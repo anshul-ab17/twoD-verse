@@ -1,5 +1,6 @@
 import express from "express";
 import { router } from "./routes/v1";
+import client from "@repo/db";
 
 const app = express();
 // app.use(express.json());
@@ -7,4 +8,4 @@ const app = express();
 app.use('/api/v1/', router);
 
 
-app.listen(process.env.Port ||3000)
+app.listen(3000)
