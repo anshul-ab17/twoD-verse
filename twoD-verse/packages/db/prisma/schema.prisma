@@ -11,15 +11,16 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 model User {
   id       String  @id @unique @default(cuid())
   username String  @unique
-  password String  @unique
+  password String 
   avatarId String
   role     Role
   space    Space[]
-  avatar   Avatar @relation(fields: [avatarId],references: [id])
+  avatar   Avatar? @relation(fields: [avatarId],references: [id])
 }
 
 model Space {
@@ -79,6 +80,6 @@ model Avatar {
 }
 
 enum Role {
-  creater   // Admin
+  Admin   // Admin
   User
 }
