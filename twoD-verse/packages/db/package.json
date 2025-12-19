@@ -1,0 +1,25 @@
+{
+  "name": "@repo/db",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts",
+    "client":"./src/index.ts"
+
+    }
+  },
+  "scripts": {
+    "build": "tsc -b"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.2.0"
+  },
+  "devDependencies": {
+    "prisma": "^7.2.0",
+    "@types/node": "^20.0.0"
+  }
+}
