@@ -3,7 +3,8 @@ import { adminRouter } from "./admin.js";
 import { userRouter } from "./user.js";
 import { spaceRouter } from "./space.js";
 import { SignupSchema } from "../../types/index.js";
-// import {client} from "@repo/db"
+import { prisma } from "@repo/db";
+
 
 export const router: Router = express.Router();
 
@@ -16,18 +17,18 @@ router.get('/signup', (req, res) => {
         return
     }
 
-    // try{
-    //     client.user.create({
-    //         data:{
-    //             username:parseData.data.username,
-    //             password:parseData.data.password,
-    //             role:parseData.data.type ==="admin" ?"Admin" :"User",
-    //         }
-    //     })
-    // }
-    // catch(e){
-    //     res.status(400).json({message:"server error"})
-    // }
+    try{
+        prisma.user.create({
+            data:{
+                username:parseData.data.username,
+                password:parseData.data.password,
+                role:parseData.data.type ==="admin" ?"Admin" :"User",
+            }
+        })
+    }
+    catch(e){
+        res.status(400).json({message:"server error"})
+    }
     res.json({
         message:"signup"
     })

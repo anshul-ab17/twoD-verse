@@ -1,13 +1,13 @@
 import { z } from "zod"; 
 
 export const SignupSchema =z.object({
-    email:z.email(),
+    username:z.email(),
     password:z.string().min(8),
     type:z.enum(["user","admin"])
 })
 
 export const SigninSchema =z.object({
-    email:z.email(),
+    username:z.email(),
     password:z.string().min(8), 
 })
 
@@ -35,13 +35,13 @@ export const CreateElementSchema = z.object({
     static:z.boolean(),
 })
 
-export const UpdateElementSchemaa = z.object({
+export const UpdateElementSchema = z.object({
     imageUrl:z.string()
 })
 
 export const CreateAvatarSchema = z.object({
     thumbnail:z.string (),
-    dimenesions:z.string().regex(/^[0-9]{1,4}x[0-9]{1,4}/),
+    dimensions:z.string().regex(/^[0-9]{1,4}x[0-9]{1,4}$/),
     defaultElement:z.array(z.object({
         elementId:z.string(),
         x:z.number(),
