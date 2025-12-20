@@ -2,13 +2,16 @@ import express, { Router } from "express";
 import { adminRouter } from "./admin.js";
 import { userRouter } from "./user.js";
 import { spaceRouter } from "./space.js";
-import { SignupSchema } from "../../types/index.js";
+import { SigninSchema, SignupSchema } from "../../types/index.js";
 import { prisma } from "@repo/db";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { JWT_PASSWORD } from "../../types/config.js";
 
 
 export const router: Router = express.Router();
 
-router.get('/signup', (req, res) => {
+router.get('/signup', async (req, res) => {
     const parseData =SignupSchema.safeParse(req.body)
     if(!parseData.success){
         res.status(400).json({
@@ -16,28 +19,65 @@ router.get('/signup', (req, res) => {
         })
         return
     }
+    const hashPassword= await bcrypt.hash(parseData.data.password,10)
 
     try{
-        prisma.user.create({
+        const user=await prisma.user.create({
             data:{
                 username:parseData.data.username,
-                password:parseData.data.password,
+                password:hashPassword,
                 role:parseData.data.type ==="admin" ?"Admin" :"User",
             }
         })
+        res.json({
+            userId:user.id
+        })
     }
     catch(e){
-        res.status(400).json({message:"server error"})
+        res.status(400).json({message:"user already exist"})
     }
     res.json({
         message:"signup"
     })
 });
 
-router.get('/signin', (req,res) => {
-    res.json({
-        mes:"singin"
-    })
+router.get('/signin',async (req,res) => {
+    const parseData = SigninSchema.safeParse(req.body)
+    if(!parseData.success){
+        res.status(400).json({
+            message:"Validation failed"
+        })
+        return
+    }
+
+    try{
+        const user = await prisma.user.findUnique({
+            where:{
+                username:parseData.data.username
+            }
+        })
+        if(!user){
+            res.status(403).json({message:"user not found"})
+            return
+        }
+        const isValid = await bcrypt.compare(parseData.data.password, user.password)
+        if(!isValid){
+            res.status(403).json({message:"invalid password"})
+            return
+        }
+
+        const token =jwt.sign({
+            userId: user.id,
+            role:user.role
+        },JWT_PASSWORD);
+
+        res.json({
+            token
+        })
+
+    } catch (e){
+        res.status(400).json({message:"server error"})
+    }
 });
 
  
