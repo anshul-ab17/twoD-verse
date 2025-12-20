@@ -5,9 +5,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "build": "npx tsc -b",
+    "build": "npx esbuild src/index.ts --bundle --outfile=dist/index.js --platform=node --tsconfig=tsconfig.json",
     "start": "node dist/index.js",
-    "dev": "pnpm run build & pnpm run start"
+    "dev": "npm run build && npm run start"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +15,7 @@
   "dependencies": {
     "@repo/db": "workspace:*",
     "@types/bcrypt": "^6.0.0",
+    "esbuild": "^0.24.0",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "dotenv": "^17.2.3",
@@ -23,4 +24,4 @@
     "typescript": "^5.9.3",
     "zod": "^4.2.1"
   }
-}
+} 
