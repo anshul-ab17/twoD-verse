@@ -48,3 +48,11 @@ export const CreateAvatarSchema = z.object({
         y:z.number()
     }))
 })
+declare global {
+    namespace Express{
+        export interface Request{
+            role? : "Admin" | "User";
+            userId?: string
+        }
+    }
+}
