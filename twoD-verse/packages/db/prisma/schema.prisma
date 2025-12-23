@@ -10,8 +10,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url="env()"
+  provider = "postgresql" 
 }
 
 
@@ -31,8 +30,8 @@ model Space {
   width     Int
   height    Int?
   thumbnail String?
-  createrId String
-  creater   User @relation(fields: [createrId], references: [id])
+  creatorId String
+  creator   User @relation(fields: [creatorId], references: [id])
   element   spaceElements[]
 }
 

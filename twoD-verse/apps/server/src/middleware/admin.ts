@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { JWT_PASSWORD } from "../types/config.js";
+import { JWT_PASSWORD } from "../config.js";
 import type {Request, Response,NextFunction  } from "express";
 
 export const adminMiddleware = (req:Request,res:Response,next:NextFunction) =>{

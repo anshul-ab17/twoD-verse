@@ -5,7 +5,7 @@ import { spaceRouter } from "./space.js";
 import { SigninSchema, SignupSchema } from "../../types/index.js";
 import { prisma } from "@repo/db"; 
 import jwt from "jsonwebtoken";
-import { JWT_PASSWORD } from "../../types/config.js";
+import { JWT_PASSWORD } from "../../config.js";
 import {hash, compare} from "../../scrypt.js";
 
 export const router: Router = express.Router();
