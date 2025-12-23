@@ -3,23 +3,23 @@ import { adminRouter } from "./admin.js";
 import { userRouter } from "./user.js";
 import { spaceRouter } from "./space.js";
 import { SigninSchema, SignupSchema } from "../../types/index.js";
-import { prisma } from "@repo/db";
-import bcrypt from "bcrypt";
+import { prisma } from "@repo/db"; 
 import jwt from "jsonwebtoken";
 import { JWT_PASSWORD } from "../../types/config.js";
-
+import {hash, compare} from "../../scrypt.js";
 
 export const router: Router = express.Router();
 
-router.get('/signup', async (req, res) => {
+router.post('/signup', async (req, res) => {
+    console.log("in signup")
     const parseData =SignupSchema.safeParse(req.body)
     if(!parseData.success){
         res.status(400).json({
-            message:"validation failed"
+            message:"signup validation failed"
         })
         return
     }
-    const hashPassword= await bcrypt.hash(parseData.data.password,10)
+    const hashPassword= await hash(parseData.data.password)
 
     try{
         const user=await prisma.user.create({
@@ -35,17 +35,14 @@ router.get('/signup', async (req, res) => {
     }
     catch(e){
         res.status(400).json({message:"user already exist"})
-    }
-    res.json({
-        message:"signup"
-    })
+    } 
 });
 
-router.get('/signin',async (req,res) => {
+router.post('/signin',async (req,res) => {
     const parseData = SigninSchema.safeParse(req.body)
     if(!parseData.success){
         res.status(400).json({
-            message:"Validation failed"
+            message:"signin Validation failed "
         })
         return
     }
@@ -60,7 +57,7 @@ router.get('/signin',async (req,res) => {
             res.status(403).json({message:"user not found"})
             return
         }
-        const isValid = await bcrypt.compare(parseData.data.password, user.password)
+        const isValid = await compare(parseData.data.password, user.password)
         if(!isValid){
             res.status(403).json({message:"invalid password"})
             return
@@ -91,6 +88,6 @@ router.get('/elements', (res, req) => {
 })
 
 
-router.get('/user',userRouter);
-router.get('/admin',adminRouter);
-router.get('/space',spaceRouter);
+router.use('/user',userRouter);
+router.use('/admin',adminRouter);
+router.use('/space',spaceRouter);

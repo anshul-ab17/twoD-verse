@@ -1,14 +1,26 @@
-import express, { Router } from "express";
+import express, { Router } from "express"; 
+import {UpdateMetadataSchema} from "../../types/index.js";
+import { prisma } from "@repo/db"; 
+
 
 export const userRouter: Router = express.Router();
 
 
-userRouter.post('/metadata/',(res,req) => {
-    req.json({
-	"avatarId": "123",
-    })
-})
+userRouter.post('/metadata/',(req,res) => {
+    const parseData= UpdateMetadataSchema.safeParse(req.body)
 
-userRouter.get('/api/v1/metadata/bulk',() => {
+    if(!parseData){
+        res.status(400).json({message:"Validation failed"})
+        return
+    }
+})
+// prisma.user.update({
+//     where: {
+//         id:
+//     },
+//     data: undefined
+// })
+
+userRouter.get('/metadata/bulk',() => {
 })
  
