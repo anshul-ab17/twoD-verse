@@ -1,7 +1,7 @@
 import express, { Router } from "express";
 import { userMiddleware } from "../../middleware/user.js";
 import { CreateSpaceSchema } from "../../types/index.js";
-import { prisma } from "@repo/db"; 
+import { prisma } from "@repo/db";  
 export const spaceRouter: Router = express.Router();
 
 
@@ -36,18 +36,21 @@ spaceRouter.post('/', userMiddleware, async (req, res) => {
     where:{
         id:parsedData.data.mapId
     },select:{
-        mapElements:true
+        mapElements:true,
+        height:true,
+        width:true
     }
   })
   if(!map){
     res.status(400).json({message:"Map doesn't exist!"})
+    return;
   }
   await prisma.$transaction(async () => {
        const space = await prisma.space.create({ 
             data:{
                name:parsedData.data.name,
-               width,
-               height,
+               width:map.width,
+               height:map.height,
                createrId:req.userId!,
             },
         });
@@ -66,16 +69,49 @@ spaceRouter.post('/', userMiddleware, async (req, res) => {
    });
 });
 
-// spaceRouter.delete('/element',(req,res)=> {
 
-// })
-// spaceRouter.delete('/:spaceID',(req,res)=> {
+spaceRouter.delete('/:spaceID',userMiddleware,async (req,res)=> {
+    const space = await prisma.space.findUnique({
+        where:{
+            id:req.params.spaceId
+        },
+        select:{
+            createrId:true
+        }
+    })
+    if(!space){
+        res.status(400).json({message:"space not found"})
+    }
+    if(space?.createrId !==req.userId){
+        res.status(403).json({message:"unauthorized"})
+    }
 
-// })
+    await prisma.space.delete({
+        where:{
+            id:req.params.spaceId
+        }
+    })
+    res.json({message:"space deleted."})
+})
  
-// spaceRouter.get('/all',(req,res)=> {
 
-// })
+spaceRouter.get("/all", userMiddleware, async (req, res) => {
+    const spaces = await prisma.space.findMany({
+    where: {
+      createrId: req.userId!,
+    },
+  });
+
+  res.json({
+    spaces: spaces.map((s) => ({
+      id: s.id,
+      name: s.name,
+      thumbnail: s.thumbnail,
+      dimensions: `${s.width}x${s.height}`,
+    })),
+  });
+});
+
 
 // spaceRouter.post("/element", async (req, res) => {
 
