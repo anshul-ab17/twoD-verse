@@ -1,5 +1,15 @@
 import { z } from "zod"; 
 
+
+declare global {
+    namespace Express{
+        export interface Request{
+            role? : "Admin" | "User";
+            userId?: string
+        }
+    }
+}
+
 export const SignupSchema =z.object({
     username:z.email(),
     password:z.string().min(8),
@@ -61,12 +71,3 @@ export const CreateAvatarSchema = z.object({
         y:z.number()
     }))
 })
-
-declare global {
-    namespace Express{
-        export interface Request{
-            role? : "Admin" | "User";
-            userId?: string
-        }
-    }
-}
