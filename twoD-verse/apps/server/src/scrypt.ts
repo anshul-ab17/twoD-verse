@@ -1,10 +1,8 @@
 import { randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
-
 /**
  * https://dev.to/advename/comment/24a9e
  */
 const keyLength = 32;
-
 /**
  * Has a password or a secret with a password hashing algorithm (scrypt)
  * @param {string} password
@@ -22,7 +20,6 @@ export const hash = async (password: string): Promise<string> => {
     });
   });
 };
-
 /**
  * Compare a plain text password with a salt+hash password
  * @param {string} password The plain text password
@@ -32,7 +29,6 @@ export const hash = async (password: string): Promise<string> => {
 export const compare = async (password: string, hash: string): Promise<boolean> => {
   return new Promise((resolve, reject) => {
     const parts = hash.split('.');
-    
     // Validate hash format and extract parts
     if (parts.length !== 2 || !parts[0] || !parts[1]) {
       reject(new Error('Invalid hash format'));
@@ -42,7 +38,6 @@ export const compare = async (password: string, hash: string): Promise<boolean> 
     //or
     // const salt: string = parts[0];
     // const hashKey: string = parts[1];
-    
     // we need to pass buffer values to timingSafeEqual
     const hashKeyBuff = Buffer.from(hashKey, 'hex');
     scrypt(password, salt, keyLength, (error, derivedKey) => {

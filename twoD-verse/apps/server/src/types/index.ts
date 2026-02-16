@@ -1,6 +1,4 @@
 import { z } from "zod"; 
-
-
 declare global {
     namespace Express{
         export interface Request{
@@ -9,7 +7,6 @@ declare global {
         }
     }
 }
-
 export const SignupSchema =z.object({
     username:z.email(),
     password:z.string().min(8),
