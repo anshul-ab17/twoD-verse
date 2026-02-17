@@ -25,7 +25,6 @@ export default function Home({ isAuthenticated }: HomeProps) {
     >
       {/* Interactive 3D Background */}
       <Hero3D />
-
       {/* Center Content Overlay */}
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 pointer-events-none">
         <h1 className="text-5xl md:text-7xl font-bold tracking-tight drop-shadow-2xl">
