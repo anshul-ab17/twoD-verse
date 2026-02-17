@@ -1,3 +1,6 @@
+"use client"
+
+import { useEffect, useRef } from "react"
 import Link from "next/link"
 import Hero3D from "./hero-3d"
 
@@ -7,17 +10,25 @@ interface HomeProps {
 
 export default function Home({ isAuthenticated }: HomeProps) {
   const href = isAuthenticated ? "/space" : "/signin"
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Auto-focus so WASD works instantly
+  useEffect(() => {
+    containerRef.current?.focus()
+  }, [])
 
   return (
-    <div className="relative h-screen w-full overflow-hidden text-white">
-
+    <div
+      ref={containerRef}
+      tabIndex={0}
+      className="relative h-screen w-full overflow-hidden bg-black text-white outline-none"
+    >
+      {/* Interactive 3D Background */}
       <Hero3D />
 
-      {/* Soft glow aura */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(140,80,255,0.2),transparent_60%)]" />
-
-      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
-        <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
+      {/* Center Content Overlay */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 pointer-events-none">
+        <h1 className="text-5xl md:text-7xl font-bold tracking-tight drop-shadow-2xl">
           Enter the World
         </h1>
 
@@ -28,7 +39,7 @@ export default function Home({ isAuthenticated }: HomeProps) {
 
         <Link
           href={href}
-          className="mt-10 rounded-md bg-white px-6 py-3 text-sm font-semibold text-black transition hover:scale-105"
+          className="mt-10 rounded-md bg-white px-6 py-3 text-sm font-semibold text-black transition duration-300 hover:scale-105 pointer-events-auto"
         >
           Start Exploring
         </Link>

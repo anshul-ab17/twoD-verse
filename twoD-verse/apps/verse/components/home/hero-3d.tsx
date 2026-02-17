@@ -1,70 +1,137 @@
 "use client"
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
-import { Points, PointMaterial } from "@react-three/drei"
-import { useRef, useMemo } from "react"
+import { useRef, useMemo, useEffect, useState } from "react"
 import * as THREE from "three"
 
 function FloatingParticles() {
   const ref = useRef<THREE.Points>(null!)
+  const positionsRef = useRef<Float32Array | null>(null)
 
-  const particles = useMemo(() => {
-    const positions = new Float32Array(2000 * 3)
-    for (let i = 0; i < 2000; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 30
-      positions[i * 3 + 1] = Math.random() * 15
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 30
+
+  const geometry = useMemo(() => {
+    const count = 6000
+    const positions = new Float32Array(count * 3)
+    const colors = new Float32Array(count * 3)
+
+    const blueVioletPalette = [
+      "#3b82f6",
+      "#6366f1",
+      "#8b5cf6",
+      "#a78bfa",
+      "#4f46e5"
+    ]
+
+    for (let i = 0; i < count; i++) {
+      positions[i * 3] = (Math.random() - 0.5) * 100
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 70
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 100
+
+      const isColored = Math.random() < 0.4
+
+      const color = new THREE.Color(
+        isColored
+          ? blueVioletPalette[Math.floor(Math.random() * blueVioletPalette.length)]
+          : "#ffffff"
+      )
+
+      colors[i * 3] = color.r
+      colors[i * 3 + 1] = color.g
+      colors[i * 3 + 2] = color.b
     }
-    return positions
+
+    positionsRef.current = positions
+
+    const geometry = new THREE.BufferGeometry()
+    geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3))
+    geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3))
+
+    return geometry
   }, [])
 
-  useFrame(({ clock }) => {
-    ref.current.rotation.y = clock.getElapsedTime() * 0.02
+  useFrame(() => {
+    if (!ref.current || !positionsRef.current) return
+
+    const positions = positionsRef.current
+
+    // Subtle forward flow
+    for (let i = 0; i < positions.length; i += 3) {
+      positions[i + 2] += 0.05
+
+      // Reset star if too close
+      if (positions[i + 2] > 50) {
+        positions[i + 2] = -50
+      }
+    }
+
+    ref.current.geometry.attributes.position.needsUpdate = true
+
+    // Gentle ambient rotation
+    ref.current.rotation.y += 0.0008
   })
 
   return (
-    <Points ref={ref} positions={particles} stride={3}>
-      <PointMaterial
+    <points ref={ref} geometry={geometry}>
+      <pointsMaterial
+        size={0.06}
+        vertexColors
         transparent
-        size={0.05}
-        color="#9f7aea"
-        sizeAttenuation
         depthWrite={false}
       />
-    </Points>
+    </points>
   )
 }
 
-function FloatingGround() {
-  const meshRef = useRef<THREE.Mesh>(null!)
+function Controls() {
+  const { camera } = useThree()
+  const [keys, setKeys] = useState<{ [key: string]: boolean }>({})
 
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime()
-    meshRef.current.rotation.y = t * 0.05
-  })
+  useEffect(() => {
+    const down = (e: KeyboardEvent) =>
+      setKeys((prev) => ({ ...prev, [e.key.toLowerCase()]: true }))
+    const up = (e: KeyboardEvent) =>
+      setKeys((prev) => ({ ...prev, [e.key.toLowerCase()]: false }))
 
-  return (
-    <mesh
-      ref={meshRef}
-      rotation={[-Math.PI / 2.2, 0, 0]}
-      position={[0, -3, 0]}
-    >
-      <circleGeometry args={[8, 64]} />
-      <meshStandardMaterial
-        color="#1a1a2e"
-        emissive="#3b0a45"
-        emissiveIntensity={1.2}
-      />
-    </mesh>
-  )
-}
+    window.addEventListener("keydown", down)
+    window.addEventListener("keyup", up)
 
-function CameraDrift() {
-  const { camera, pointer } = useThree()
+    return () => {
+      window.removeEventListener("keydown", down)
+      window.removeEventListener("keyup", up)
+    }
+  }, [])
 
-  useFrame(() => {
-    camera.position.x += (pointer.x * 2 - camera.position.x) * 0.02
-    camera.position.y += (pointer.y * 1 - camera.position.y) * 0.02
+  useFrame(({ pointer }) => {
+    // Smooth mouse tilt
+    camera.rotation.y = THREE.MathUtils.lerp(
+      camera.rotation.y,
+      -pointer.x * 0.18,
+      0.03
+    )
+
+    camera.rotation.x = THREE.MathUtils.lerp(
+      camera.rotation.x,
+      -pointer.y * 0.12,
+      0.03
+    )
+
+    // Slow controlled movement
+    const speed = 0.07
+    const limitX = 10
+    const minZ = 8
+    const maxZ = 25
+
+    if ((keys["w"] || keys["arrowup"]) && camera.position.z > minZ)
+      camera.position.z -= speed
+
+    if ((keys["s"] || keys["arrowdown"]) && camera.position.z < maxZ)
+      camera.position.z += speed
+
+    if ((keys["a"] || keys["arrowleft"]) && camera.position.x > -limitX)
+      camera.position.x -= speed
+
+    if ((keys["d"] || keys["arrowright"]) && camera.position.x < limitX)
+      camera.position.x += speed
   })
 
   return null
@@ -73,18 +140,15 @@ function CameraDrift() {
 export default function Hero3D() {
   return (
     <Canvas
-      camera={{ position: [0, 2, 10], fov: 50 }}
+      camera={{ position: [0, 0, 15], fov: 50 }}
       className="absolute inset-0"
     >
-      <color attach="background" args={["#050509"]} />
-      <fog attach="fog" args={["#050509", 10, 40]} />
+      <color attach="background" args={["#000000"]} />
+      <fog attach="fog" args={["#000000", 40, 150]} />
+      <ambientLight intensity={0.9} />
 
-      <ambientLight intensity={0.7} />
-      <directionalLight position={[5, 10, 5]} intensity={1.5} />
-
-      <CameraDrift />
+      <Controls />
       <FloatingParticles />
-      <FloatingGround />
     </Canvas>
   )
 }

@@ -12,12 +12,24 @@
   --foreground: 0 0% 98%;
 }
 
+/* Raspberry Theme */
+.raspberry {
+  --background: 342 34% 36%;
+  --foreground: 194 15% 70%;
+}
+
+/* Burgundy Theme */
+.burgundy {
+  --background: 0 0% 11%;
+  --foreground: 345 100% 25%;
+}
+
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
 }
 
-/* global theme transition*/
+/* Smooth global theme transition */
 * {
   transition:
     background-color 300ms ease,
