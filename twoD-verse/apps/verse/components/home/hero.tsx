@@ -11,27 +11,26 @@ export default function Home({ isAuthenticated }: HomeProps) {
   return (
     <div className="relative h-screen w-full overflow-hidden text-white">
 
-      {/* Fullscreen 3D */}
       <Hero3D />
 
-      {/* Smooth Gradient Fade (top + bottom) */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black via-black/40 to-black" />
+      {/* Soft glow aura */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(140,80,255,0.2),transparent_60%)]" />
 
-      {/* Center Content */}
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6">
-        <h2 className="text-4xl font-bold tracking-tight md:text-6xl">
-          Create Your Verse
-        </h2>
+        <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
+          Enter the World
+        </h1>
 
-        <p className="mt-6 max-w-xl text-lg text-white/80">
-          Build your digital space. Shape your ideas.
+        <p className="mt-6 max-w-xl text-lg text-white/70">
+          Build playful spaces. Explore ideas.
+          Shape mysterious digital realms.
         </p>
 
         <Link
           href={href}
-          className="mt-10 rounded-lg bg-white px-6 py-3 text-sm font-semibold text-black transition-all duration-300 hover:scale-105 hover:shadow-lg"
+          className="mt-10 rounded-md bg-white px-6 py-3 text-sm font-semibold text-black transition hover:scale-105"
         >
-          Start Now
+          Start Exploring
         </Link>
       </div>
     </div>
