@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
 
 import WorldCanvas from "@/components/world/WorldCanvas"
 import SidePanel from "@/components/space/SidePanel"
@@ -15,8 +14,7 @@ export default function SpaceWorldClient({
   spaceId,
   userName,
 }: Props) {
-  const router = useRouter()
-  const [spaceName, setSpaceName] = useState<string | null>(null)
+  const [spaceName, setSpaceName] = useState<string>("Loading...")
 
   useEffect(() => {
     const stored =
@@ -24,21 +22,22 @@ export default function SpaceWorldClient({
 
     const space = stored.find((s: any) => s.id === spaceId)
 
-    if (!space) {
-      router.replace("/space/dashboard")
-      return
+    if (space) {
+      setSpaceName(space.name)
+    } else {
+      setSpaceName("Untitled Space")
     }
-
-    setSpaceName(space.name)
-  }, [spaceId, router])
-
-
-  if (!spaceName) return null
+  }, [spaceId])
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-neutral-950">
-      <WorldCanvas userName={userName} />
+
       <SidePanel userName={userName} spaceName={spaceName} />
+
+      <div className="pl-80 h-full w-full">
+        <WorldCanvas userName={userName} />
+      </div>
+
     </div>
   )
 }

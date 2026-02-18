@@ -1,35 +1,42 @@
 "use client"
 
-import { useWorldStore } from "@/store/useWorldStore"
+import { useRouter } from "next/navigation"
 
 type Props = {
-  userName?: string
-  spaceName?: string
+  spaceName: string
+  userName: string
 }
 
-export default function SidePanel({ userName, spaceName }: Props) {
-  const currentZone = useWorldStore((s) => s.currentZone)
+export default function SidePanel({ spaceName, userName }: Props) {
+  const router = useRouter()
 
   return (
-    <div className="absolute right-0 top-0 h-full w-72 bg-neutral-900/80 backdrop-blur-md border-l border-neutral-800 p-4 text-white">
-      <h2 className="text-sm font-semibold mb-4">
-        {spaceName}
-      </h2>
+    <div className="absolute left-0 top-0 h-full w-80
+                    bg-black/70 backdrop-blur-xl
+                    border-r border-white/10
+                    p-6 flex flex-col justify-between">
 
-      <p className="mb-4">
-        Welcome, <span className="text-indigo-400">{userName}</span>
-      </p>
+      <div className="space-y-8">
 
-      <div className="text-sm">
-        <p className="mb-2">Current Zone:</p>
-        <div className="p-3 bg-neutral-800 rounded-md">
-          {currentZone ?? "None"}
+        <div>
+          <h2 className="text-lg font-semibold text-white/80">
+            {spaceName}
+          </h2>
+
+          <p className="text-sm text-white/50 mt-2">
+            Logged in as {userName}
+          </p>
         </div>
+
+      </div>
+
+      <div className="space-y-4">
+
         <button
-        onClick={() => window.location.href = "/space/dashboard"}
-        className="mt-6 w-full bg-red-600 py-2 rounded"
+          onClick={() => router.push("/space/dashboard")}
+          className="w-full bg-red-950 py-2 rounded-lg hover:bg-neutral-700 transition"
         >
-        Leave Space
+          Back to Dashboard
         </button>
 
       </div>

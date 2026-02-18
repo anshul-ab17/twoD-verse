@@ -6,9 +6,10 @@ import SidePanel from "@/components/space/SidePanel"
 
 type Props = {
   spaceId: string
+  userName: string
 }
 
-export default function SpaceWorldView({ spaceId }: Props) {
+export default function SpaceWorldView({ spaceId, userName }: Props) {
   const [spaceName, setSpaceName] = useState<string>("Loading...")
 
   useEffect(() => {
@@ -26,8 +27,13 @@ export default function SpaceWorldView({ spaceId }: Props) {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-neutral-950">
-      <WorldCanvas />
-      <SidePanel spaceName={spaceName} />
+
+      <SidePanel spaceName={spaceName} userName={userName} />
+
+      <div className="pl-80 h-full w-full">
+        <WorldCanvas />
+      </div>
+
     </div>
   )
 }

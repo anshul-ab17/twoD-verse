@@ -1,61 +1,105 @@
 "use client"
 
 import { useRef, useEffect } from "react"
-import { useFrame } from "@react-three/fiber"
+import { useFrame, useThree } from "@react-three/fiber"
 import * as THREE from "three"
-import { useWorldStore } from "@/store/useWorldStore"
 
-type Props = {
-  userName?: string
-}
+export default function Player() {
+  const meshRef = useRef<THREE.Mesh>(null!)
+  const velocity = useRef(new THREE.Vector3())
+  const direction = useRef(new THREE.Vector3())
+  const keys = useRef<Record<string, boolean>>({})
 
-export default function Player({ userName }: Props) {
-  const ref = useRef<THREE.Mesh>(null!)
-  const velocity = useRef({ x: 0, y: 0 })
-  const keys = useRef<{ [key: string]: boolean }>({})
-
-  const { position, setPosition } = useWorldStore()
+  const { camera } = useThree()
 
   // Key listeners
   useEffect(() => {
-    const down = (e: KeyboardEvent) => (keys.current[e.key.toLowerCase()] = true)
-    const up = (e: KeyboardEvent) => (keys.current[e.key.toLowerCase()] = false)
+    const handleDown = (e: KeyboardEvent) => {
+      keys.current[e.key.toLowerCase()] = true
+    }
 
-    window.addEventListener("keydown", down)
-    window.addEventListener("keyup", up)
+    const handleUp = (e: KeyboardEvent) => {
+      keys.current[e.key.toLowerCase()] = false
+    }
+
+    window.addEventListener("keydown", handleDown)
+    window.addEventListener("keyup", handleUp)
 
     return () => {
-      window.removeEventListener("keydown", down)
-      window.removeEventListener("keyup", up)
+      window.removeEventListener("keydown", handleDown)
+      window.removeEventListener("keyup", handleUp)
     }
   }, [])
 
-  useFrame(() => {
-    const speed = 0.08
-    const damping = 0.85
+  useFrame((_, delta) => {
+    const acceleration = 3        // lower = slower
+    const damping = 0.90          // higher = smoother glide
+    const maxSpeed = 3            // caps top speed
 
-    if (keys.current["w"]) velocity.current.y += speed
-    if (keys.current["s"]) velocity.current.y -= speed
-    if (keys.current["a"]) velocity.current.x -= speed
-    if (keys.current["d"]) velocity.current.x += speed
+    direction.current.set(0, 0, 0)
 
-    velocity.current.x *= damping
-    velocity.current.y *= damping
+    // WASD
+    if (keys.current["w"]) direction.current.y += 1
+    if (keys.current["s"]) direction.current.y -= 1
+    if (keys.current["a"]) direction.current.x -= 1
+    if (keys.current["d"]) direction.current.x += 1
 
-    const newX = position.x + velocity.current.x
-    const newY = position.y + velocity.current.y
+    // Arrow keys
+    if (keys.current["arrowup"]) direction.current.y += 1
+    if (keys.current["arrowdown"]) direction.current.y -= 1
+    if (keys.current["arrowleft"]) direction.current.x -= 1
+    if (keys.current["arrowright"]) direction.current.x += 1
 
-    setPosition(newX, newY)
-
-    if (ref.current) {
-      ref.current.position.set(newX, newY, 0)
+    // Normalize diagonal movement
+    if (direction.current.length() > 0) {
+      direction.current.normalize()
     }
+
+    // Apply acceleration
+    velocity.current.x += direction.current.x * acceleration * delta
+    velocity.current.y += direction.current.y * acceleration * delta
+
+    // Clamp max speed
+    velocity.current.clampLength(0, maxSpeed)
+
+    // Apply damping (smooth slowdown)
+    velocity.current.multiplyScalar(damping)
+
+    // Apply movement
+    meshRef.current.position.x += velocity.current.x
+    meshRef.current.position.y += velocity.current.y
+
+    // Boundaries
+    meshRef.current.position.x = THREE.MathUtils.clamp(
+      meshRef.current.position.x,
+      -50,
+      50
+    )
+
+    meshRef.current.position.y = THREE.MathUtils.clamp(
+      meshRef.current.position.y,
+      -50,
+      50
+    )
+
+    // Smooth camera follow
+    camera.position.x = THREE.MathUtils.lerp(
+      camera.position.x,
+      meshRef.current.position.x,
+      0.08
+    )
+
+    camera.position.y = THREE.MathUtils.lerp(
+      camera.position.y,
+      meshRef.current.position.y,
+      0.08
+    )
   })
 
   return (
-    <mesh ref={ref}>
-      <circleGeometry args={[0.5, 32]} />
-      <meshBasicMaterial color="#4f46e5" />
+    <mesh ref={meshRef}>
+      <circleGeometry args={[0.6, 32]} />
+      <meshStandardMaterial color="#6366f1" />
     </mesh>
   )
 }

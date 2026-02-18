@@ -12,16 +12,19 @@ export default function DashboardView() {
   const [spaces, setSpaces] = useState<Space[]>([])
   const router = useRouter()
 
-  // Load spaces from localStorage
   useEffect(() => {
     const stored =
       JSON.parse(localStorage.getItem("twodverse-spaces") || "[]")
-
     setSpaces(stored)
   }, [])
 
-  // Delete space
   const handleDelete = (id: string) => {
+    const confirmed = confirm(
+      "Are you sure you want to delete this space?"
+    )
+
+    if (!confirmed) return
+
     const updated = spaces.filter((space) => space.id !== id)
 
     localStorage.setItem(
@@ -33,11 +36,11 @@ export default function DashboardView() {
   }
 
   return (
-    <div className="px-16 pt-28">
+    <div className="px-20 pt-28">
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-10">
-        <h1 className="text-2xl font-semibold">
+      <div className="flex items-center justify-between mb-12">
+        <h1 className="text-3xl font-semibold tracking-tight">
           Your Spaces
         </h1>
 
@@ -49,32 +52,37 @@ export default function DashboardView() {
         </button>
       </div>
 
-      {/* Spaces Grid */}
-      <div className="grid gap-4">
+      {/* Grid Layout */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
 
         {spaces.map((space) => (
           <div
             key={space.id}
-            className="flex items-center justify-between p-4 bg-neutral-800 rounded hover:bg-neutral-700 transition"
+            className="group relative bg-neutral-900 p-6 rounded-2xl 
+                       border border-white/10 
+                       transition-all duration-300
+                       hover:border-indigo-500
+                       hover:shadow-[0_0_40px_rgba(99,102,241,0.25)]
+                       hover:-translate-y-1"
           >
-            {/* Clickable Space Name */}
-            <span
+            {/* Space Name */}
+            <h2
               onClick={() => router.push(`/space/${space.id}`)}
-              className="cursor-pointer"
+              className="text-lg font-medium cursor-pointer"
             >
               {space.name}
-            </span>
+            </h2>
 
             {/* Delete Button */}
             <button
-              onClick={(e) => {
-                e.stopPropagation()
-                handleDelete(space.id)
-              }}
-              className="px-3 py-1 bg-red-600 rounded text-xs hover:bg-red-500 transition"
+              onClick={() => handleDelete(space.id)}
+              className="absolute top-4 right-4 opacity-0 
+                         group-hover:opacity-100 
+                         text-xs text-red-400 hover:text-red-300 transition"
             >
               Delete
             </button>
+
           </div>
         ))}
 
@@ -82,7 +90,7 @@ export default function DashboardView() {
 
       {/* Empty State */}
       {spaces.length === 0 && (
-        <div className="text-white/60 mt-10">
+        <div className="text-white/60 mt-20 text-center">
           No spaces yet. Create one to get started.
         </div>
       )}
