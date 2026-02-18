@@ -18,7 +18,8 @@ export default function PhaserGame() {
       physics: {
         default: "arcade",
         arcade: {
-          gravity: { y: 0 },
+          gravity: { x: 0, y: 0 }, // ✅ fixed
+          debug: false,
         },
       },
       scene: [OfficeScene],
@@ -27,8 +28,10 @@ export default function PhaserGame() {
     gameRef.current = new Phaser.Game(config)
 
     return () => {
-      gameRef.current?.destroy(true)
-      gameRef.current = null
+      if (gameRef.current) {
+        gameRef.current.destroy(true)
+        gameRef.current = null
+      }
     }
   }, [])
 

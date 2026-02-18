@@ -1,14 +1,23 @@
 "use client"
 
-import { useEffect, useState } from "react" 
+import { useEffect, useState } from "react"
+import dynamic from "next/dynamic"
 import SidePanel from "@/components/space/SidePanel"
+
+const PhaserGame = dynamic(
+  () => import("./PhaserGame"),
+  { ssr: false }
+)
 
 type Props = {
   spaceId: string
   userName: string
 }
 
-export default function SpaceWorldView({ spaceId, userName }: Props) {
+export default function SpaceWorldClient({
+  spaceId,
+  userName,
+}: Props) {
   const [spaceName, setSpaceName] = useState<string>("Loading...")
 
   useEffect(() => {
@@ -27,10 +36,10 @@ export default function SpaceWorldView({ spaceId, userName }: Props) {
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-neutral-950">
 
-      <SidePanel spaceName={spaceName} userName={userName} />
+      <SidePanel userName={userName} spaceName={spaceName} />
 
       <div className="pl-80 h-full w-full">
-        <WorldCanvas />
+        <PhaserGame />
       </div>
 
     </div>

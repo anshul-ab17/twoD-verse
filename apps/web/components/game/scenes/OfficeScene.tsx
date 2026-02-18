@@ -15,23 +15,31 @@ export class OfficeScene extends Phaser.Scene {
 
   create() {
     this.player = createPlayer(this)
-    this.cursors = this.input.keyboard.createCursorKeys()
+
+    // Non-null assertion because Phaser typings allow null
+    this.cursors = this.input.keyboard!.createCursorKeys()
+
     this.cameras.main.startFollow(this.player)
+    this.cameras.main.setBounds(0, 0, 2000, 1200)
+
+    this.physics.world.setBounds(0, 0, 2000, 1200)
   }
 
   update() {
-    const speed = 120
+    const speed = 150
 
     this.player.setVelocity(0)
 
-    if (this.cursors.left?.isDown)
+    if (this.cursors.left?.isDown) {
       this.player.setVelocityX(-speed)
-    else if (this.cursors.right?.isDown)
+    } else if (this.cursors.right?.isDown) {
       this.player.setVelocityX(speed)
+    }
 
-    if (this.cursors.up?.isDown)
+    if (this.cursors.up?.isDown) {
       this.player.setVelocityY(-speed)
-    else if (this.cursors.down?.isDown)
+    } else if (this.cursors.down?.isDown) {
       this.player.setVelocityY(speed)
+    }
   }
 }
