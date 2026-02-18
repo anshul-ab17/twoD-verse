@@ -1,7 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import WorldCanvas from "@/components/world/WorldCanvas"
+import { useEffect, useState } from "react" 
 import SidePanel from "@/components/space/SidePanel"
 
 type Props = {
