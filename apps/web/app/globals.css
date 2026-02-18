@@ -1,50 +1,40 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: 0 0% 100%;
+  --foreground: 0 0% 3.9%;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.dark {
+  --background: 0 0% 3.9%;
+  --foreground: 0 0% 98%;
 }
 
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
+/* Raspberry Theme */
+.raspberry {
+  --background: 342 34% 36%;
+  --foreground: 194 15% 70%;
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
+/* Burgundy Theme */
+.burgundy {
+  --background: 0 0% 11%;
+  --foreground: 345 100% 25%;
+}
+html, body {
+  height: 100%;
+  background: #000;
 }
 
+
+/* Smooth global theme transition */
 * {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.imgDark {
-  display: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
-
-  .imgLight {
-    display: none;
-  }
-  .imgDark {
-    display: unset;
-  }
+  transition:
+    background-color 300ms ease,
+    color 300ms ease,
+    border-color 300ms ease,
+    fill 300ms ease,
+    stroke 300ms ease;
 }
