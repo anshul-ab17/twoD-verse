@@ -1,7 +1,7 @@
 import { z } from "zod"
 
 export const CreateElementSchema = z.object({
-  imageUrl: z.string().url(),
+  imageUrl: z.url(),
   width: z.number().int().positive(),
   height: z.number().int().positive(),
   static: z.boolean().default(false),
