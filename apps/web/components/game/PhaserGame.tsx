@@ -4,7 +4,13 @@ import { useEffect, useRef } from "react"
 import Phaser from "phaser"
 import { OfficeScene } from "./scenes/OfficeScene"
 
-export default function PhaserGame() {
+export default function PhaserGame({
+  spaceId,
+  userName,
+}: {
+  spaceId: string
+  userName: string
+}) {
   const gameRef = useRef<Phaser.Game | null>(null)
 
   useEffect(() => {
@@ -12,17 +18,19 @@ export default function PhaserGame() {
 
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
-      width: 1200,
-      height: 700,
+      width: 1600,
+      height: 900,
       parent: "phaser-container",
       physics: {
         default: "arcade",
         arcade: {
-          gravity: { x: 0, y: 0 }, // ✅ fixed
+          gravity: { x: 0, y: 0 },
           debug: false,
         },
       },
-      scene: [OfficeScene],
+      scene: [
+        new OfficeScene({ spaceId, userName })
+      ],
     }
 
     gameRef.current = new Phaser.Game(config)
@@ -33,7 +41,7 @@ export default function PhaserGame() {
         gameRef.current = null
       }
     }
-  }, [])
+  }, [spaceId, userName])
 
   return <div id="phaser-container" />
 }

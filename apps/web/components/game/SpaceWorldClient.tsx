@@ -5,20 +5,19 @@ import dynamic from "next/dynamic"
 import SidePanel from "@/components/space/SidePanel"
 
 const PhaserGame = dynamic(
-  () => import("./PhaserGame"),
+  () => import("@/components/game/PhaserGame"),
   { ssr: false }
 )
-
-type Props = {
-  spaceId: string
-  userName: string
-}
 
 export default function SpaceWorldClient({
   spaceId,
   userName,
-}: Props) {
-  const [spaceName, setSpaceName] = useState<string>("Loading...")
+}: {
+  spaceId: string
+  userName: string
+}) {
+  const [spaceName, setSpaceName] = useState("Loading...")
+  const [sidebarOpen, setSidebarOpen] = useState(true)
 
   useEffect(() => {
     const stored =
@@ -26,20 +25,26 @@ export default function SpaceWorldClient({
 
     const space = stored.find((s: any) => s.id === spaceId)
 
-    if (space) {
-      setSpaceName(space.name)
-    } else {
-      setSpaceName("Untitled Space")
-    }
+    setSpaceName(space?.name ?? "Untitled Space")
   }, [spaceId])
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-neutral-950">
 
-      <SidePanel userName={userName} spaceName={spaceName} />
+      {/* Sidebar */}
+      <SidePanel
+        userName={userName}
+        spaceName={spaceName}
+        open={sidebarOpen}
+        setOpen={setSidebarOpen}
+      />
 
-      <div className="pl-80 h-full w-full">
-        <PhaserGame />
+      {/* Phaser Area */}
+      <div
+        className={`h-full transition-all duration-300
+        ${sidebarOpen ? "ml-80" : "ml-0"}`}
+      >
+        <PhaserGame spaceId={spaceId} userName={userName} />
       </div>
 
     </div>

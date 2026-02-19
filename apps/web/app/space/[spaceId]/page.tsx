@@ -5,13 +5,13 @@ import SpaceWorldClient from "@/components/game/SpaceWorldClient"
 export default async function SpaceWorldPage({
   params,
 }: {
-  params: { spaceId: string }
+  params: Promise<{ spaceId: string }>
 }) {
   const session = await auth()
 
   if (!session) redirect("/signin")
 
-  const { spaceId } = params
+  const { spaceId } = await params
 
   return (
     <SpaceWorldClient
