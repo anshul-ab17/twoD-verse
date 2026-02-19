@@ -1,23 +1,18 @@
 import { WebSocketServer } from "ws"
+import { handleConnection } from "./core/connectionManager"
+import type { AuthenticatedSocket } from "./types/ws.types"
 
-const wss = new WebSocketServer({ port: 3001 })
+const wss = new WebSocketServer({ port: 8080 })
 
-const clients = new Set<any>()
-
-wss.on("connection", (ws) => {
-  clients.add(ws)
-
-  ws.on("message", (message) => {
-    wss.clients.forEach((client) => {
-      if (client !== ws && client.readyState === 1) {
-        client.send(message.toString())
-      }
-    })
-  })
-
-  ws.on("close", () => {
-    clients.delete(ws)
-  })
+wss.on("connection", (ws: AuthenticatedSocket, req) => {
+  handleConnection(ws, req)
 })
 
-console.log("WebSocket server running on ws://localhost:3001")
+setInterval(() => {
+  wss.clients.forEach((ws: any) => {
+    if (!ws.isAlive) return ws.terminate()
+
+    ws.isAlive = false
+    ws.ping()
+  })
+}, 30000)

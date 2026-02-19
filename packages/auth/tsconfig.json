@@ -27,5 +27,4 @@
     "noPropertyAccessFromIndexSignature": false
   },
   "include": ["**/*.ts"],
-
 }
