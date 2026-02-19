@@ -1,22 +1,37 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
+import { client } from "@repo/db";
 import SpaceWorldClient from "@/components/game/SpaceWorldClient"
+
+export const dynamic = "force-dynamic"
 
 export default async function SpaceWorldPage({
   params,
 }: {
-  params: Promise<{ spaceId: string }>
+  params: { spaceId: string }
 }) {
   const session = await auth()
 
-  if (!session) redirect("/signin")
+  if (!session?.user) {
+    redirect("/signin")
+  }
 
-  const { spaceId } = await params
+  const space = await client.space.findFirst({
+    where: {
+      id: params.spaceId,
+      userId: session.user.id,
+    },
+  })
+
+  if (!space) {
+    redirect("/space/dashboard")
+  }
 
   return (
     <SpaceWorldClient
-      spaceId={spaceId}
-      userName={session.user?.name ?? "Creator"}
+      spaceId={space.id}
+      spaceName={space.name}
+      userName={session.user.name ?? "Creator"}
     />
   )
 }

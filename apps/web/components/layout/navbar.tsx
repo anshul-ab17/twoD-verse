@@ -1,8 +1,10 @@
-import Link from "next/link"
-import { auth, signOut } from "@/lib/auth"
+"use client"
 
-export default async function Navbar() {
-  const session = await auth()
+import Link from "next/link"
+import { useSession, signOut } from "next-auth/react"
+
+export default function Navbar() {
+  const { data: session } = useSession()
 
   return (
     <header className="absolute top-0 left-0 z-50 w-full flex items-center justify-between px-8 py-6">
@@ -14,21 +16,13 @@ export default async function Navbar() {
       </Link>
 
       <div className="flex items-center gap-4 text-white">
-
         {session ? (
-          <form
-            action={async () => {
-              "use server"
-              await signOut({ redirectTo: "/" })
-            }}
+          <button
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className="text-sm font-medium hover:underline"
           >
-            <button
-              type="submit"
-              className="text-sm font-medium hover:underline"
-            >
-              Logout
-            </button>
-          </form>
+            Logout
+          </button>
         ) : (
           <Link
             href="/signin"
