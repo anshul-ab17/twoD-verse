@@ -1,0 +1,101 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  role      Role     @default(USER)
+  avatarId  String?
+  avatar    Avatar?  @relation(fields: [avatarId], references: [id])
+  spaces    Space[]  @relation("UserSpaces")
+  messages  Message[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Space {
+  id        String   @id @default(cuid())
+  name      String
+  width     Int
+  height    Int
+  creatorId String
+  creator   User     @relation("UserSpaces", fields: [creatorId], references: [id])
+  elements  SpaceElement[]
+  messages  Message[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SpaceElement {
+  id        String   @id @default(cuid())
+  spaceId   String
+  elementId String
+  x         Int
+  y         Int
+  space     Space    @relation(fields: [spaceId], references: [id])
+  element   Element  @relation(fields: [elementId], references: [id])
+  @@index([spaceId])
+}
+
+model Element {
+  id        String   @id @default(cuid())
+  width     Int
+  height    Int
+  imageUrl  String
+  static    Boolean  @default(false)
+  spaces    SpaceElement[]
+  mapItems  MapElement[]
+  createdAt DateTime @default(now())
+}
+
+model Map {
+  id        String   @id @default(cuid())
+  name      String
+  width     Int
+  height    Int
+  elements  MapElement[]
+  createdAt DateTime @default(now())
+}
+
+model MapElement {
+  id        String   @id @default(cuid())
+  mapId     String
+  elementId String
+  x         Int
+  y         Int
+  map       Map      @relation(fields: [mapId], references: [id])
+  element   Element  @relation(fields: [elementId], references: [id])
+  @@index([mapId])
+}
+
+model Avatar {
+  id        String   @id @default(cuid())
+  imageUrl  String
+  name      String?
+  users     User[]
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  userId    String
+  spaceId   String
+  user      User     @relation(fields: [userId], references: [id])
+  space     Space    @relation(fields: [spaceId], references: [id])
+  createdAt DateTime @default(now())
+  @@index([spaceId])
+}
