@@ -1,9 +1,10 @@
 {
-  "name": "db",
+  "name": "@repo/db",
   "module": "index.ts",
   "type": "module",
   "private": true,
   "devDependencies": {
+    "@repo/typescript-config": "*",
     "@types/bun": "latest",
     "@types/pg": "^8.16.0",
     "prisma": "^7.4.0"

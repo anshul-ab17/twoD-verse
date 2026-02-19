@@ -70,6 +70,7 @@
         "pg": "^8.18.0",
       },
       "devDependencies": {
+        "@repo/typescript-config": "*",
         "@types/bun": "latest",
         "@types/pg": "^8.16.0",
         "prisma": "^7.4.0",

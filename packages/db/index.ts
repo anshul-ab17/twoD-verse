@@ -1,10 +1,2 @@
-import { PrismaClient } from "@prisma/client/extension";
-import { PrismaPg } from "@prisma/adapter-pg";
-
-const adapter = new PrismaPg({
-  connectionString: process.env.DATABASE_URL!,
-});
-
-export const client= new PrismaClient({
-  adapter,
-});
+export { client } from "./client"
+export * from "@prisma/client"
