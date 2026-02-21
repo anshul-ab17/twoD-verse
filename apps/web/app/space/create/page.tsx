@@ -6,22 +6,39 @@ import CreateSpaceView from "@/components/space/create/CreateSpaceView"
 export default async function CreateSpacePage() {
   const session = await auth()
 
-  if (!session?.user?.id) {
+  if (!session?.user?.email) {
     redirect("/signin")
   }
-
-  const userId = session.user.id
 
   async function createSpace(formData: FormData) {
     "use server"
 
+    const session = await auth()
+
+    if (!session?.user?.email) {
+      redirect("/signin")
+    }
+
+    const user = await client.user.findUnique({
+      where: { email: session.user.email },
+    })
+
+    if (!user) {
+      redirect("/signin")
+    }
+
     const name = formData.get("name") as string
-    if (!name?.trim()) return
+
+    if (!name?.trim()) {
+      throw new Error("Space name is required")
+    }
 
     const space = await client.space.create({
       data: {
         name,
-        userId,
+        width: 800,
+        height: 600,
+        creatorId: user.id,
       },
     })
 

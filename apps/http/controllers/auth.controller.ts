@@ -1,6 +1,6 @@
 import type { RequestHandler } from "express"
 import { EmailSignupSchema, EmailSigninSchema } from "@repo/types"
-import { signup, login } from "../services/auth.service"
+import { signup, signin } from "../services/auth.service"
 import { handleError } from "../utils/handleZodError"
 
 const COOKIE_OPTIONS = {
@@ -24,11 +24,11 @@ export const signupHandler: RequestHandler = async (req, res) => {
   }
 }
 
-export const loginHandler: RequestHandler = async (req, res) => {
+export const signinHandler: RequestHandler = async (req, res) => {
   try {
     const parsed = EmailSigninSchema.parse(req.body)
 
-    const token = await login(parsed.email, parsed.password)
+    const token = await signin(parsed.email, parsed.password)
 
     res.cookie("token", token, COOKIE_OPTIONS)
 

@@ -4,18 +4,30 @@ import { client } from "@repo/db"
 import DashboardView from "@/components/space/dashboard/DashboardView"
 
 export const dynamic = "force-dynamic"
-
 export default async function DashboardPage() {
-  const session = await auth()
-
-  if (!session?.user?.id) {
+  
+  const session = await auth()  
+  console.log("SERVER SESSION:", session)
+  if (!session?.user?.email) {
     redirect("/signin")
   }
 
-  const userId = session.user.id
+  let user = await client.user.findUnique({
+    where: { email: session.user.email },
+  })
+
+  if (!user) {
+    user = await client.user.create({
+      data: {
+        email: session.user.email,
+        provider: "GOOGLE",
+        role: "USER",
+      },
+    })
+  }
 
   const spaces = await client.space.findMany({
-    where: { userId },
+    where: { creatorId: user.id },
     orderBy: { createdAt: "desc" },
   })
 
@@ -26,6 +38,7 @@ export default async function DashboardPage() {
       where: { id },
     })
   }
+  console.log("SERVER SESSION:", session)
 
   return (
     <DashboardView

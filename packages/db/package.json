@@ -7,14 +7,14 @@
     "@repo/typescript-config": "*",
     "@types/bun": "latest",
     "@types/pg": "^8.16.0",
-    "prisma": "^7.4.0"
+    "prisma": "^7.4.1"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.0",
-    "@prisma/client": "^7.4.0",
+    "@prisma/client": "^7.4.1",
     "dotenv": "^17.3.1",
     "pg": "^8.18.0"
   }

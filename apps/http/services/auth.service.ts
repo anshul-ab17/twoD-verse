@@ -24,7 +24,7 @@ export async function signup(email: string, password: string) {
   return signToken(user.id)
 }
 
-export async function login(email: string, password: string) {
+export async function signin(email: string, password: string) {
   const user = await client.user.findUnique({
     where: { email },
   })
@@ -48,7 +48,7 @@ export async function login(email: string, password: string) {
   return signToken(user.id)
 }
 
-// Prevent timing attacks makes login time similar whether user exists or not
+// Prevent timing attacks makes signin time similar whether user exists or not
  
 async function fakeHashDelay() {
   await argon2.hash("dummy-password")

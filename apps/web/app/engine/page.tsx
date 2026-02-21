@@ -5,6 +5,15 @@ const PhaserGame = dynamic(
   { ssr: false }
 )
 
-export default function EnginePage() {
-  return <PhaserGame />
+export default function EnginePage({
+  params,
+}: {
+  params: { spaceId: string }
+}) {
+  return (
+    <PhaserGame
+      spaceId={params.spaceId}
+      userName="Player"
+    />
+  )
 }
