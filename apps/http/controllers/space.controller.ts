@@ -1,7 +1,25 @@
-import type { Request, Response, } from "express"
-import { client } from "@repo/db"
+import type { RequestHandler } from "express"
+import { getSpaces, createSpace } from "../services/space.service"
+import { handleError } from "../utils/handleZodError"
 
-export async function getSpaces(_req: Request, res: Response) {
-  const spaces = await client.space.findMany()
-  res.json(spaces)
+export const getSpacesHandler: RequestHandler = async (req, res) => {
+  try {
+    const spaces = await getSpaces()
+    return res.json(spaces)
+  } catch (error) {
+    return handleError(res, error)
+  }
+}
+
+export const createSpaceHandler: RequestHandler = async (req, res) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({ error: "Unauthorized" })
+    }
+
+    const space = await createSpace(req.userId, req.body)
+    return res.status(201).json(space)
+  } catch (error) {
+    return handleError(res, error)
+  }
 }

@@ -1,20 +1,19 @@
 import express from "express"
-import cors from "cors"
 import cookieParser from "cookie-parser"
 import { authRouter } from "./routes/auth.routes"
+import { spaceRouter } from "./routes/space.routes"
+import { errorMiddleware } from "./middleware/error.middleware"
 
-import { healthRoute } from "./health"
-import { spaceRouter } from "./routes/space.router"
+export const app = express();
 
-export const app = express()
+app.use(express.json());
+app.use(cookieParser());
 
-app.use(cors())
-app.use(express.json())
+app.use("/api/auth", authRouter);
+app.use("/api/spaces", spaceRouter);
 
-app.use("/health", healthRoute)
-app.use(cookieParser())
-app.use("/auth", authRouter)
-app.use("/space", spaceRouter)
+app.use(errorMiddleware);
+
 
 
 // Add Redis pub/sub so multiple WS instances sync

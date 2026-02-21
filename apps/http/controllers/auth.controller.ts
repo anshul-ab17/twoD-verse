@@ -1,6 +1,7 @@
 import type { RequestHandler } from "express"
 import { EmailSignupSchema, EmailSigninSchema } from "@repo/types"
 import { signup, signin } from "../services/auth.service"
+import { client } from "@repo/db"
 import { handleError } from "../utils/handleZodError"
 
 const COOKIE_OPTIONS = {
@@ -36,4 +37,22 @@ export const signinHandler: RequestHandler = async (req, res) => {
   } catch (error) {
     return handleError(res, error)
   }
+}
+
+export const logoutHandler: RequestHandler = async (_req, res) => {
+  res.clearCookie("token")
+  return res.json({ success: true })
+}
+
+export const meHandler: RequestHandler = async (req, res) => {
+  if (!req.userId) {
+    return res.status(401).json({ error: "Unauthorized" })
+  }
+
+  const user = await client.user.findUnique({
+    where: { id: req.userId },
+    select: { id: true, email: true, role: true },
+  })
+
+  return res.json(user)
 }
