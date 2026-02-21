@@ -3,22 +3,29 @@ import {
   signAccessToken,
   signRefreshToken,
 } from "@repo/auth"
-import { client, AuthProvider } from "@repo/db"
+import { client } from "@repo/db"
 
 export async function signup(email: string, password: string) {
-  const existing = await client.user.findUnique({ where: { email } })
+  const existing = await client.user.findUnique({
+    where: { email },
+  })
 
   if (existing) {
     throw new Error("User already exists")
   }
 
-  const hashedPassword = await argon2.hash(password)
+  const hashed = await argon2.hash(password)
 
   const user = await client.user.create({
     data: {
       email,
-      password: hashedPassword,
-      provider: AuthProvider.EMAIL,
+      password: hashed,
+      accounts: {
+        create: {
+          provider: "EMAIL",
+          providerId: email,
+        },
+      },
     },
   })
 
@@ -26,29 +33,45 @@ export async function signup(email: string, password: string) {
 }
 
 export async function signin(email: string, password: string) {
-  const user = await client.user.findUnique({ where: { email } })
+  const user = await client.user.findUnique({
+    where: { email },
+    include: { accounts: true },
+  })
 
-  if (!user || user.provider !== AuthProvider.EMAIL || !user.password) {
-    await fakeHashDelay()
+  if (!user || !user.password) {
+    await argon2.hash("fake-password")
+    throw new Error("Invalid credentials")
+  }
+
+  const emailAccount = user.accounts.find(
+    (acc) => acc.provider === "EMAIL"
+  )
+
+  if (!emailAccount) {
+    await argon2.hash("fake-password")
     throw new Error("Invalid credentials")
   }
 
   const valid = await argon2.verify(user.password, password)
 
-  if (!valid) {
-    throw new Error("Invalid credentials")
-  }
+  if (!valid) throw new Error("Invalid credentials")
 
   return generateTokens(user.id, user.role)
 }
 
-function generateTokens(userId: string, role: string) {
+async function generateTokens(userId: string, role: string) {
   const accessToken = signAccessToken(userId, role)
-  const refreshToken = signRefreshToken(userId)
+  const { token: refreshToken, jti } = signRefreshToken(userId)
+
+  await client.session.create({
+    data: {
+      userId,
+      jti,
+      expiresAt: new Date(
+        Date.now() + 7 * 24 * 60 * 60 * 1000
+      ),
+    },
+  })
 
   return { accessToken, refreshToken }
-}
-
-async function fakeHashDelay() {
-  await argon2.hash("dummy-password")
 }

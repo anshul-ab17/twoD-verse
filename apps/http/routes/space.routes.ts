@@ -1,11 +1,11 @@
 import { Router } from "express"
 import {
-  getSpacesHandler,
-  createSpaceHandler,
+  getSpaces,
+  createSpace,
 } from "../controllers/space.controller"
 import { requireAuth } from "../middleware/auth.middleware"
 
 export const spaceRouter = Router()
 
-spaceRouter.get("/", requireAuth, getSpacesHandler)
-spaceRouter.post("/", requireAuth, createSpaceHandler)
+spaceRouter.get("/", requireAuth, getSpaces)
+spaceRouter.post("/", requireAuth, createSpace)

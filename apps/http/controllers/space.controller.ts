@@ -1,54 +1,35 @@
-import { client } from "@repo/db"
-import { redis, publish } from "@repo/pubsub"
+import type { RequestHandler } from "express"
+import {
+  getSpaces as getSpacesService,
+  createSpace as createSpaceService,
+} from "../services/space.service"
 
-const SPACES_CACHE_KEY = "spaces:all"
-const CACHE_TTL = 60
-
-export async function getSpaces() {
-  const cached = await redis.get(SPACES_CACHE_KEY)
-
-  if (cached) {
-    try {
-      return JSON.parse(cached)
-    } catch {
-      await redis.del(SPACES_CACHE_KEY)
-    }
+export const getSpaces: RequestHandler = async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "Unauthorized" })
   }
 
-  const spaces = await client.space.findMany({
-    include: {
-      creator: {
-        select: { id: true, email: true },
-      },
-    },
-  })
+  const spaces = await getSpacesService(req.user.userId)
 
-  await redis.set(SPACES_CACHE_KEY, JSON.stringify(spaces), {
-    EX: CACHE_TTL,
-  })
-
-  return spaces
+  return res.json(spaces)
 }
 
-export async function createSpace(
-  userId: string,
-  data: { name: string; width: number; height: number }
-) {
-  const space = await client.space.create({
-    data: {
-      name: data.name,
-      width: data.width,
-      height: data.height,
-      creatorId: userId,
-    },
+export const createSpace: RequestHandler = async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "Unauthorized" })
+  }
+
+  const { name, width, height } = req.body
+
+  if (!name || !width || !height) {
+    return res.status(400).json({ error: "Invalid input" })
+  }
+
+  const space = await createSpaceService(req.user.userId, {
+    name,
+    width,
+    height,
   })
 
-  await redis.del(SPACES_CACHE_KEY)
-
-  await publish("spaces", {
-    type: "SPACE_CREATED",
-    payload: space,
-  })
-
-  return space
+  return res.status(201).json(space)
 }

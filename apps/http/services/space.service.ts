@@ -1,34 +1,42 @@
 import { client } from "@repo/db"
 import { redis, publish } from "@repo/pubsub"
 
-const SPACES_CACHE_KEY = "spaces:all"
-const CACHE_TTL = 60 // seconds
+const CACHE_TTL = 60
 
-export async function getSpaces() {
-  const cached = await redis.get(SPACES_CACHE_KEY)
+function getUserSpacesCacheKey(userId: string) {
+  return `spaces:user:${userId}`
+}
+
+export async function getSpaces(userId: string) {
+  const cacheKey = getUserSpacesCacheKey(userId)
+
+  const cached = await redis.get(cacheKey)
 
   if (cached) {
     try {
       return JSON.parse(cached)
     } catch {
-      // If cache corrupted, delete and continue
-      await redis.del(SPACES_CACHE_KEY)
+      await redis.del(cacheKey)
     }
   }
 
   const spaces = await client.space.findMany({
+    where: {
+      creatorId: userId,
+    },
     include: {
       creator: {
         select: { id: true, email: true },
       },
     },
+    orderBy: {
+      createdAt: "desc",
+    },
   })
 
-  await redis.set(
-    SPACES_CACHE_KEY,
-    JSON.stringify(spaces),
-    { EX: CACHE_TTL }
-  )
+  await redis.set(cacheKey, JSON.stringify(spaces), {
+    EX: CACHE_TTL,
+  })
 
   return spaces
 }
@@ -37,10 +45,6 @@ export async function createSpace(
   userId: string,
   data: { name: string; width: number; height: number }
 ) {
-  if (!data.name || !data.width || !data.height) {
-    throw new Error("Invalid space data")
-  }
-
   const space = await client.space.create({
     data: {
       name: data.name,
@@ -50,13 +54,17 @@ export async function createSpace(
     },
   })
 
-  // Invalidate cache
-  await redis.del(SPACES_CACHE_KEY)
+  // Invalidate only this user's cache
+  await redis.del(getUserSpacesCacheKey(userId))
 
-  // Optional: publish event (for realtime)
+  // Publish event for WS instances
   await publish("spaces", {
     type: "SPACE_CREATED",
-    payload: space,
+    payload: {
+      id: space.id,
+      name: space.name,
+      creatorId: userId,
+    },
   })
 
   return space

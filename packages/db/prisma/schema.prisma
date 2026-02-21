@@ -1,34 +1,65 @@
-// This is your Prisma schema file
-
 generator client {
   provider = "prisma-client-js"
 }
+
 datasource db {
   provider = "postgresql"
-  
 }
 
 enum Role {
   ADMIN
   USER
 }
+
 enum AuthProvider {
   EMAIL
   GOOGLE
   GITHUB
 }
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
-  password  String?
-  provider  AuthProvider
-  role      Role     @default(USER)  
+  password  String?  
+  role      Role     @default(USER)
+
+  accounts  Account[]
+  sessions  Session[]
+
   avatarId  String?
   avatar    Avatar?  @relation(fields: [avatarId], references: [id])
+
   spaces    Space[]  @relation("UserSpaces")
   messages  Message[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id           String       @id @default(cuid())
+  userId       String
+  provider     AuthProvider
+  providerId   String       
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime     @default(now())
+
+  @@unique([provider, providerId])
+  @@index([userId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  jti       String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([userId])
 }
 
 model Space {
@@ -36,10 +67,13 @@ model Space {
   name      String
   width     Int
   height    Int
+
   creatorId String
-  creator   User     @relation("UserSpaces", fields: [creatorId], references: [id])
+  creator   User     @relation("UserSpaces", fields: [creatorId], references: [id], onDelete: Cascade)
+
   elements  SpaceElement[]
   messages  Message[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -50,8 +84,10 @@ model SpaceElement {
   elementId String
   x         Int
   y         Int
-  space     Space    @relation(fields: [spaceId], references: [id])
-  element   Element  @relation(fields: [elementId], references: [id])
+
+  space     Space    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  element   Element  @relation(fields: [elementId], references: [id], onDelete: Cascade)
+
   @@index([spaceId])
 }
 
@@ -61,8 +97,10 @@ model Element {
   height    Int
   imageUrl  String
   static    Boolean  @default(false)
+
   spaces    SpaceElement[]
   mapItems  MapElement[]
+
   createdAt DateTime @default(now())
 }
 
@@ -71,7 +109,9 @@ model Map {
   name      String
   width     Int
   height    Int
+
   elements  MapElement[]
+
   createdAt DateTime @default(now())
 }
 
@@ -81,8 +121,10 @@ model MapElement {
   elementId String
   x         Int
   y         Int
-  map       Map      @relation(fields: [mapId], references: [id])
-  element   Element  @relation(fields: [elementId], references: [id])
+
+  map       Map      @relation(fields: [mapId], references: [id], onDelete: Cascade)
+  element   Element  @relation(fields: [elementId], references: [id], onDelete: Cascade)
+
   @@index([mapId])
 }
 
@@ -90,6 +132,7 @@ model Avatar {
   id        String   @id @default(cuid())
   imageUrl  String
   name      String?
+
   users     User[]
 }
 
@@ -98,8 +141,11 @@ model Message {
   content   String
   userId    String
   spaceId   String
-  user      User     @relation(fields: [userId], references: [id])
-  space     Space    @relation(fields: [spaceId], references: [id])
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  space     Space    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
   createdAt DateTime @default(now())
+
   @@index([spaceId])
 }

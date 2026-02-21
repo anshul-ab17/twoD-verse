@@ -2,7 +2,12 @@ import { z } from "zod"
 
 export const EmailSignupSchema = z.object({
   email: z.email(),
-  password: z.string().min(8),
+  password: z
+    .string()
+    .min(8)
+    .regex(/[A-Z]/, "Must include uppercase")
+    .regex(/[0-9]/, "Must include number")
+    .regex(/[^A-Za-z0-9]/, "Must include special character"),
 })
 
 export const EmailSigninSchema = z.object({

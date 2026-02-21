@@ -1,5 +1,5 @@
 import passport from "passport"
-import "../providers/google"
-import "../providers/github"
+import "./google"
+import "./github"
 
 export default passport
