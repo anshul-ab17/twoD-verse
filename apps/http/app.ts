@@ -23,3 +23,4 @@ app.use("/auth", authRouter)
 // Persist chat to DB
 // Add server-side collision detection
 //  Add authoritative movement tick system
+//smooth movement.
