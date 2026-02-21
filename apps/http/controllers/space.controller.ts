@@ -1,25 +1,54 @@
-import type { RequestHandler } from "express"
-import { getSpaces, createSpace } from "../services/space.service"
-import { handleError } from "../utils/handleZodError"
+import { client } from "@repo/db"
+import { redis, publish } from "@repo/pubsub"
 
-export const getSpacesHandler: RequestHandler = async (req, res) => {
-  try {
-    const spaces = await getSpaces()
-    return res.json(spaces)
-  } catch (error) {
-    return handleError(res, error)
+const SPACES_CACHE_KEY = "spaces:all"
+const CACHE_TTL = 60
+
+export async function getSpaces() {
+  const cached = await redis.get(SPACES_CACHE_KEY)
+
+  if (cached) {
+    try {
+      return JSON.parse(cached)
+    } catch {
+      await redis.del(SPACES_CACHE_KEY)
+    }
   }
+
+  const spaces = await client.space.findMany({
+    include: {
+      creator: {
+        select: { id: true, email: true },
+      },
+    },
+  })
+
+  await redis.set(SPACES_CACHE_KEY, JSON.stringify(spaces), {
+    EX: CACHE_TTL,
+  })
+
+  return spaces
 }
 
-export const createSpaceHandler: RequestHandler = async (req, res) => {
-  try {
-    if (!req.userId) {
-      return res.status(401).json({ error: "Unauthorized" })
-    }
+export async function createSpace(
+  userId: string,
+  data: { name: string; width: number; height: number }
+) {
+  const space = await client.space.create({
+    data: {
+      name: data.name,
+      width: data.width,
+      height: data.height,
+      creatorId: userId,
+    },
+  })
 
-    const space = await createSpace(req.userId, req.body)
-    return res.status(201).json(space)
-  } catch (error) {
-    return handleError(res, error)
-  }
+  await redis.del(SPACES_CACHE_KEY)
+
+  await publish("spaces", {
+    type: "SPACE_CREATED",
+    payload: space,
+  })
+
+  return space
 }

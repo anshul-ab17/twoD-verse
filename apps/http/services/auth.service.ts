@@ -1,11 +1,12 @@
 import argon2 from "argon2"
-import { signToken } from "@repo/auth"
-import { client, AuthProvider } from "@repo/db" 
+import {
+  signAccessToken,
+  signRefreshToken,
+} from "@repo/auth"
+import { client, AuthProvider } from "@repo/db"
 
 export async function signup(email: string, password: string) {
-  const existing = await client.user.findUnique({
-    where: { email },
-  })
+  const existing = await client.user.findUnique({ where: { email } })
 
   if (existing) {
     throw new Error("User already exists")
@@ -21,21 +22,14 @@ export async function signup(email: string, password: string) {
     },
   })
 
-  return signToken(user.id)
+  return generateTokens(user.id, user.role)
 }
 
 export async function signin(email: string, password: string) {
-  const user = await client.user.findUnique({
-    where: { email },
-  })
+  const user = await client.user.findUnique({ where: { email } })
 
-  // Prevent account enumeration timing leaks
-  if (!user || user.provider !== AuthProvider.EMAIL) {
+  if (!user || user.provider !== AuthProvider.EMAIL || !user.password) {
     await fakeHashDelay()
-    throw new Error("Invalid credentials")
-  }
-
-  if (!user.password) {
     throw new Error("Invalid credentials")
   }
 
@@ -45,11 +39,16 @@ export async function signin(email: string, password: string) {
     throw new Error("Invalid credentials")
   }
 
-  return signToken(user.id)
+  return generateTokens(user.id, user.role)
 }
 
-// Prevent timing attacks makes signin time similar whether user exists or not
- 
+function generateTokens(userId: string, role: string) {
+  const accessToken = signAccessToken(userId, role)
+  const refreshToken = signRefreshToken(userId)
+
+  return { accessToken, refreshToken }
+}
+
 async function fakeHashDelay() {
   await argon2.hash("dummy-password")
 }

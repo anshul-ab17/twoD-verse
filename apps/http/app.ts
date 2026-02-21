@@ -1,19 +1,20 @@
 import express from "express"
 import cookieParser from "cookie-parser"
+import passport from "./config/passport"
 import { authRouter } from "./routes/auth.routes"
 import { spaceRouter } from "./routes/space.routes"
 import { errorMiddleware } from "./middleware/error.middleware"
 
-export const app = express();
+export const app = express()
 
-app.use(express.json());
-app.use(cookieParser());
+app.use(express.json())
+app.use(cookieParser())
+app.use(passport.initialize())
 
-app.use("/api/auth", authRouter);
-app.use("/api/spaces", spaceRouter);
+app.use("/api/auth", authRouter)
+app.use("/api/spaces", spaceRouter)
 
-app.use(errorMiddleware);
-
+app.use(errorMiddleware)
 
 
 // Add Redis pub/sub so multiple WS instances sync
