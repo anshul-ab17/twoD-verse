@@ -1,5 +1,5 @@
 import type { AuthenticatedSocket } from "../types/ws.types"
-import { broadcast } from "../core/roomManager"
+import { broadcast } from "../managers/roomManager"
 
 export function handleChat(
   ws: AuthenticatedSocket,

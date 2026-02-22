@@ -1,10 +1,13 @@
 import { verifyToken } from "@repo/auth"
-import {MessageSchema } from "@repo/types"
+import { MessageSchema } from "@repo/types"
 
 import { allowMessage } from "./rateLimiter"
 import { handleJoin } from "../handlers/join.handler"
 import { handleMove } from "../handlers/move.handler"
 import { handleChat } from "../handlers/chat.handler"
+import { leaveRoom, broadcast } from "./roomManager"
+import { removeUser, getUsers } from "./presenceManager"
+
 import type { AuthenticatedSocket } from "../types/ws.types"
 
 export function handleConnection(
@@ -32,11 +35,18 @@ export function handleConnection(
   ws.on("message", (raw: Buffer) => {
     if (!ws.userId) return
 
-    if (!allowMessage(ws.userId)) return
-
     try {
       const data = JSON.parse(raw.toString())
       const parsed = MessageSchema.parse(data)
+
+      const channel =
+        parsed.type === "move"
+          ? "move"
+          : parsed.type === "chat"
+          ? "chat"
+          : "global"
+
+      if (!allowMessage(ws.userId, channel)) return
 
       switch (parsed.type) {
         case "join":
@@ -50,7 +60,19 @@ export function handleConnection(
           break
       }
     } catch {
-      // silently ignore malformed messages
+      return
+    }
+  })
+
+  ws.on("close", () => {
+    if (ws.spaceId && ws.userId) {
+      leaveRoom(ws.spaceId, ws)
+      removeUser(ws.spaceId, ws.userId)
+
+      broadcast(ws.spaceId, {
+        type: "presence",
+        users: getUsers(ws.spaceId),
+      })
     }
   })
 }

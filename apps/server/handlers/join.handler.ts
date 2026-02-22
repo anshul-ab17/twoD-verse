@@ -1,12 +1,22 @@
 import type { AuthenticatedSocket } from "../types/ws.types"
-import { joinRoom, broadcast } from "../core/roomManager"
-import { addUser, getUsers } from "../core/presenceManager"
+import { joinRoom, leaveRoom, broadcast } from "../managers/roomManager"
+import { addUser, removeUser, getUsers } from "../managers/presenceManager"
 
 export function handleJoin(
   ws: AuthenticatedSocket,
   spaceId: string
 ) {
   if (!ws.userId) return
+
+  if (ws.spaceId) {
+    leaveRoom(ws.spaceId, ws)
+    removeUser(ws.spaceId, ws.userId)
+
+    broadcast(ws.spaceId, {
+      type: "presence",
+      users: getUsers(ws.spaceId),
+    })
+  }
 
   ws.spaceId = spaceId
 

@@ -1,5 +1,5 @@
 import { WebSocketServer } from "ws"
-import { handleConnection } from "./core/connectionManager"
+import { handleConnection } from "./managers/connectionManager"
 import type { AuthenticatedSocket } from "./types/ws.types"
 
 const wss = new WebSocketServer({ port: 8080 })

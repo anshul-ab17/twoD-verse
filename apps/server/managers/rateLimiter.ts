@@ -8,9 +8,9 @@ interface Bucket {
 const buckets = new Map<string, Map<Channel, Bucket>>()
 
 const CONFIG: Record<Channel, { limit: number; window: number }> = {
-  global: { limit: 40, window: 1000 }, // 40 msgs/sec
-  move:   { limit: 20, window: 1000 }, // 20 moves/sec
-  chat:   { limit: 3,  window: 1000 }, // 3 chats/sec
+  global: { limit: 40, window: 1000 },
+  move: { limit: 20, window: 1000 },
+  chat: { limit: 3, window: 1000 },
 }
 
 export function allowMessage(userId: string, channel: Channel): boolean {
@@ -36,9 +36,7 @@ export function allowMessage(userId: string, channel: Channel): boolean {
     return true
   }
 
-  if (bucket.count >= config.limit) {
-    return false
-  }
+  if (bucket.count >= config.limit) return false
 
   bucket.count++
   return true

@@ -10,8 +10,11 @@ export type ServerMessage =
   | { type: "chat"; userId: string; content: string }
   | { type: "presence"; users: string[] }
 
+
 export interface AuthenticatedSocket extends WebSocket {
   userId?: string
   spaceId?: string
   isAlive?: boolean
+  lastX?: number
+  lastY?: number
 }
