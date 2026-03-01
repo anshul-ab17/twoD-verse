@@ -17,12 +17,12 @@ export default function Home() {
                           bg-[repeating-linear-gradient(45deg,#00000020_0px,#00000020_2px,transparent_2px,transparent_6px)]" />
 
           <h1 className="relative text-3xl font-extrabold tracking-wide text-yellow-200 drop-shadow-lg">
-            Explore Virtual Space
+            Explore TwoD VersE.
           </h1>
         </div>
 
         <p className="text-xl font-bold text-yellow-200 drop-shadow-md mb-8">
-          Gather with friends in interactive online rooms
+          Gather with friends in interactive Virtual Space
         </p>
 
         <Link
