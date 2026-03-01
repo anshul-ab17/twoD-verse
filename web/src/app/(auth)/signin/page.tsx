@@ -1,56 +1,46 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import Hero from "@/components/home/Hero"
-import Card from "@/components/ui/Card"
-import Input from "@/components/ui/Input"
-import Button from "@/components/ui/Button"
 import Link from "next/link"
-import { useState } from "react"
 
-export default function SignIn() {
-  const router = useRouter()
-  const [loading, setLoading] = useState(false)
-
-  const handleSignIn = async () => {
-    setLoading(true)
-
-    // TODO: Replace with real API call
-    setTimeout(() => {
-      localStorage.setItem("token", "demo-token")
-      router.push("/dashboard")
-    }, 800)
-  }
-
+export default function SignInPage() {
   return (
-    <Hero blur="backdrop-blur-lg">
-      <Card className="w-[420px]">
+    <Hero
+      overlay="bg-black/50"
+      blur="backdrop-blur-xl"
+    >
+      <div className="bg-white/10 backdrop-blur-2xl border border-white/20 p-10 rounded-3xl shadow-2xl w-[420px] text-white">
+
         <h2 className="text-2xl font-bold mb-6 text-center">
           Sign In
         </h2>
 
         <div className="space-y-4">
-          <Input type="email" placeholder="Email" />
-          <Input type="password" placeholder="Password" />
+          <input
+            type="email"
+            placeholder="Email"
+            className="w-full p-3 rounded-lg bg-black/40 border border-white/20 focus:outline-none focus:ring-2 focus:ring-[#E59E2D]"
+          />
 
-          <Button
-            onClick={handleSignIn}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            {loading ? "Signing in..." : "Sign In"}
-          </Button>
+          <input
+            type="password"
+            placeholder="Password"
+            className="w-full p-3 rounded-lg bg-black/40 border border-white/20 focus:outline-none focus:ring-2 focus:ring-[#E59E2D]"
+          />
+
+          <button className="w-full bg-[#2E7D32] hover:bg-[#256628] text-white p-3 rounded-lg transition">
+            Sign In
+          </button>
         </div>
 
         <div className="mt-6 text-center text-sm text-white/70">
           Don’t have an account?{" "}
-          <Link
-            href="/signup"
-            className="text-white underline hover:text-white/90"
-          >
+          <Link href="/signup" className="underline text-[#E59E2D]">
             Sign up
           </Link>
         </div>
-      </Card>
+
+      </div>
     </Hero>
   )
 }

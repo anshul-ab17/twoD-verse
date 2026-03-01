@@ -1,3 +1,5 @@
+import React from "react"
+
 export default function Card({
   children,
   className = "",
@@ -7,7 +9,7 @@ export default function Card({
 }) {
   return (
     <div
-      className={`bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-6 shadow-xl text-white ${className}`}
+      className={`bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl p-10 shadow-2xl text-white ${className}`}
     >
       {children}
     </div>
