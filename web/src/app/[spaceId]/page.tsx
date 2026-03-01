@@ -1,7 +1,7 @@
 import HomeBackground from "@/components/home/HomeBackground"
 import Link from "next/link"
 
-export default function Home() {
+export default function SpaceHome() {
   return (
     <HomeBackground>
       <div className="text-center max-w-2xl mx-auto">

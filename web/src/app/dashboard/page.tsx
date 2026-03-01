@@ -1,8 +1,21 @@
+"use client"
+
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
 import Hero from "@/components/home/Hero"
 import Card from "@/components/ui/Card"
 import Button from "@/components/ui/Button"
 
 export default function Dashboard() {
+  const router = useRouter()
+
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+    if (!token) {
+      router.push("/signin")
+    }
+  }, [router])
+
   return (
     <Hero
       overlay="bg-black/50"
@@ -29,12 +42,6 @@ export default function Dashboard() {
               </Button>
             </Card>
           ))}
-
-          <Card>
-            <div className="flex items-center justify-center text-4xl font-bold h-full">
-              +
-            </div>
-          </Card>
         </div>
       </div>
     </Hero>
