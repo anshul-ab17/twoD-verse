@@ -1,4 +1,4 @@
-import Phaser from "phaser"
+import * as Phaser from "phaser"
 
 export function loadSpace(scene: Phaser.Scene, spaceId: string) {
   console.log("Loading space:", spaceId)

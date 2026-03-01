@@ -1,4 +1,4 @@
-import Phaser from "phaser"
+import * as Phaser from "phaser"
 import { createPlayer } from "../entities/Player"
 import { buildOffice } from "../world/OfficeLayout"
 import { loadSpace } from "../world/loadSpace"

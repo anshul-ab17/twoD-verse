@@ -1,4 +1,4 @@
-import Phaser from "phaser"
+import * as Phaser from "phaser"
 
 export function buildOffice(scene: Phaser.Scene) {
   const desks = scene.physics.add.staticGroup()

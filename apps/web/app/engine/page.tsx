@@ -1,19 +1,10 @@
-import dynamic from "next/dynamic"
 
-const PhaserGame = dynamic(
-  () => import("@/components/game/PhaserGame"),
-  { ssr: false }
-)
+import EngineClient from "./EngineClient"
 
 export default function EnginePage({
   params,
 }: {
   params: { spaceId: string }
 }) {
-  return (
-    <PhaserGame
-      spaceId={params.spaceId}
-      userName="Player"
-    />
-  )
+  return <EngineClient spaceId={params.spaceId} />
 }
