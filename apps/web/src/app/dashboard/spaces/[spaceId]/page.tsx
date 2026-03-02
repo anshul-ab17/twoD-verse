@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
+import GameCanvas from "@/components/game/GameCanvas"
 
 export default function SpacePage() {
   const params = useParams()
+
+  // IMPORTANT: folder must be [spaceId]
   const spaceId =
     typeof params.spaceId === "string"
       ? params.spaceId
@@ -31,9 +34,7 @@ export default function SpacePage() {
 
       const spaces = spacesRaw ? JSON.parse(spacesRaw) : []
 
-      const found = spaces.find(
-        (s: any) => s.id === spaceId
-      )
+      const found = spaces.find((s: any) => s.id === spaceId)
 
       if (!found) {
         console.log("Space not found")
@@ -56,7 +57,7 @@ export default function SpacePage() {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center text-white">
+      <div className="h-screen flex items-center justify-center bg-[#1e293b] text-white">
         Loading...
       </div>
     )
@@ -64,7 +65,7 @@ export default function SpacePage() {
 
   if (!space) {
     return (
-      <div className="h-screen flex items-center justify-center text-red-400">
+      <div className="h-screen flex items-center justify-center bg-[#1e293b] text-red-400">
         Space not found
       </div>
     )
@@ -86,42 +87,42 @@ export default function SpacePage() {
       return s
     })
 
-    localStorage.setItem(
-      "spaces",
-      JSON.stringify(updated)
-    )
+    localStorage.setItem("spaces", JSON.stringify(updated))
 
     setIsMember(true)
     setSpace(updated.find((s: any) => s.id === spaceId))
   }
 
   return (
-    <div className="h-screen flex items-center justify-center bg-[#1e293b] text-white">
+    <div className="h-screen w-screen bg-[#1e293b] text-white">
 
       {!isMember ? (
-        <div className="bg-[#8B5A2B] p-10 rounded-2xl text-center">
+        <div className="h-full flex items-center justify-center">
+          <div className="bg-[#8B5A2B] p-10 rounded-2xl text-center shadow-2xl">
 
-          <h1 className="text-2xl font-bold mb-6">
-            {space.name}
-          </h1>
+            <h1 className="text-2xl font-bold mb-6">
+              {space.name}
+            </h1>
 
-          <p className="mb-6 text-white/80">
-            You are not a member of this space.
-          </p>
+            <p className="mb-6 text-white/80">
+              You are not a member of this space.
+            </p>
 
-          <button
-            onClick={joinSpace}
-            className="px-8 py-3 bg-[#556B2F]
-                       hover:bg-[#6B8E23]
-                       rounded-xl"
-          >
-            Join Space
-          </button>
+            <button
+              onClick={joinSpace}
+              className="px-8 py-3 bg-[#556B2F]
+                         hover:bg-[#6B8E23]
+                         transition
+                         rounded-xl"
+            >
+              Join Space
+            </button>
 
+          </div>
         </div>
       ) : (
-        <div className="w-full h-full flex items-center justify-center">
-          2D Office Placeholder
+        <div className="w-full h-full">
+          <GameCanvas />
         </div>
       )}
 
