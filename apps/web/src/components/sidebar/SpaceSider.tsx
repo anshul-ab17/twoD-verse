@@ -2,7 +2,7 @@
 
 export default function SpaceSidebar() {
   return (
-    <div className="w-[280px] bg-[#1c1c1c] text-white p-6 flex flex-col justify-between">
+    <div className="w-70 bg-[#1c1c1c] text-white p-6 flex flex-col justify-between">
 
       <div>
         <h2 className="text-lg font-semibold mb-6">

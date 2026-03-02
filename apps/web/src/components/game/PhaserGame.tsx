@@ -1,34 +1,40 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import Phaser from "phaser"
-import OfficeScene from "./scenes/OfficeScene"
 
 export default function PhaserGame() {
   const gameRef = useRef<HTMLDivElement>(null)
-  const phaserInstance = useRef<Phaser.Game | null>(null)
 
   useEffect(() => {
-    if (!gameRef.current) return
+    let game: any
 
-    const config: Phaser.Types.Core.GameConfig = {
-      type: Phaser.AUTO,
-      width: window.innerWidth - 280, // minus sidebar
-      height: window.innerHeight,
-      parent: gameRef.current,
-      pixelArt: true,
-      backgroundColor: "#2c3e50",
-      physics: {
-        default: "arcade",
-        arcade: { debug: false },
-      },
-      scene: [OfficeScene],
+    const loadPhaser = async () => {
+      const Phaser = (await import("phaser")).default
+      const OfficeScene = (await import("./scenes/OfficeScene")).default
+
+      const config: Phaser.Types.Core.GameConfig = {
+        type: Phaser.AUTO,
+        width: window.innerWidth - 280,
+        height: window.innerHeight,
+        parent: gameRef.current!,
+        pixelArt: true,
+        backgroundColor: "#2c3e50",
+        physics: {
+          default: "arcade",
+          arcade: { debug: false },
+        },
+        scene: [OfficeScene],
+      }
+
+      game = new Phaser.Game(config)
     }
 
-    phaserInstance.current = new Phaser.Game(config)
+    loadPhaser()
 
     return () => {
-      phaserInstance.current?.destroy(true)
+      if (game) {
+        game.destroy(true)
+      }
     }
   }, [])
 
