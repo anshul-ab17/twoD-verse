@@ -6,7 +6,8 @@ export default class BootScene extends Phaser.Scene {
   }
 
   preload() {
-    console.log("Boot loaded")
+    this.load.image("tiles", "/assets/tiles.png")
+    this.load.tilemapTiledJSON("office-map", "/assets/map.json")
   }
 
   create() {

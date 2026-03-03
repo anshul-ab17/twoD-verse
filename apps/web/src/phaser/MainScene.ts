@@ -1,110 +1,61 @@
-import * as Phaser from "phaser"
+import Phaser from "phaser"
 
 export default class MainScene extends Phaser.Scene {
-  player!: Phaser.GameObjects.Sprite
-  worldContainer!: Phaser.GameObjects.Container
-
+  player!: Phaser.Physics.Arcade.Sprite
   cursors!: Phaser.Types.Input.Keyboard.CursorKeys
   keys!: any
-
-  worldWidth = 1500
-  worldHeight = 1500
-  speed = 4
-
-  playerWorldX = 0
-  playerWorldY = 0
 
   constructor() {
     super("MainScene")
   }
 
-  preload() {
-    this.load.image("tiles", "/assets/tiles.png")
-    this.load.image("player", "/assets/player.png")
-  }
-
   create() {
-    const { width, height } = this.scale
-
-    this.worldContainer = this.add.container(0, 0)
-
-    const tileSize = 256
-
-    for (let x = 0; x < this.worldWidth; x += tileSize) {
-      for (let y = 0; y < this.worldHeight; y += tileSize) {
-        const tile = this.add.image(x, y, "tiles").setOrigin(0)
-        this.worldContainer.add(tile)
-      }
+    const map = this.make.tilemap({ key: "office-map" })
+    const tileset = map.addTilesetImage("tiles", "tiles")
+    if (!tileset) {
+      console.error("Tileset not found")
+      return
     }
 
-    // Logical player starts at world center
-    this.playerWorldX = this.worldWidth / 2
-    this.playerWorldY = this.worldHeight / 2
+    const floorLayer = map.createLayer("Floor", tileset)
+    if (!floorLayer) {
+      console.error("Floor layer missing")
+      return
+    }
 
-    // Player sprite fixed at screen center
-    this.player = this.add.sprite(width / 2, height / 2, "player")
+    // Enable camera bounds
+    this.physics.world.setBounds(0, 0, map.widthInPixels, map.heightInPixels)
+    this.cameras.main.setBounds(0, 0, map.widthInPixels, map.heightInPixels)
 
-    // IMPORTANT: position world correctly on start
-    this.updateWorldPosition()
+    // Create player
+    this.player = this.physics.add.sprite(200, 200, undefined as any)
+    this.player.setSize(20, 20)
+    this.player.setCollideWorldBounds(true)
+
+    // Camera follow
+    this.cameras.main.startFollow(this.player, true, 0.1, 0.1)
 
     this.cursors = this.input.keyboard!.createCursorKeys()
     this.keys = this.input.keyboard!.addKeys("W,A,S,D")
-
-    const debugText = this.add.text(20, 20, "TwoDverse Running", {
-      color: "#ffffff",
-      fontSize: "18px",
-    })
-    debugText.setScrollFactor(0)
   }
 
   update() {
-    let moveX = 0
-    let moveY = 0
+    if (!this.cursors) return
 
-    if (this.cursors.left?.isDown || this.keys.A.isDown) {
-      moveX = -this.speed
+    const speed = 200
+    let vx = 0
+    let vy = 0
+
+    if (this.cursors.left?.isDown || this.keys?.A?.isDown) vx = -speed
+    else if (this.cursors.right?.isDown || this.keys?.D?.isDown) vx = speed
+
+    if (this.cursors.up?.isDown || this.keys?.W?.isDown) vy = -speed
+    else if (this.cursors.down?.isDown || this.keys?.S?.isDown) vy = speed
+
+    this.player.setVelocity(vx, vy)
+
+    if (vx !== 0 || vy !== 0) {
+      this.player!.body!.velocity.normalize().scale(speed)
     }
-    else if (this.cursors.right?.isDown || this.keys.D.isDown) {
-      moveX = this.speed
-    }
-
-    if (this.cursors.up?.isDown || this.keys.W.isDown) {
-      moveY = -this.speed
-    }
-    else if (this.cursors.down?.isDown || this.keys.S.isDown) {
-      moveY = this.speed
-    }
-
-    const vec = new Phaser.Math.Vector2(moveX, moveY)
-
-    if (vec.length() > 0) {
-      vec.normalize().scale(this.speed)
-      this.playerWorldX += vec.x
-      this.playerWorldY += vec.y
-    }
-
-    this.clampPlayer()
-    this.updateWorldPosition()
-  }
-
-  clampPlayer() {
-    this.playerWorldX = Phaser.Math.Clamp(
-      this.playerWorldX,
-      0,
-      this.worldWidth
-    )
-
-    this.playerWorldY = Phaser.Math.Clamp(
-      this.playerWorldY,
-      0,
-      this.worldHeight
-    )
-  }
-
-  updateWorldPosition() {
-    const { width, height } = this.scale
-
-    this.worldContainer.x = Math.round(width / 2 - this.playerWorldX)
-    this.worldContainer.y = Math.round(height / 2 - this.playerWorldY)
   }
 }

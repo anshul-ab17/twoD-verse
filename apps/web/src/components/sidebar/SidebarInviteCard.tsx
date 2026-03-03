@@ -2,7 +2,7 @@ export default function SidebarInviteCard() {
   return (
     <div
       className="
-        bg-gradient-to-br 
+        bg-linear-to-br 
         from-[#2f3e2f] 
         to-[#1f2a1f]
         border border-[#556b2f]

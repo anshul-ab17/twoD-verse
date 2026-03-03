@@ -25,7 +25,7 @@ export default function Sidebar() {
       {/* DESKTOP SIDEBAR */}
       <div className="hidden lg:flex h-screen">
 
-        <div className="w-[80px] bg-[#2b1a10] border-r-4 border-[#6b4b2a]">
+        <div className="w-20 bg-[#2b1a10] border-r-4 border-[#6b4b2a]">
           <SidebarRail
             isOpen={isOpen}
             toggle={() => setIsOpen(!isOpen)}

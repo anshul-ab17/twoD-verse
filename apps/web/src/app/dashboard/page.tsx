@@ -131,7 +131,7 @@ export default function Dashboard() {
         {deleteTarget && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
 
-            <div className="bg-[#8B5A2B] p-8 rounded-2xl border border-[#5A3B1C] shadow-2xl w-[400px]">
+            <div className="bg-[#8B5A2B] p-8 rounded-2xl border border-[#5A3B1C] shadow-2xl w-100">
 
               <h2 className="text-xl font-bold text-yellow-200 mb-4">
                 Delete Space?
