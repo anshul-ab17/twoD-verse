@@ -1,18 +1,47 @@
+import "dotenv/config"
+import http from "http"
 import { WebSocketServer } from "ws"
-import { handleConnection } from "./managers/connectionManager"
-import type { AuthenticatedSocket } from "./types/ws.types"
+import cookie from "cookie"
 
-const wss = new WebSocketServer({ port: 8080 })
+import { app } from "./app"
+import { PORT } from "./config/env"
+import { verifyToken } from "@repo/auth"
+import { registerWSHandlers } from "./ws"
+import { client } from "@repo/db"
 
-wss.on("connection", (ws: AuthenticatedSocket, req) => {
-  handleConnection(ws, req)
+const server = http.createServer(app)
+
+const wss = new WebSocketServer({
+  server,
+  path: "/ws",
 })
 
-setInterval(() => {
-  wss.clients.forEach((ws: any) => {
-    if (!ws.isAlive) return ws.terminate()
+wss.on("connection", (ws, req) => {
+  try {
+    const rawCookie = req.headers.cookie
 
-    ws.isAlive = false
-    ws.ping()
-  })
-}, 30000)
+    if (!rawCookie) {
+      ws.close()
+      return
+    }
+
+    const parsed = cookie.parse(rawCookie)
+    const token = parsed.accessToken
+
+    if (!token) {
+      ws.close()
+      return
+    }
+
+    const user = verifyToken(token)
+
+    registerWSHandlers(ws, client, user)
+
+  } catch (err) {
+    ws.close()
+  }
+})
+
+server.listen(PORT, () => {
+  console.log(`server's running on http://localhost:${PORT}`)
+})

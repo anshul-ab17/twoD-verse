@@ -1,4 +1,4 @@
-# server
+# http
 
 To install dependencies:
 

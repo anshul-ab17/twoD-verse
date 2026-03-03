@@ -18,7 +18,7 @@ export async function subscribe(
       const parsed = JSON.parse(message)
       handler(parsed)
     } catch (err) {
-      console.error("Invalid pubsub payload:", err)
+      console.error("Invalid pubsub paylowad:", err)
     }
   })
 }
