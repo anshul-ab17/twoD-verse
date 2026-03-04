@@ -15,20 +15,34 @@ export default function Sidebar() {
       {/* Mobile Toggle */}
       <button
         onClick={() => setIsMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 
+        className="md:hidden fixed top-4 left-4 z-50 
                    bg-[#3b2a1a] border border-[#6b4b2a] 
                    p-2 rounded"
       >
         <Menu size={20} className="text-yellow-200" />
       </button>
 
+      {/* COMPACT SIDEBAR (tablet / half-window) */}
+      <div className="hidden md:flex lg:hidden fixed left-0 top-0 z-40 h-screen">
+        <div className="w-20 bg-[#2b1a10] border-r-4 border-[#6b4b2a]">
+          <SidebarRail
+            isOpen={false}
+            toggle={() => setIsMobileOpen(true)}
+            onIconAction={() => setIsMobileOpen(true)}
+          />
+        </div>
+      </div>
+
       {/* DESKTOP SIDEBAR */}
-      <div className="hidden lg:flex h-screen">
+      <div className="hidden lg:flex fixed left-0 top-0 z-40 h-screen">
 
         <div className="w-20 bg-[#2b1a10] border-r-4 border-[#6b4b2a]">
           <SidebarRail
             isOpen={isOpen}
             toggle={() => setIsOpen(!isOpen)}
+            onIconAction={() => {
+              if (!isOpen) setIsOpen(true)
+            }}
           />
         </div>
 

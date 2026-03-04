@@ -1,4 +1,21 @@
+"use client"
+
+import { useParams, useRouter } from "next/navigation"
+
 export default function SidebarInviteCard() {
+  const router = useRouter()
+  const params = useParams<{ spaceId?: string }>()
+  const spaceId = typeof params?.spaceId === "string" ? params.spaceId : ""
+
+  const handleInvite = () => {
+    if (spaceId) {
+      router.push(`/dashboard/spaces/${spaceId}/invite`)
+      return
+    }
+
+    router.push("/dashboard/spaces")
+  }
+
   return (
     <div
       className="
@@ -34,6 +51,7 @@ export default function SidebarInviteCard() {
 
       {/* Olive Invite Button */}
       <button
+        onClick={handleInvite}
         className="
           w-full mt-4
           bg-[#556b2f]

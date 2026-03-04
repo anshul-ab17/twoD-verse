@@ -1,14 +1,20 @@
+import { useSpaceSidebar } from "./SpaceSidebarContext";
+
 interface Props {
   collapsed?: boolean;
 }
 
 export default function SidebarUser({ collapsed }: Props) {
+  const { currentUser } = useSpaceSidebar()
+  const displayName = currentUser?.name || "Guest"
+  const initials = displayName.slice(0, 1).toUpperCase() || "G"
+
   return (
     <div className="flex items-center gap-3 p-2">
 
       <div className="relative">
         <div className="w-10 h-10 rounded-full bg-yellow-400 flex items-center justify-center font-semibold text-black">
-          S
+          {initials}
         </div>
 
         <span
@@ -24,7 +30,7 @@ export default function SidebarUser({ collapsed }: Props) {
       {!collapsed && (
         <div>
           <p className="text-sm text-yellow-200">
-            ab.17
+            {displayName}
           </p>
           <p className="text-xs text-green-400">
             Active
