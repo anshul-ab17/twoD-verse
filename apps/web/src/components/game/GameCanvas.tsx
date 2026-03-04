@@ -1,10 +1,11 @@
 "use client"
 
 import { useEffect, useRef } from "react"
+import type Phaser from "phaser"
 
 export default function GameCanvas() {
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const gameRef = useRef<any>(null)
+  const gameRef = useRef<Phaser.Game | null>(null)
 
   useEffect(() => {
     let mounted = true
@@ -15,7 +16,6 @@ export default function GameCanvas() {
       if (gameRef.current) return
 
       const Phaser = (await import("phaser")).default
-      const BootScene = (await import("@/phaser/BootScene")).default
       const MainScene = (await import("@/phaser/MainScene")).default
 
       if (!mounted) return
@@ -26,11 +26,21 @@ export default function GameCanvas() {
         height: 800,
         parent: containerRef.current,
         backgroundColor: "#1e1e1e",
+        physics: {
+          default: "arcade",
+          arcade: {
+            debug: false,
+          },
+        },
+        scale: {
+          mode: Phaser.Scale.RESIZE,
+          autoCenter: Phaser.Scale.CENTER_BOTH,
+        },
         render: {
           pixelArt: true,
           antialias: false
         },
-        scene: [BootScene, MainScene]
+        scene: [MainScene]
       })
     }
 
@@ -45,5 +55,10 @@ export default function GameCanvas() {
     }
   }, [])
 
-  return <div ref={containerRef} className="w-full h-full overflow-hidden" />
+  return (
+    <div
+      ref={containerRef}
+      className="w-full h-[80vh] min-h-[640px] overflow-hidden rounded-xl"
+    />
+  )
 }

@@ -1,10 +1,12 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
+import type Phaser from "phaser"
 
 export default function GameCanvas() {
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const gameRef = useRef<any>(null)
+  const gameRef = useRef<Phaser.Game | null>(null)
+  const [status, setStatus] = useState("init: waiting")
 
   useEffect(() => {
     let isMounted = true
@@ -19,14 +21,15 @@ export default function GameCanvas() {
       if (!containerRef.current) return
 
       try {
+        setStatus("init: importing phaser")
         const Phaser = (await import("phaser")).default
-        const BootScene = (await import("@/phaser/BootScene")).default
         const MainScene = (await import("@/phaser/MainScene")).default
 
         if (!isMounted) return
 
+        setStatus("init: creating game")
         gameRef.current = new Phaser.Game({
-          type: Phaser.AUTO,
+          type: Phaser.CANVAS,
           width: 1600,
           height: 800,
           parent: containerRef.current, 
@@ -37,13 +40,15 @@ export default function GameCanvas() {
               debug: false,
             },
           },
-          scene: [BootScene, MainScene],
+          scene: [MainScene],
           scale: {
             mode: Phaser.Scale.RESIZE,
             autoCenter: Phaser.Scale.CENTER_BOTH,
           },
         })
+        setStatus("init: game created")
       } catch (err) {
+        setStatus("init: failed (check console)")
         console.error("Phaser initialization failed:", err)
       }
     }
@@ -61,9 +66,17 @@ export default function GameCanvas() {
   }, [])
 
   return (
-    <div
-      ref={containerRef}
-      className="w-full h-full overflow-hidden"
-    />
+    <div className="relative">
+      <div
+        className="absolute left-3 top-3 z-10 rounded bg-black/70 px-2 py-1 text-xs text-cyan-300"
+      >
+        {status}
+      </div>
+
+      <div
+        ref={containerRef}
+        className="w-full h-[80vh] min-h-[640px] overflow-hidden rounded-xl"
+      />
+    </div>
   )
 }
