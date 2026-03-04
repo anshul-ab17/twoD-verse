@@ -46,7 +46,7 @@ export default function GameCanvas() {
             autoCenter: Phaser.Scale.CENTER_BOTH,
           },
         })
-        setStatus("init: game created")
+        setStatus("")
       } catch (err) {
         setStatus("init: failed (check console)")
         console.error("Phaser initialization failed:", err)
