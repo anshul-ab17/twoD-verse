@@ -1,11 +1,17 @@
 "use client"
 
+import { useMemo } from "react"
 import { useParams, useRouter } from "next/navigation"
+import { useSpaceSidebar } from "./SpaceSidebarContext"
+import { getAvatarColor, getUserInitials } from "./avatar"
 
 export default function SidebarInviteCard() {
+  const { members } = useSpaceSidebar()
   const router = useRouter()
   const params = useParams<{ spaceId?: string }>()
   const spaceId = typeof params?.spaceId === "string" ? params.spaceId : ""
+  const visibleMembers = useMemo(() => members.slice(0, 4), [members])
+  const hiddenMembersCount = Math.max(members.length - visibleMembers.length, 0)
 
   const handleInvite = () => {
     if (spaceId) {
@@ -38,14 +44,33 @@ export default function SidebarInviteCard() {
 
       {/* Avatars */}
       <div className="flex -space-x-2 mt-3">
-        {["#facc15", "#4ade80", "#fb7185", "#60a5fa"].map(
-          (color, i) => (
-            <div
-              key={i}
-              className="w-8 h-8 rounded-full border-2 border-[#1f2a1f]"
-              style={{ backgroundColor: color }}
-            />
-          )
+        {visibleMembers.map((member) => (
+          <div
+            key={member.id}
+            title={member.name}
+            className="h-8 w-8 overflow-hidden rounded-full border-2 border-[#1f2a1f]"
+            style={
+              member.avatarUrl
+                ? {
+                    backgroundImage: `url(${member.avatarUrl})`,
+                    backgroundPosition: "center",
+                    backgroundSize: "cover",
+                  }
+                : { backgroundColor: getAvatarColor(member.id) }
+            }
+          >
+            {!member.avatarUrl && (
+              <span className="flex h-full w-full items-center justify-center text-[11px] font-semibold text-black">
+                {getUserInitials(member.name)}
+              </span>
+            )}
+          </div>
+        ))}
+
+        {hiddenMembersCount > 0 && (
+          <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#1f2a1f] bg-[#344225] text-[10px] font-semibold text-yellow-100">
+            +{hiddenMembersCount}
+          </div>
         )}
       </div>
 

@@ -1,4 +1,5 @@
 import { useSpaceSidebar } from "./SpaceSidebarContext";
+import { getAvatarColor, getUserInitials } from "./avatar";
 
 interface Props {
   collapsed?: boolean;
@@ -7,14 +8,29 @@ interface Props {
 export default function SidebarUser({ collapsed }: Props) {
   const { currentUser } = useSpaceSidebar()
   const displayName = currentUser?.name || "Guest"
-  const initials = displayName.slice(0, 1).toUpperCase() || "G"
+  const avatarUrl = currentUser?.avatarUrl
+  const initials = getUserInitials(displayName)
+  const avatarSeed = currentUser?.id || displayName
 
   return (
     <div className="flex items-center gap-3 p-2">
 
       <div className="relative">
-        <div className="w-10 h-10 rounded-full bg-yellow-400 flex items-center justify-center font-semibold text-black">
-          {initials}
+        <div
+          className="w-10 h-10 overflow-hidden rounded-full flex items-center justify-center font-semibold text-black"
+          style={
+            avatarUrl
+              ? {
+                  backgroundImage: `url(${avatarUrl})`,
+                  backgroundPosition: "center",
+                  backgroundSize: "cover",
+                }
+              : {
+                  backgroundColor: getAvatarColor(avatarSeed),
+                }
+          }
+        >
+          {!avatarUrl && initials}
         </div>
 
         <span

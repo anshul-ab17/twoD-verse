@@ -2,13 +2,15 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { useParams } from "next/navigation"
+import { getGeneratedAvatarDataUrl } from "./avatar"
 
 type PaneMode = "map" | "chat" | "search" | "notifications"
 
-type SpaceUser = {
+export type SpaceUser = {
   id: string
   name: string
   email?: string
+  avatarUrl?: string
 }
 
 type StoredSpace = {
@@ -55,29 +57,112 @@ type SpaceSidebarContextValue = {
 
 const SpaceSidebarContext = createContext<SpaceSidebarContextValue | null>(null)
 
+function toSpaceUser(value: unknown): SpaceUser | null {
+  if (!value || typeof value !== "object") return null
+
+  const candidate = value as {
+    id?: unknown
+    userId?: unknown
+    name?: unknown
+    userName?: unknown
+    username?: unknown
+    displayName?: unknown
+    email?: unknown
+    avatarUrl?: unknown
+    avatar?: unknown
+    avatar_url?: unknown
+    avatarURL?: unknown
+    profileImage?: unknown
+    profileImageUrl?: unknown
+    profilePhoto?: unknown
+    image?: unknown
+    imageUrl?: unknown
+    photo?: unknown
+    photoUrl?: unknown
+    photoURL?: unknown
+    picture?: unknown
+    user?: unknown
+  }
+  const nestedUser = candidate.user && typeof candidate.user === "object"
+    ? (candidate.user as {
+      id?: unknown
+      userId?: unknown
+      name?: unknown
+      userName?: unknown
+      username?: unknown
+      displayName?: unknown
+      email?: unknown
+      avatarUrl?: unknown
+      avatar?: unknown
+      avatar_url?: unknown
+      avatarURL?: unknown
+      profileImage?: unknown
+      profileImageUrl?: unknown
+      profilePhoto?: unknown
+      image?: unknown
+      imageUrl?: unknown
+      photo?: unknown
+      photoUrl?: unknown
+      photoURL?: unknown
+      picture?: unknown
+    })
+    : null
+
+  const idCandidate = candidate.id ?? candidate.userId ?? nestedUser?.id ?? nestedUser?.userId
+  const nameCandidate =
+    candidate.name ?? candidate.userName ?? candidate.username ?? candidate.displayName ??
+    nestedUser?.name ?? nestedUser?.userName ?? nestedUser?.username ?? nestedUser?.displayName
+  const emailCandidate = candidate.email ?? nestedUser?.email
+
+  if (!idCandidate || !nameCandidate) return null
+
+  const avatarCandidate =
+    candidate.avatarUrl ??
+    candidate.avatar ??
+    candidate.avatar_url ??
+    candidate.avatarURL ??
+    candidate.profileImage ??
+    candidate.profileImageUrl ??
+    candidate.profilePhoto ??
+    candidate.image ??
+    candidate.imageUrl ??
+    candidate.photo ??
+    candidate.photoUrl ??
+    candidate.photoURL ??
+    candidate.picture ??
+    nestedUser?.avatarUrl ??
+    nestedUser?.avatar ??
+    nestedUser?.avatar_url ??
+    nestedUser?.avatarURL ??
+    nestedUser?.profileImage ??
+    nestedUser?.profileImageUrl ??
+    nestedUser?.profilePhoto ??
+    nestedUser?.image ??
+    nestedUser?.imageUrl ??
+    nestedUser?.photo ??
+    nestedUser?.photoUrl ??
+    nestedUser?.photoURL ??
+    nestedUser?.picture
+
+  return {
+    id: String(idCandidate),
+    name: String(nameCandidate),
+    email: emailCandidate ? String(emailCandidate) : undefined,
+    avatarUrl:
+      typeof avatarCandidate === "string" && avatarCandidate.trim().length > 0
+        ? avatarCandidate
+        : getGeneratedAvatarDataUrl(String(nameCandidate), String(idCandidate)),
+  }
+}
+
 function readCurrentUser(): SpaceUser | null {
   if (typeof window === "undefined") return null
 
   try {
     const parsed = JSON.parse(localStorage.getItem("currentUser") || "null")
-    if (!parsed || typeof parsed !== "object") return null
-    if (!parsed.id || !parsed.name) return null
-    return { id: String(parsed.id), name: String(parsed.name), email: parsed.email ? String(parsed.email) : undefined }
+    return toSpaceUser(parsed)
   } catch {
     return null
-  }
-}
-
-function toSpaceUser(value: unknown): SpaceUser | null {
-  if (!value || typeof value !== "object") return null
-
-  const candidate = value as { id?: unknown; name?: unknown; email?: unknown }
-  if (!candidate.id || !candidate.name) return null
-
-  return {
-    id: String(candidate.id),
-    name: String(candidate.name),
-    email: candidate.email ? String(candidate.email) : undefined,
   }
 }
 
