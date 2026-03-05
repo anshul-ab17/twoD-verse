@@ -61,6 +61,9 @@ export default class MainScene extends Phaser.Scene {
   interactionStatusTimer?: Phaser.Time.TimerEvent
   interactables: Interactable[] = []
   activeInteractable?: Interactable
+  seatedInteractable?: Interactable
+  preSeatX = 0
+  preSeatY = 0
   interactKey?: Phaser.Input.Keyboard.Key
   isSeated = false
   cursors?: Phaser.Types.Input.Keyboard.CursorKeys
@@ -423,6 +426,135 @@ export default class MainScene extends Phaser.Scene {
     return nearest
   }
 
+  private getRoomIdAtWorld(x: number, y: number) {
+    if (!this.roomByTile || this.mapWidthInTiles === 0 || this.mapHeightInTiles === 0) {
+      return -1
+    }
+
+    const tileX = Phaser.Math.Clamp(Math.floor(x / this.tileWidth), 0, this.mapWidthInTiles - 1)
+    const tileY = Phaser.Math.Clamp(Math.floor(y / this.tileHeight), 0, this.mapHeightInTiles - 1)
+    return this.roomByTile[tileY * this.mapWidthInTiles + tileX]
+  }
+
+  private findNearestWalkablePosition(startX: number, startY: number, maxRadiusInTiles = 4) {
+    if (this.getRoomIdAtWorld(startX, startY) >= 0) {
+      return { x: startX, y: startY }
+    }
+
+    if (!this.roomByTile || this.mapWidthInTiles === 0 || this.mapHeightInTiles === 0) {
+      return undefined
+    }
+
+    const centerTileX = Phaser.Math.Clamp(Math.floor(startX / this.tileWidth), 0, this.mapWidthInTiles - 1)
+    const centerTileY = Phaser.Math.Clamp(Math.floor(startY / this.tileHeight), 0, this.mapHeightInTiles - 1)
+    let best: { x: number; y: number; distanceSq: number } | undefined
+
+    for (let radius = 1; radius <= maxRadiusInTiles; radius += 1) {
+      for (let tileY = centerTileY - radius; tileY <= centerTileY + radius; tileY += 1) {
+        for (let tileX = centerTileX - radius; tileX <= centerTileX + radius; tileX += 1) {
+          if (tileX < 0 || tileY < 0 || tileX >= this.mapWidthInTiles || tileY >= this.mapHeightInTiles) {
+            continue
+          }
+
+          const ringDistance = Math.max(Math.abs(tileX - centerTileX), Math.abs(tileY - centerTileY))
+          if (ringDistance !== radius) continue
+
+          const roomId = this.roomByTile[tileY * this.mapWidthInTiles + tileX]
+          if (roomId < 0) continue
+
+          const x = tileX * this.tileWidth + this.tileWidth / 2
+          const y = tileY * this.tileHeight + this.tileHeight * 0.75
+          const distanceSq = Phaser.Math.Distance.Squared(startX, startY, x, y)
+
+          if (!best || distanceSq < best.distanceSq) {
+            best = { x, y, distanceSq }
+          }
+        }
+      }
+
+      if (best) {
+        return { x: best.x, y: best.y }
+      }
+    }
+
+    return undefined
+  }
+
+  private setPlayerCollisionEnabled(enabled: boolean) {
+    if (!this.player) return
+    const body = this.player.body as Phaser.Physics.Arcade.Body | undefined
+    if (!body) return
+
+    body.checkCollision.none = !enabled
+  }
+
+  private sitAtInteractable(interactable: Interactable) {
+    if (!this.player) return
+
+    this.preSeatX = this.player.x
+    this.preSeatY = this.player.y
+
+    const snappedSeat =
+      this.findNearestWalkablePosition(interactable.seatX, interactable.seatY, 3) ??
+      { x: interactable.seatX, y: interactable.seatY }
+
+    this.isSeated = true
+    this.seatedInteractable = interactable
+    this.player.setVelocity(0, 0)
+    this.player.setPosition(snappedSeat.x, snappedSeat.y)
+    this.player.setFrame("Adam_sit_down.png")
+    this.setPlayerCollisionEnabled(false)
+  }
+
+  private standUpFromSeat() {
+    if (!this.player || !this.isSeated) return
+
+    this.isSeated = false
+    this.setPlayerCollisionEnabled(true)
+
+    const baseX = this.seatedInteractable?.seatX ?? this.player.x
+    const baseY = this.seatedInteractable?.seatY ?? this.player.y
+    const preferredExitX = baseX
+    const preferredExitY = baseY + this.tileHeight * 0.9
+
+    const standPosition =
+      this.findNearestWalkablePosition(this.preSeatX, this.preSeatY, 6) ??
+      this.findNearestWalkablePosition(preferredExitX, preferredExitY, 4) ??
+      this.findNearestWalkablePosition(this.player.x, this.player.y, 8) ??
+      this.findNearestWalkablePosition(this.lastSafeX, this.lastSafeY, 5) ??
+      { x: this.lastSafeX, y: this.lastSafeY }
+
+    this.player.setPosition(standPosition.x, standPosition.y)
+    this.player.setVelocity(0, 0)
+    this.player.play(PLAYER_IDLE_ANIM, true)
+    this.lastSafeX = standPosition.x
+    this.lastSafeY = standPosition.y
+    this.seatedInteractable = undefined
+  }
+
+  private rescueIfEmbedded() {
+    if (!this.player) return
+
+    const body = this.player.body as Phaser.Physics.Arcade.Body | undefined
+    if (!body || !body.embedded) return
+
+    this.isSeated = false
+    this.seatedInteractable = undefined
+    this.setPlayerCollisionEnabled(true)
+
+    const rescue =
+      this.findNearestWalkablePosition(this.lastSafeX, this.lastSafeY, 8) ??
+      this.findNearestWalkablePosition(this.player.x, this.player.y, 10) ??
+      this.findSpawnPoint()
+
+    this.player.setPosition(rescue.x, rescue.y)
+    body.reset(rescue.x, rescue.y)
+    this.player.play(PLAYER_IDLE_ANIM, true)
+    this.lastSafeX = rescue.x
+    this.lastSafeY = rescue.y
+    this.showInteractionStatus("Adjusted position")
+  }
+
   private updateInteractionPrompt() {
     if (!this.interactionPrompt) return
 
@@ -461,8 +593,7 @@ export default class MainScene extends Phaser.Scene {
     if (!this.player) return
 
     if (this.isSeated) {
-      this.isSeated = false
-      this.player.play(PLAYER_IDLE_ANIM, true)
+      this.standUpFromSeat()
       this.showInteractionStatus("Stood up")
       return
     }
@@ -471,12 +602,7 @@ export default class MainScene extends Phaser.Scene {
 
     const label = this.getInteractableLabel(this.activeInteractable.kind)
     if (this.activeInteractable.canSit) {
-      this.isSeated = true
-      this.player.setVelocity(0, 0)
-      this.player.setPosition(this.activeInteractable.seatX, this.activeInteractable.seatY)
-      this.lastSafeX = this.player.x
-      this.lastSafeY = this.player.y
-      this.player.setFrame("Adam_sit_down.png")
+      this.sitAtInteractable(this.activeInteractable)
       this.showInteractionStatus(`Sitting at ${label}`)
       return
     }
@@ -799,6 +925,12 @@ export default class MainScene extends Phaser.Scene {
     if (this.cursors.up?.isDown || this.keys?.W?.isDown) vy = -speed
     else if (this.cursors.down?.isDown || this.keys?.S?.isDown) vy = speed
 
+    const wantsToMove = vx !== 0 || vy !== 0
+    if (this.isSeated && wantsToMove) {
+      this.standUpFromSeat()
+      this.showInteractionStatus("Stood up")
+    }
+
     if (this.isSeated) {
       this.player.setVelocity(0, 0)
       this.player.setFrame("Adam_sit_down.png")
@@ -819,6 +951,7 @@ export default class MainScene extends Phaser.Scene {
     this.updateCameraMotion(vx, vy)
     this.player.setDepth(this.player.y + 100)
     this.applyRoomLogic()
+    this.rescueIfEmbedded()
     this.updateInteractionPrompt()
 
     if (this.interactKey && Phaser.Input.Keyboard.JustDown(this.interactKey)) {

@@ -1,6 +1,6 @@
 export type WSIncoming =
   | { type: "space:join"; spaceId: string }
-  | { type: "player:move"; x: number; y: number }
+  | { type: "player:move"; x: number; y: number; roomId?: number }
   | { type: "chat:global"; content: string }
   | { type: "chat:nearby"; content: string }
   | { type: "webrtc:offer"; targetUserId: string; offer: any }
@@ -9,7 +9,7 @@ export type WSIncoming =
 
 export type WSOutgoing =
   | { type: "player:joined"; userId: string }
-  | { type: "player:moved"; userId: string; x: number; y: number }
+  | { type: "player:moved"; userId: string; x: number; y: number; roomId: number | null }
   | { type: "player:left"; userId: string }
   | { type: "chat:global"; userId: string; content: string }
   | { type: "chat:nearby"; userId: string; content: string }

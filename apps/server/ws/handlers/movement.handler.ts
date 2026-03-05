@@ -10,7 +10,8 @@ const MAX_SPEED = 300
 export async function handleMovement(
   ws: WebSocket,
   x: number,
-  y: number
+  y: number,
+  roomId?: number
 ) {
   const player = playerManager.get(ws)
   if (!player) return
@@ -30,10 +31,11 @@ export async function handleMovement(
 
   player.x = x
   player.y = y
+  player.roomId = Number.isFinite(roomId) ? Math.trunc(roomId as number) : null
 
   await redis.set(
     `rt:player:${player.userId}`,
-    JSON.stringify({ x, y, spaceId: player.spaceId }),
+    JSON.stringify({ x, y, spaceId: player.spaceId, roomId: player.roomId }),
     { EX: 3600 }
   )
 
@@ -42,12 +44,34 @@ export async function handleMovement(
     userId: player.userId,
     x,
     y,
+    roomId: player.roomId,
   })
 
   // Proximity detection
   playerManager.getAll().forEach((target) => {
     if (target.userId === player.userId) return
     if (target.spaceId !== player.spaceId) return
+    if (player.roomId === null || target.roomId === null) return
+    if (player.roomId !== target.roomId) {
+      ws.send(
+        JSON.stringify({
+          type: "proximity:update",
+          targetUserId: target.userId,
+          isClose: false,
+        })
+      )
+
+      if (target.ws.readyState === target.ws.OPEN) {
+        target.ws.send(
+          JSON.stringify({
+            type: "proximity:update",
+            targetUserId: player.userId,
+            isClose: false,
+          })
+        )
+      }
+      return
+    }
 
     const d = calculateDistance(
       player.x,
@@ -55,13 +79,24 @@ export async function handleMovement(
       target.x,
       target.y
     )
+    const isClose = d < 200
 
     ws.send(
       JSON.stringify({
         type: "proximity:update",
         targetUserId: target.userId,
-        isClose: d < 200,
+        isClose,
       })
     )
+
+    if (target.ws.readyState === target.ws.OPEN) {
+      target.ws.send(
+        JSON.stringify({
+          type: "proximity:update",
+          targetUserId: player.userId,
+          isClose,
+        })
+      )
+    }
   })
 }

@@ -20,7 +20,7 @@ export async function routeMessage(
       break
 
     case "player:move":
-      await handleMovement(ws, message.x, message.y)
+      await handleMovement(ws, message.x, message.y, message.roomId)
       break
 
     case "chat:global":

@@ -4,6 +4,7 @@ import {
   signRefreshToken,
 } from "@repo/auth"
 import { client } from "@repo/db"
+import { redis } from "@repo/pubsub"
 
 export async function signup(email: string, password: string) {
   const existing = await client.user.findUnique({
@@ -63,15 +64,23 @@ async function generateTokens(userId: string, role: string) {
   const accessToken = signAccessToken(userId, role)
   const { token: refreshToken, jti } = signRefreshToken(userId)
 
-  await client.session.create({
-    data: {
-      userId,
-      jti,
-      expiresAt: new Date(
-        Date.now() + 7 * 24 * 60 * 60 * 1000
-      ),
-    },
-  })
+  const expiresAt = new Date(
+    Date.now() + 7 * 24 * 60 * 60 * 1000
+  )
+
+  await Promise.all([
+    client.session.create({
+      data: {
+        userId,
+        jti,
+        expiresAt,
+      },
+    }),
+    redis.set(`refresh:${jti}`, userId, {
+      EX: 60 * 60 * 24 * 7,
+    }),
+    redis.sAdd(`sessions:${userId}`, jti),
+  ])
 
   return { accessToken, refreshToken }
 }

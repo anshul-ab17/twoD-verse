@@ -43,6 +43,8 @@ export async function handleNearbyChat(
 
   playerManager.getAll().forEach((target) => {
     if (target.spaceId !== sender.spaceId) return
+    if (sender.roomId === null || target.roomId === null) return
+    if (sender.roomId !== target.roomId) return
 
     const distance = calculateDistance(
       sender.x,

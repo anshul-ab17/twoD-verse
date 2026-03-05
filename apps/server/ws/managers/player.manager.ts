@@ -5,6 +5,7 @@ export interface Player {
   spaceId: string
   x: number
   y: number
+  roomId: number | null
   mapWidth: number
   mapHeight: number
   ws: WebSocket

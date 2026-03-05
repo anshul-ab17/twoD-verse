@@ -41,6 +41,17 @@ export async function getSpaces(userId: string) {
   return spaces
 }
 
+export async function getSpaceById(spaceId: string) {
+  return client.space.findUnique({
+    where: { id: spaceId },
+    include: {
+      creator: {
+        select: { id: true, email: true },
+      },
+    },
+  })
+}
+
 export async function createSpace(
   userId: string,
   data: { name: string; width: number; height: number }
@@ -68,4 +79,30 @@ export async function createSpace(
   })
 
   return space
+}
+
+export async function deleteSpace(
+  userId: string,
+  spaceId: string
+) {
+  const space = await client.space.findUnique({
+    where: { id: spaceId },
+    select: { id: true, creatorId: true },
+  })
+
+  if (!space) {
+    return { status: "not_found" as const }
+  }
+
+  if (space.creatorId !== userId) {
+    return { status: "forbidden" as const }
+  }
+
+  await client.space.delete({
+    where: { id: spaceId },
+  })
+
+  await redis.del(getUserSpacesCacheKey(userId))
+
+  return { status: "deleted" as const }
 }
