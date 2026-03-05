@@ -244,6 +244,8 @@ export function SpaceSidebarProvider({ children }: { children: React.ReactNode }
   const [searchQuery, setSearchQuery] = useState("")
   const [currentUser, setCurrentUser] = useState<SpaceUser | null>(null)
   const [members, setMembers] = useState<SpaceUser[]>([])
+  const [livePresenceUserIds, setLivePresenceUserIds] = useState<string[]>([])
+  const [hasLivePresenceSnapshot, setHasLivePresenceSnapshot] = useState(false)
   const [notifications, setNotifications] = useState<JoinNotification[]>([])
   const [currentChatUserId, setCurrentChatUserId] = useState<string | null>(null)
   const [messages, setMessages] = useState<SpaceChatMessage[]>([])
@@ -318,16 +320,67 @@ export function SpaceSidebarProvider({ children }: { children: React.ReactNode }
     }
   }, [refreshSpaceData, spaceId])
 
+  useEffect(() => {
+    if (!spaceId) return
+
+    const handlePresenceUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent<{ userIds?: string[] }>
+      const userIds = Array.isArray(customEvent.detail?.userIds)
+        ? customEvent.detail.userIds
+            .map((userId) => String(userId))
+            .filter((userId) => userId.length > 0)
+        : []
+
+      setHasLivePresenceSnapshot(true)
+      setLivePresenceUserIds(userIds)
+    }
+
+    window.addEventListener("twodverse:presence:update", handlePresenceUpdate as EventListener)
+    return () => {
+      window.removeEventListener("twodverse:presence:update", handlePresenceUpdate as EventListener)
+      setLivePresenceUserIds([])
+      setHasLivePresenceSnapshot(false)
+    }
+  }, [spaceId])
+
+  const resolvedMembers = useMemo(() => {
+    if (!hasLivePresenceSnapshot) return members
+
+    const memberById = new Map(members.map((member) => [member.id, member]))
+    const seen = new Set<string>()
+    const onlineMembers: SpaceUser[] = []
+
+    for (const userId of livePresenceUserIds) {
+      if (seen.has(userId)) continue
+      seen.add(userId)
+
+      const existing = memberById.get(userId)
+      if (existing) {
+        onlineMembers.push(existing)
+        continue
+      }
+
+      const shortId = userId.slice(0, 6)
+      onlineMembers.push({
+        id: userId,
+        name: `Guest ${shortId}`,
+        avatarUrl: getGeneratedAvatarDataUrl(`Guest ${shortId}`, userId),
+      })
+    }
+
+    return onlineMembers
+  }, [hasLivePresenceSnapshot, livePresenceUserIds, members])
+
   const currentChatUser = useMemo(
-    () => members.find((member) => member.id === currentChatUserId) ?? null,
-    [currentChatUserId, members]
+    () => resolvedMembers.find((member) => member.id === currentChatUserId) ?? null,
+    [currentChatUserId, resolvedMembers]
   )
 
   const filteredMembers = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
-    if (!query) return members
-    return members.filter((member) => member.name.toLowerCase().includes(query))
-  }, [members, searchQuery])
+    if (!query) return resolvedMembers
+    return resolvedMembers.filter((member) => member.name.toLowerCase().includes(query))
+  }, [resolvedMembers, searchQuery])
 
   const threadMessages = useMemo(() => {
     if (!currentUser) return []
@@ -364,7 +417,7 @@ export function SpaceSidebarProvider({ children }: { children: React.ReactNode }
       }
 
       if (pane === "chat" && !currentChatUserId) {
-        const fallback = members.find((member) => member.id !== currentUser?.id) ?? members[0]
+        const fallback = resolvedMembers.find((member) => member.id !== currentUser?.id) ?? resolvedMembers[0]
         if (fallback) {
           setCurrentChatUserId(fallback.id)
           lastChatUserIdRef.current = fallback.id
@@ -377,7 +430,7 @@ export function SpaceSidebarProvider({ children }: { children: React.ReactNode }
 
       setActivePane(pane)
     },
-    [activePane, currentChatUserId, currentUser?.id, markNotificationsRead, members]
+    [activePane, currentChatUserId, currentUser?.id, markNotificationsRead, resolvedMembers]
   )
 
   const openChatWithUser = useCallback((userId: string | null) => {
@@ -422,7 +475,7 @@ export function SpaceSidebarProvider({ children }: { children: React.ReactNode }
       activePane,
       activatePane,
       currentUser,
-      members,
+      members: resolvedMembers,
       searchQuery,
       setSearchQuery,
       filteredMembers,
@@ -441,7 +494,7 @@ export function SpaceSidebarProvider({ children }: { children: React.ReactNode }
       activePane,
       activatePane,
       currentUser,
-      members,
+      resolvedMembers,
       searchQuery,
       filteredMembers,
       notifications,

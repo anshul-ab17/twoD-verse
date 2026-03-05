@@ -17,6 +17,15 @@ export async function handleSpaceJoin(
 
   if (!space) return
 
+  const existingPlayers = Array.from(playerManager.getAll().values())
+    .filter((player) => player.spaceId === spaceId && player.userId !== user.userId)
+    .map((player) => ({
+      userId: player.userId,
+      x: player.x,
+      y: player.y,
+      roomId: player.roomId,
+    }))
+
   playerManager.add({
     userId: user.userId,
     spaceId,
@@ -28,8 +37,20 @@ export async function handleSpaceJoin(
     ws,
   })
 
-  spaceManager.broadcast(spaceId, {
+  if (ws.readyState === ws.OPEN) {
+    ws.send(
+      JSON.stringify({
+        type: "space:state",
+        players: existingPlayers,
+      })
+    )
+  }
+
+  await spaceManager.broadcast(spaceId, {
     type: "player:joined",
     userId: user.userId,
+    x: 100,
+    y: 100,
+    roomId: null,
   })
 }

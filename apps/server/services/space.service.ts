@@ -1,5 +1,5 @@
 import { client } from "@repo/db"
-import { redis, publish } from "@repo/pubsub"
+import { redis, pub, publish } from "@repo/pubsub"
 
 const CACHE_TTL = 60
 
@@ -8,6 +8,10 @@ function getUserSpacesCacheKey(userId: string) {
 }
 
 async function getCachedSpaces(cacheKey: string) {
+  if (!redis.isOpen) {
+    return null
+  }
+
   try {
     return await redis.get(cacheKey)
   } catch (error) {
@@ -17,6 +21,10 @@ async function getCachedSpaces(cacheKey: string) {
 }
 
 async function setCachedSpaces(cacheKey: string, spaces: unknown) {
+  if (!redis.isOpen) {
+    return
+  }
+
   try {
     await redis.set(cacheKey, JSON.stringify(spaces), {
       EX: CACHE_TTL,
@@ -27,6 +35,10 @@ async function setCachedSpaces(cacheKey: string, spaces: unknown) {
 }
 
 async function invalidateUserSpacesCache(userId: string) {
+  if (!redis.isOpen) {
+    return
+  }
+
   try {
     await redis.del(getUserSpacesCacheKey(userId))
   } catch (error) {
@@ -43,10 +55,12 @@ export async function getSpaces(userId: string) {
     try {
       return JSON.parse(cached)
     } catch {
-      try {
-        await redis.del(cacheKey)
-      } catch (error) {
-        console.error("Failed to delete invalid spaces cache:", error)
+      if (redis.isOpen) {
+        try {
+          await redis.del(cacheKey)
+        } catch (error) {
+          console.error("Failed to delete invalid spaces cache:", error)
+        }
       }
     }
   }
@@ -97,18 +111,20 @@ export async function createSpace(
   // Invalidate only this user's cache
   await invalidateUserSpacesCache(userId)
 
-  // Publish event for WS instances
-  try {
-    await publish("spaces", {
-      type: "SPACE_CREATED",
-      payload: {
-        id: space.id,
-        name: space.name,
-        creatorId: userId,
-      },
-    })
-  } catch (error) {
-    console.error("Failed to publish SPACE_CREATED event:", error)
+  // Publish event for WS instances when pubsub is available.
+  if (pub.isOpen) {
+    try {
+      await publish("spaces", {
+        type: "SPACE_CREATED",
+        payload: {
+          id: space.id,
+          name: space.name,
+          creatorId: userId,
+        },
+      })
+    } catch (error) {
+      console.error("Failed to publish SPACE_CREATED event:", error)
+    }
   }
 
   return space

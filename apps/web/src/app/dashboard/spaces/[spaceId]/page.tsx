@@ -2,16 +2,23 @@
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react"
 import type Phaser from "phaser"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useSpaceSidebar } from "@/components/sidebar/SpaceSidebarContext"
 import { useAuthSession } from "@/components/providers/AuthSessionProvider"
 import { getWebSocketUrl } from "@/lib/api"
-import { MapPinned, Send } from "lucide-react"
+import { Camera, CameraOff, MapPinned, MessageCircle, Mic, MicOff, Send, UserRound } from "lucide-react"
 
 type PlayerStateEvent = {
   x: number
   y: number
   roomId: number
+}
+
+type RealtimePlayer = {
+  userId: string
+  x: number
+  y: number
+  roomId: number | null
 }
 
 type ProximityUpdateMessage = {
@@ -31,13 +38,57 @@ type PlayerLeftMessage = {
   userId: string
 }
 
+type PlayerJoinedMessage = {
+  type: "player:joined"
+  userId: string
+  x: number
+  y: number
+  roomId: number | null
+}
+
+type PlayerMovedMessage = {
+  type: "player:moved"
+  userId: string
+  x: number
+  y: number
+  roomId: number | null
+}
+
+type SpaceStateMessage = {
+  type: "space:state"
+  players: RealtimePlayer[]
+}
+
 type IncomingRealtimeMessage =
   | ProximityUpdateMessage
   | WebRTCMessage
+  | SpaceStateMessage
+  | PlayerJoinedMessage
+  | PlayerMovedMessage
   | PlayerLeftMessage
+
+function StreamVideo({
+  stream,
+  muted = false,
+  className,
+}: {
+  stream: MediaStream
+  muted?: boolean
+  className?: string
+}) {
+  const videoRef = useRef<HTMLVideoElement | null>(null)
+
+  useEffect(() => {
+    if (!videoRef.current) return
+    videoRef.current.srcObject = stream
+  }, [stream])
+
+  return <video ref={videoRef} autoPlay playsInline muted={muted} className={className} />
+}
 
 export default function SpacePage() {
   const params = useParams<{ spaceId?: string }>()
+  const router = useRouter()
   const spaceId = typeof params?.spaceId === "string" ? params.spaceId : ""
   const {
     activePane,
@@ -55,11 +106,22 @@ export default function SpacePage() {
   const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map())
   const closeTargetsRef = useRef<Set<string>>(new Set())
   const localStreamRef = useRef<MediaStream | null>(null)
+  const localCameraStreamRef = useRef<MediaStream | null>(null)
+  const localCameraTrackRef = useRef<MediaStreamTrack | null>(null)
   const remoteAudioRef = useRef<Map<string, HTMLAudioElement>>(new Map())
+  const videoSendersRef = useRef<Map<string, RTCRtpSender>>(new Map())
+  const presenceUserIdsRef = useRef<Set<string>>(new Set())
+  const remotePlayersStateRef = useRef<Map<string, RealtimePlayer>>(new Map())
+  const latestPlayerStateRef = useRef<PlayerStateEvent | null>(null)
+  const micEnabledRef = useRef(true)
   const [statusText, setStatusText] = useState("init: waiting")
   const [realtimeStatus, setRealtimeStatus] = useState("realtime: disconnected")
   const [draft, setDraft] = useState("")
   const [connectedVoicePeers, setConnectedVoicePeers] = useState(0)
+  const [micEnabled, setMicEnabled] = useState(true)
+  const [cameraEnabled, setCameraEnabled] = useState(false)
+  const [localVideoPreview, setLocalVideoPreview] = useState<MediaStream | null>(null)
+  const [remoteVideoStreams, setRemoteVideoStreams] = useState<Array<{ userId: string; stream: MediaStream }>>([])
   const showChatPanel = activePane === "chat"
 
   const sendSocketMessage = useCallback((payload: unknown) => {
@@ -96,12 +158,25 @@ export default function SpacePage() {
         audio: true,
         video: false,
       })
+      stream.getAudioTracks().forEach((track) => {
+        track.enabled = micEnabledRef.current
+      })
       localStreamRef.current = stream
       return stream
     } catch {
       return null
     }
   }, [])
+
+  useEffect(() => {
+    micEnabledRef.current = micEnabled
+
+    const stream = localStreamRef.current
+    if (!stream) return
+    stream.getAudioTracks().forEach((track) => {
+      track.enabled = micEnabled
+    })
+  }, [micEnabled])
 
   const createPeer = useCallback(async (
     targetUserId: string,
@@ -288,6 +363,24 @@ export default function SpacePage() {
   }, [showChatPanel, threadMessages.length])
 
   useEffect(() => {
+    const handleSceneReady = () => {
+      if (typeof window === "undefined") return
+      window.dispatchEvent(
+        new CustomEvent("twodverse:remote-players:sync", {
+          detail: {
+            players: Array.from(remotePlayersStateRef.current.values()),
+          },
+        })
+      )
+    }
+
+    window.addEventListener("twodverse:scene-ready", handleSceneReady)
+    return () => {
+      window.removeEventListener("twodverse:scene-ready", handleSceneReady)
+    }
+  }, [])
+
+  useEffect(() => {
     if (status !== "authenticated" || !spaceId) return
 
     const ws = new WebSocket(getWebSocketUrl())
@@ -295,14 +388,132 @@ export default function SpacePage() {
     wsRef.current = ws
     setRealtimeStatus("realtime: connecting")
 
+    const dispatchRemotePlayersSync = (players: RealtimePlayer[]) => {
+      remotePlayersStateRef.current = new Map(
+        players.map((player) => [player.userId, player])
+      )
+      if (typeof window === "undefined") return
+      window.dispatchEvent(
+        new CustomEvent("twodverse:remote-players:sync", {
+          detail: { players },
+        })
+      )
+    }
+
+    const dispatchRemotePlayerUpsert = (player: RealtimePlayer) => {
+      remotePlayersStateRef.current.set(player.userId, player)
+      if (typeof window === "undefined") return
+      window.dispatchEvent(
+        new CustomEvent("twodverse:remote-player:upsert", {
+          detail: { player },
+        })
+      )
+    }
+
+    const dispatchRemotePlayerLeft = (userId: string) => {
+      remotePlayersStateRef.current.delete(userId)
+      if (typeof window === "undefined") return
+      window.dispatchEvent(
+        new CustomEvent("twodverse:remote-player:left", {
+          detail: { userId },
+        })
+      )
+    }
+
+    const emitPresence = () => {
+      if (typeof window === "undefined") return
+      window.dispatchEvent(
+        new CustomEvent("twodverse:presence:update", {
+          detail: { userIds: Array.from(presenceUserIdsRef.current) },
+        })
+      )
+    }
+
+    const replacePresence = (
+      userIds: Iterable<string>,
+      options?: { includeCurrentUser?: boolean }
+    ) => {
+      const nextIds = new Set<string>()
+      for (const userId of userIds) {
+        if (!userId) continue
+        nextIds.add(userId)
+      }
+
+      if (options?.includeCurrentUser !== false && currentUser?.id) {
+        nextIds.add(currentUser.id)
+      }
+
+      presenceUserIdsRef.current = nextIds
+      emitPresence()
+    }
+
+    const addPresenceUser = (userId: string) => {
+      if (!userId) return
+      if (presenceUserIdsRef.current.has(userId)) return
+      presenceUserIdsRef.current.add(userId)
+      emitPresence()
+    }
+
+    const removePresenceUser = (userId: string) => {
+      if (!userId) return
+      if (!presenceUserIdsRef.current.has(userId)) return
+      presenceUserIdsRef.current.delete(userId)
+      emitPresence()
+    }
+
+    const sendPlayerMove = (detail: PlayerStateEvent) => {
+      const payload: { type: "player:move"; x: number; y: number; roomId?: number } = {
+        type: "player:move",
+        x: detail.x,
+        y: detail.y,
+      }
+
+      if (detail.roomId >= 0) {
+        payload.roomId = detail.roomId
+      }
+
+      sendSocketMessage(payload)
+    }
+
     ws.onopen = () => {
       setRealtimeStatus("realtime: connected")
+      replacePresence([], { includeCurrentUser: true })
+      dispatchRemotePlayersSync([])
       sendSocketMessage({ type: "space:join", spaceId })
+
+      const lastPlayerState = latestPlayerStateRef.current
+      if (lastPlayerState) {
+        sendPlayerMove(lastPlayerState)
+      }
     }
 
     ws.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data) as IncomingRealtimeMessage
+
+        if (message.type === "space:state") {
+          const players = message.players.filter((player) => !!player?.userId)
+          const remotePlayers = players.filter((player) => player.userId !== currentUser?.id)
+          dispatchRemotePlayersSync(remotePlayers)
+          replacePresence(players.map((player) => player.userId), { includeCurrentUser: true })
+          return
+        }
+
+        if (message.type === "player:joined" || message.type === "player:moved") {
+          const player = {
+            userId: message.userId,
+            x: message.x,
+            y: message.y,
+            roomId: message.roomId,
+          } satisfies RealtimePlayer
+
+          addPresenceUser(player.userId)
+          if (player.userId !== currentUser?.id) {
+            dispatchRemotePlayerUpsert(player)
+          }
+          return
+        }
+
         if (message.type === "proximity:update") {
           void handleProximityUpdate(message)
           return
@@ -320,6 +531,8 @@ export default function SpacePage() {
         if (message.type === "player:left") {
           closeTargetsRef.current.delete(message.userId)
           destroyPeer(message.userId)
+          removePresenceUser(message.userId)
+          dispatchRemotePlayerLeft(message.userId)
         }
       } catch (error) {
         console.error("WS message parse failed", error)
@@ -333,6 +546,8 @@ export default function SpacePage() {
     ws.onclose = () => {
       setRealtimeStatus("realtime: disconnected")
       wsRef.current = null
+      replacePresence([], { includeCurrentUser: false })
+      dispatchRemotePlayersSync([])
 
       Array.from(peers.keys()).forEach((userId) => {
         destroyPeer(userId)
@@ -344,17 +559,8 @@ export default function SpacePage() {
       const detail = customEvent.detail
       if (!detail) return
 
-      const payload: { type: "player:move"; x: number; y: number; roomId?: number } = {
-        type: "player:move",
-        x: detail.x,
-        y: detail.y,
-      }
-
-      if (detail.roomId >= 0) {
-        payload.roomId = detail.roomId
-      }
-
-      sendSocketMessage(payload)
+      latestPlayerStateRef.current = detail
+      sendPlayerMove(detail)
     }
 
     window.addEventListener("twodverse:player-state", handlePlayerState as EventListener)
@@ -362,6 +568,8 @@ export default function SpacePage() {
     return () => {
       window.removeEventListener("twodverse:player-state", handlePlayerState as EventListener)
       ws.close()
+      replacePresence([], { includeCurrentUser: false })
+      dispatchRemotePlayersSync([])
 
       Array.from(peers.keys()).forEach((userId) => {
         destroyPeer(userId)
@@ -377,6 +585,7 @@ export default function SpacePage() {
     handleProximityUpdate,
     handleWebRTCSignal,
     sendSocketMessage,
+    currentUser?.id,
     spaceId,
     status,
   ])
@@ -387,6 +596,30 @@ export default function SpacePage() {
     sendMessage(draft)
     setDraft("")
   }
+
+  const handleToggleMic = useCallback(async () => {
+    const next = !micEnabled
+    setMicEnabled(next)
+
+    const stream = await ensureLocalStream()
+    if (!stream) return
+
+    stream.getAudioTracks().forEach((track) => {
+      track.enabled = next
+    })
+  }, [ensureLocalStream, micEnabled])
+
+  const handleToggleCamera = useCallback(() => {
+    setCameraEnabled((prev) => !prev)
+  }, [])
+
+  const handleToggleChat = useCallback(() => {
+    activatePane(showChatPanel ? "map" : "chat")
+  }, [activatePane, showChatPanel])
+
+  const handleOpenProfile = useCallback(() => {
+    router.push("/dashboard/profile")
+  }, [router])
 
   return (
     <div className="relative h-full w-full overflow-hidden rounded-xl border border-[#3f2a17] bg-[#0b0f19]">
@@ -408,6 +641,50 @@ export default function SpacePage() {
             ref={containerRef}
             className="h-full w-full overflow-hidden rounded-xl"
           />
+
+          <div className="pointer-events-none absolute bottom-3 left-1/2 z-20 -translate-x-1/2">
+            <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-[#6b4b2a] bg-[#160f0a]/92 px-2 py-2 shadow-lg backdrop-blur">
+              <button
+                type="button"
+                onClick={() => void handleToggleMic()}
+                aria-pressed={!micEnabled}
+                title={micEnabled ? "Mute microphone" : "Unmute microphone"}
+                className={`rounded-full border p-2 transition-colors ${micEnabled ? "border-[#6b4b2a] bg-[#2a1b11] text-yellow-100 hover:bg-[#3a2518]" : "border-[#8b1d1d] bg-[#3a1212] text-red-200 hover:bg-[#4a1919]"}`}
+              >
+                {micEnabled ? <Mic size={16} /> : <MicOff size={16} />}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleToggleCamera}
+                aria-pressed={cameraEnabled}
+                title={cameraEnabled ? "Turn camera off" : "Turn camera on"}
+                className={`rounded-full border p-2 transition-colors ${cameraEnabled ? "border-[#4d6f29] bg-[#243718] text-lime-100 hover:bg-[#2f471f]" : "border-[#6b4b2a] bg-[#2a1b11] text-yellow-100 hover:bg-[#3a2518]"}`}
+              >
+                {cameraEnabled ? <Camera size={16} /> : <CameraOff size={16} />}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleToggleChat}
+                aria-pressed={showChatPanel}
+                title={showChatPanel ? "Close chat" : "Open chat"}
+                className={`rounded-full border p-2 transition-colors ${showChatPanel ? "border-[#4d6f29] bg-[#314a20] text-lime-100 hover:bg-[#3c5d28]" : "border-[#6b4b2a] bg-[#2a1b11] text-yellow-100 hover:bg-[#3a2518]"}`}
+              >
+                <MessageCircle size={16} />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleOpenProfile}
+                title="Open profile"
+                className="flex items-center gap-2 rounded-full border border-[#6b4b2a] bg-[#2a1b11] px-3 py-2 text-yellow-100 transition-colors hover:bg-[#3a2518]"
+              >
+                <UserRound size={16} />
+                <span className="text-xs font-medium">{currentUser?.name?.split(" ")[0] || "Profile"}</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         {showChatPanel && (

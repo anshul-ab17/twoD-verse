@@ -9,6 +9,7 @@ import { verifyToken } from "@repo/auth"
 import { registerWSHandlers } from "./ws"
 import { client } from "@repo/db"
 import { connectRedis } from "@repo/pubsub"
+import { initRedisSubscriber } from "./ws/redis.adapter"
 
 const server = http.createServer(app)
 
@@ -46,6 +47,7 @@ wss.on("connection", (ws, req) => {
 async function bootstrap() {
   try {
     await connectRedis()
+    await initRedisSubscriber()
     console.log("Redis connected")
   } catch (error) {
     console.error(

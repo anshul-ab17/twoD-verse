@@ -52,6 +52,21 @@ type Interactable = {
   seatY: number
 }
 
+type RealtimePlayer = {
+  userId: string
+  x: number
+  y: number
+  roomId: number | null
+}
+
+type RemoteAvatar = {
+  userId: string
+  sprite: Phaser.GameObjects.Sprite
+  label: Phaser.GameObjects.Text
+  targetX: number
+  targetY: number
+}
+
 export default class MainScene extends Phaser.Scene {
   player?: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody
   colliders?: Phaser.Physics.Arcade.StaticGroup
@@ -94,6 +109,10 @@ export default class MainScene extends Phaser.Scene {
   lastStateEmitX = Number.NaN
   lastStateEmitY = Number.NaN
   lastStateEmitRoom = Number.NaN
+  remotePlayers = new Map<string, RemoteAvatar>()
+  onRemotePlayersSync?: (event: Event) => void
+  onRemotePlayerUpsert?: (event: Event) => void
+  onRemotePlayerLeft?: (event: Event) => void
 
   constructor() {
     super("MainScene")
@@ -829,6 +848,152 @@ export default class MainScene extends Phaser.Scene {
     )
   }
 
+  private createRemoteAvatar(player: RealtimePlayer) {
+    const sprite = this.add.sprite(player.x, player.y, CHARACTER_ATLAS_KEY, "Adam_idle_anim_1.png")
+    sprite.setOrigin(0.5, 1)
+    sprite.setDepth(player.y + 95)
+    sprite.setTint(0xb8d6ff)
+    sprite.play(PLAYER_IDLE_ANIM)
+
+    const displayName =
+      player.userId.length > 11 ? `${player.userId.slice(0, 8)}...` : player.userId
+    const label = this.add
+      .text(player.x, player.y - 44, displayName, {
+        fontFamily: "monospace",
+        fontSize: "11px",
+        color: "#e2e8f0",
+        backgroundColor: "#111827cc",
+        padding: { x: 6, y: 3 },
+      })
+      .setOrigin(0.5, 1)
+      .setDepth(1200)
+
+    this.remotePlayers.set(player.userId, {
+      userId: player.userId,
+      sprite,
+      label,
+      targetX: player.x,
+      targetY: player.y,
+    })
+  }
+
+  private upsertRemotePlayer(player: RealtimePlayer) {
+    const existing = this.remotePlayers.get(player.userId)
+    if (!existing) {
+      this.createRemoteAvatar(player)
+      return
+    }
+
+    existing.targetX = player.x
+    existing.targetY = player.y
+  }
+
+  private syncRemotePlayers(players: RealtimePlayer[]) {
+    const nextIds = new Set<string>()
+
+    for (const player of players) {
+      if (!player?.userId) continue
+      nextIds.add(player.userId)
+      this.upsertRemotePlayer(player)
+    }
+
+    for (const userId of Array.from(this.remotePlayers.keys())) {
+      if (nextIds.has(userId)) continue
+      this.removeRemotePlayer(userId)
+    }
+  }
+
+  private removeRemotePlayer(userId: string) {
+    const remote = this.remotePlayers.get(userId)
+    if (!remote) return
+
+    remote.sprite.destroy()
+    remote.label.destroy()
+    this.remotePlayers.delete(userId)
+  }
+
+  private clearRemotePlayers() {
+    for (const userId of Array.from(this.remotePlayers.keys())) {
+      this.removeRemotePlayer(userId)
+    }
+  }
+
+  private updateRemotePlayers() {
+    for (const remote of this.remotePlayers.values()) {
+      const dx = remote.targetX - remote.sprite.x
+      const dy = remote.targetY - remote.sprite.y
+      const isMoving = Math.abs(dx) > 0.7 || Math.abs(dy) > 0.7
+      const lerp = isMoving ? 0.35 : 1
+      const nextX = Phaser.Math.Linear(remote.sprite.x, remote.targetX, lerp)
+      const nextY = Phaser.Math.Linear(remote.sprite.y, remote.targetY, lerp)
+
+      remote.sprite.setPosition(nextX, nextY)
+      remote.sprite.setDepth(nextY + 95)
+
+      if (isMoving) {
+        if (dx < -0.1) remote.sprite.setFlipX(true)
+        if (dx > 0.1) remote.sprite.setFlipX(false)
+        if (remote.sprite.anims.currentAnim?.key !== PLAYER_RUN_ANIM) {
+          remote.sprite.play(PLAYER_RUN_ANIM, true)
+        }
+      } else if (remote.sprite.anims.currentAnim?.key !== PLAYER_IDLE_ANIM) {
+        remote.sprite.play(PLAYER_IDLE_ANIM, true)
+      }
+
+      remote.label.setPosition(nextX, nextY - remote.sprite.displayHeight - 6)
+    }
+  }
+
+  private bindRemotePlayerEvents() {
+    if (typeof window === "undefined") return
+
+    this.onRemotePlayersSync = (event: Event) => {
+      const customEvent = event as CustomEvent<{ players?: RealtimePlayer[] }>
+      const players = Array.isArray(customEvent.detail?.players)
+        ? customEvent.detail.players
+        : []
+      this.syncRemotePlayers(players)
+    }
+
+    this.onRemotePlayerUpsert = (event: Event) => {
+      const customEvent = event as CustomEvent<{ player?: RealtimePlayer }>
+      const player = customEvent.detail?.player
+      if (!player?.userId) return
+      this.upsertRemotePlayer(player)
+    }
+
+    this.onRemotePlayerLeft = (event: Event) => {
+      const customEvent = event as CustomEvent<{ userId?: string }>
+      const userId = customEvent.detail?.userId
+      if (!userId) return
+      this.removeRemotePlayer(userId)
+    }
+
+    window.addEventListener("twodverse:remote-players:sync", this.onRemotePlayersSync)
+    window.addEventListener("twodverse:remote-player:upsert", this.onRemotePlayerUpsert)
+    window.addEventListener("twodverse:remote-player:left", this.onRemotePlayerLeft)
+    window.dispatchEvent(new Event("twodverse:scene-ready"))
+  }
+
+  private unbindRemotePlayerEvents() {
+    if (typeof window === "undefined") return
+
+    if (this.onRemotePlayersSync) {
+      window.removeEventListener("twodverse:remote-players:sync", this.onRemotePlayersSync)
+      this.onRemotePlayersSync = undefined
+    }
+
+    if (this.onRemotePlayerUpsert) {
+      window.removeEventListener("twodverse:remote-player:upsert", this.onRemotePlayerUpsert)
+      this.onRemotePlayerUpsert = undefined
+    }
+
+    if (this.onRemotePlayerLeft) {
+      window.removeEventListener("twodverse:remote-player:left", this.onRemotePlayerLeft)
+      this.onRemotePlayerLeft = undefined
+    }
+  }
+
   create() {
     console.log("[MainScene] create start")
     this.cameras.main.setBackgroundColor("#1e1e1e")
@@ -944,6 +1109,12 @@ export default class MainScene extends Phaser.Scene {
     this.applyRoomLogic()
     this.updateInteractionPrompt()
     this.emitPlayerState(true)
+    this.bindRemotePlayerEvents()
+
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.unbindRemotePlayerEvents()
+      this.clearRemotePlayers()
+    })
   }
 
   update() {
@@ -984,6 +1155,7 @@ export default class MainScene extends Phaser.Scene {
     this.clampPlayerSpriteToWorld()
     this.updateCameraMotion(vx, vy)
     this.player.setDepth(this.player.y + 100)
+    this.updateRemotePlayers()
     this.applyRoomLogic()
     this.rescueIfEmbedded()
     this.emitPlayerState()

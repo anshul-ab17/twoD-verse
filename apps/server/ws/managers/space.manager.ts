@@ -3,8 +3,13 @@ import { publishEvent } from "../redis.adapter"
 
 class SpaceManager {
   async broadcast(spaceId: string, payload: any) {
-    // Publish to Redis so all instances receive it
-    await publishEvent(spaceId, payload)
+    try {
+      // Publish to Redis so all instances receive it.
+      await publishEvent(spaceId, payload)
+    } catch {
+      // Fallback for local/dev mode when Redis is unavailable.
+      this.localBroadcast(spaceId, payload)
+    }
   }
 
   localBroadcast(spaceId: string, payload: any) {

@@ -8,7 +8,8 @@ export type WSIncoming =
   | { type: "webrtc:ice"; targetUserId: string; candidate: any }
 
 export type WSOutgoing =
-  | { type: "player:joined"; userId: string }
+  | { type: "space:state"; players: { userId: string; x: number; y: number; roomId: number | null }[] }
+  | { type: "player:joined"; userId: string; x: number; y: number; roomId: number | null }
   | { type: "player:moved"; userId: string; x: number; y: number; roomId: number | null }
   | { type: "player:left"; userId: string }
   | { type: "chat:global"; userId: string; content: string }
