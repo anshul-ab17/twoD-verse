@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useAuthSession } from "@/components/providers/AuthSessionProvider"
+import { useState } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 
 type HeroProps = {
   children: React.ReactNode
@@ -16,24 +17,41 @@ type Particle = {
   delay: string
 }
 
+const PARTICLES: Particle[] = [
+  { left: "8%", top: "12%", delay: "0.4s" },
+  { left: "22%", top: "65%", delay: "1.1s" },
+  { left: "34%", top: "28%", delay: "2.2s" },
+  { left: "46%", top: "78%", delay: "0.9s" },
+  { left: "58%", top: "18%", delay: "1.8s" },
+  { left: "69%", top: "52%", delay: "2.7s" },
+  { left: "77%", top: "33%", delay: "1.4s" },
+  { left: "84%", top: "72%", delay: "3.1s" },
+  { left: "14%", top: "43%", delay: "2.5s" },
+  { left: "28%", top: "84%", delay: "0.7s" },
+  { left: "63%", top: "69%", delay: "1.6s" },
+  { left: "91%", top: "24%", delay: "2.9s" },
+]
+
 export default function Hero({
   children,
   blur = "",
   overlay = "bg-black/5",
 }: HeroProps) {
   const pathname = usePathname()
+  const router = useRouter()
+  const { status, signOut } = useAuthSession()
   const isHome = pathname === "/"
+  const isAuthenticated = status === "authenticated"
 
-  const [particles, setParticles] = useState<Particle[]>([])
+  const particles = PARTICLES
+  const [signingOut, setSigningOut] = useState(false)
 
-  useEffect(() => {
-    const generated = Array.from({ length: 12 }).map(() => ({
-      left: `${Math.random() * 100}%`,
-      top: `${Math.random() * 100}%`,
-      delay: `${Math.random() * 10}s`,
-    }))
-    setParticles(generated)
-  }, [])
+  const handleSignOut = async () => {
+    if (signingOut) return
+    setSigningOut(true)
+    await signOut()
+    router.replace("/signin")
+  }
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden">
@@ -82,6 +100,40 @@ export default function Hero({
 
         <div className="flex items-center gap-3">
 
+          {/* Sign Out (for authenticated users) */}
+          {isAuthenticated && (
+            <button
+              type="button"
+              onClick={handleSignOut}
+              disabled={signingOut}
+              className="px-4 py-1.5 text-sm font-semibold
+                         bg-[#2f2f2f] text-white
+                         border border-[#4a4a4a]
+                         rounded-lg
+                         shadow-md hover:shadow-lg
+                         hover:-translate-y-1
+                         transition-all duration-200 disabled:opacity-60"
+            >
+              {signingOut ? "Signing out..." : "Sign Out"}
+            </button>
+          )}
+
+          {/* Sign In (only on home) */}
+          {isHome && !isAuthenticated && (
+            <Link
+              href="/signin"
+              className="px-4 py-1.5 text-sm font-semibold
+                         bg-[#8B5A2B] text-yellow-200
+                         border border-[#5A3B1C]
+                         rounded-lg
+                         shadow-md hover:shadow-lg
+                         hover:-translate-y-1
+                         transition-all duration-200"
+            >
+              Sign In
+            </Link>
+          )}
+
           {/* Home Button */}
           <Link
             href="/"
@@ -102,22 +154,6 @@ export default function Hero({
               <path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z" />
             </svg>
           </Link>
-
-          {/* Sign In (only on home) */}
-          {isHome && (
-            <Link
-              href="/signin"
-              className="px-4 py-1.5 text-sm font-semibold
-                         bg-[#8B5A2B] text-yellow-200
-                         border border-[#5A3B1C]
-                         rounded-lg
-                         shadow-md hover:shadow-lg
-                         hover:-translate-y-1
-                         transition-all duration-200"
-            >
-              Sign In
-            </Link>
-          )}
 
         </div>
       </div>

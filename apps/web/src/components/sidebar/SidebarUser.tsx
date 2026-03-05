@@ -1,5 +1,7 @@
 import { useSpaceSidebar } from "./SpaceSidebarContext";
 import { getAvatarColor, getUserInitials } from "./avatar";
+import { useAuthSession } from "../providers/AuthSessionProvider";
+import { useRouter } from "next/navigation";
 
 interface Props {
   collapsed?: boolean;
@@ -7,6 +9,8 @@ interface Props {
 
 export default function SidebarUser({ collapsed }: Props) {
   const { currentUser } = useSpaceSidebar()
+  const { signOut } = useAuthSession()
+  const router = useRouter()
   const displayName = currentUser?.name || "Guest"
   const avatarUrl = currentUser?.avatarUrl
   const initials = getUserInitials(displayName)
@@ -44,13 +48,23 @@ export default function SidebarUser({ collapsed }: Props) {
       </div>
 
       {!collapsed && (
-        <div>
+        <div className="min-w-0">
           <p className="text-sm text-yellow-200">
             {displayName}
           </p>
           <p className="text-xs text-green-400">
             Active
           </p>
+          <button
+            type="button"
+            onClick={async () => {
+              await signOut()
+              router.replace("/signin")
+            }}
+            className="mt-1 text-[11px] text-yellow-300/85 hover:text-yellow-200"
+          >
+            Sign out
+          </button>
         </div>
       )}
     </div>

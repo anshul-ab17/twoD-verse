@@ -96,8 +96,11 @@ export function AuthSessionProvider({
         writeCurrentUserToStorage(null)
         return null
       }
-
-      throw error
+      console.error("Session refresh failed", error)
+      setUser(null)
+      setStatus("unauthenticated")
+      writeCurrentUserToStorage(null)
+      return null
     }
   }, [])
 

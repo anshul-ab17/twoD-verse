@@ -90,6 +90,10 @@ export default class MainScene extends Phaser.Scene {
   lastSafeY = 0
   cameraLookX = 0
   cameraLookY = 0
+  lastStateEmitAt = 0
+  lastStateEmitX = Number.NaN
+  lastStateEmitY = Number.NaN
+  lastStateEmitRoom = Number.NaN
 
   constructor() {
     super("MainScene")
@@ -796,6 +800,35 @@ export default class MainScene extends Phaser.Scene {
     this.cameras.main.setZoom(Phaser.Math.Linear(this.cameras.main.zoom, targetZoom, 0.08))
   }
 
+  private emitPlayerState(force = false) {
+    if (!this.player || typeof window === "undefined") return
+
+    const now = this.time.now
+    const x = Math.round(this.player.x)
+    const y = Math.round(this.player.y)
+    const roomId = Number.isFinite(this.currentRoomId) ? this.currentRoomId : -1
+
+    const movedEnough =
+      !Number.isFinite(this.lastStateEmitX) ||
+      Math.abs(x - this.lastStateEmitX) >= 2 ||
+      Math.abs(y - this.lastStateEmitY) >= 2
+    const roomChanged = roomId !== this.lastStateEmitRoom
+    const throttled = now - this.lastStateEmitAt < 80
+
+    if (!force && !roomChanged && (!movedEnough || throttled)) return
+
+    this.lastStateEmitX = x
+    this.lastStateEmitY = y
+    this.lastStateEmitRoom = roomId
+    this.lastStateEmitAt = now
+
+    window.dispatchEvent(
+      new CustomEvent("twodverse:player-state", {
+        detail: { x, y, roomId },
+      })
+    )
+  }
+
   create() {
     console.log("[MainScene] create start")
     this.cameras.main.setBackgroundColor("#1e1e1e")
@@ -910,6 +943,7 @@ export default class MainScene extends Phaser.Scene {
 
     this.applyRoomLogic()
     this.updateInteractionPrompt()
+    this.emitPlayerState(true)
   }
 
   update() {
@@ -952,6 +986,7 @@ export default class MainScene extends Phaser.Scene {
     this.player.setDepth(this.player.y + 100)
     this.applyRoomLogic()
     this.rescueIfEmbedded()
+    this.emitPlayerState()
     this.updateInteractionPrompt()
 
     if (this.interactKey && Phaser.Input.Keyboard.JustDown(this.interactKey)) {

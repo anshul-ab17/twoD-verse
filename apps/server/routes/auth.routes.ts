@@ -50,7 +50,7 @@ authRouter.get(
       sameSite: "strict",
     })
 
-    res.redirect("http://localhost:3000")
+    res.redirect("http://localhost:3000/dashboard")
   }
 )
 
@@ -74,6 +74,6 @@ authRouter.get(
       sameSite: "strict",
     })
 
-    res.redirect("http://localhost:3000")
+    res.redirect("http://localhost:3000/dashboard")
   }
 )

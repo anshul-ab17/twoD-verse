@@ -7,16 +7,47 @@ function getUserSpacesCacheKey(userId: string) {
   return `spaces:user:${userId}`
 }
 
+async function getCachedSpaces(cacheKey: string) {
+  try {
+    return await redis.get(cacheKey)
+  } catch (error) {
+    console.error("Failed to read spaces cache:", error)
+    return null
+  }
+}
+
+async function setCachedSpaces(cacheKey: string, spaces: unknown) {
+  try {
+    await redis.set(cacheKey, JSON.stringify(spaces), {
+      EX: CACHE_TTL,
+    })
+  } catch (error) {
+    console.error("Failed to write spaces cache:", error)
+  }
+}
+
+async function invalidateUserSpacesCache(userId: string) {
+  try {
+    await redis.del(getUserSpacesCacheKey(userId))
+  } catch (error) {
+    console.error("Failed to invalidate spaces cache:", error)
+  }
+}
+
 export async function getSpaces(userId: string) {
   const cacheKey = getUserSpacesCacheKey(userId)
 
-  const cached = await redis.get(cacheKey)
+  const cached = await getCachedSpaces(cacheKey)
 
   if (cached) {
     try {
       return JSON.parse(cached)
     } catch {
-      await redis.del(cacheKey)
+      try {
+        await redis.del(cacheKey)
+      } catch (error) {
+        console.error("Failed to delete invalid spaces cache:", error)
+      }
     }
   }
 
@@ -34,9 +65,7 @@ export async function getSpaces(userId: string) {
     },
   })
 
-  await redis.set(cacheKey, JSON.stringify(spaces), {
-    EX: CACHE_TTL,
-  })
+  await setCachedSpaces(cacheKey, spaces)
 
   return spaces
 }
@@ -66,17 +95,21 @@ export async function createSpace(
   })
 
   // Invalidate only this user's cache
-  await redis.del(getUserSpacesCacheKey(userId))
+  await invalidateUserSpacesCache(userId)
 
   // Publish event for WS instances
-  await publish("spaces", {
-    type: "SPACE_CREATED",
-    payload: {
-      id: space.id,
-      name: space.name,
-      creatorId: userId,
-    },
-  })
+  try {
+    await publish("spaces", {
+      type: "SPACE_CREATED",
+      payload: {
+        id: space.id,
+        name: space.name,
+        creatorId: userId,
+      },
+    })
+  } catch (error) {
+    console.error("Failed to publish SPACE_CREATED event:", error)
+  }
 
   return space
 }
@@ -102,7 +135,7 @@ export async function deleteSpace(
     where: { id: spaceId },
   })
 
-  await redis.del(getUserSpacesCacheKey(userId))
+  await invalidateUserSpacesCache(userId)
 
   return { status: "deleted" as const }
 }

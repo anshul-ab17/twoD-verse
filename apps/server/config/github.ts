@@ -10,7 +10,7 @@ passport.use(
       clientID: process.env.GitHub_CLIENT_ID!,
       clientSecret: process.env.GitHub_CLIENT_SECRET!,
       callbackURL:
-        "http://localhost:3002/api/auth/GitHub/callback",
+        "http://localhost:3001/api/auth/GitHub/callback",
     },
     async (
       _accessToken: string,

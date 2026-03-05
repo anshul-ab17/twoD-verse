@@ -8,6 +8,7 @@ import { PORT } from "./config/env"
 import { verifyToken } from "@repo/auth"
 import { registerWSHandlers } from "./ws"
 import { client } from "@repo/db"
+import { connectRedis } from "@repo/pubsub"
 
 const server = http.createServer(app)
 
@@ -42,6 +43,20 @@ wss.on("connection", (ws, req) => {
   }
 })
 
-server.listen(PORT, () => {
-  console.log(`server's running on http://localhost:${PORT}`)
-})
+async function bootstrap() {
+  try {
+    await connectRedis()
+    console.log("Redis connected")
+  } catch (error) {
+    console.error(
+      "Redis connection failed. Continuing without cache/pubsub.",
+      error
+    )
+  }
+
+  server.listen(PORT, () => {
+    console.log(`server's running on http://localhost:${PORT}`)
+  })
+}
+
+void bootstrap()

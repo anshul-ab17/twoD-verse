@@ -37,7 +37,7 @@ function syncSpacesToLocalStorage(spaces: SpaceSummary[], userId: string, userNa
 
 export default function Dashboard() {
   const router = useRouter()
-  const { user, status, signOut } = useAuthSession()
+  const { user, status } = useAuthSession()
   const [spaces, setSpaces] = useState<SpaceSummary[]>([])
   const [loadingSpaces, setLoadingSpaces] = useState(true)
   const [error, setError] = useState("")
@@ -84,11 +84,6 @@ export default function Dashboard() {
     }
   }
 
-  const handleSignOut = async () => {
-    await signOut()
-    router.replace("/signin")
-  }
-
   if (status !== "authenticated" || !user) {
     return null
   }
@@ -109,12 +104,6 @@ export default function Dashboard() {
               className="px-6 py-3 bg-[#556B2F] hover:bg-[#6B8E23] rounded-xl shadow-lg transition"
             >
               + Create Space
-            </button>
-            <button
-              onClick={handleSignOut}
-              className="px-6 py-3 bg-[#2f2f2f] hover:bg-[#444] rounded-xl shadow-lg transition"
-            >
-              Sign Out
             </button>
           </div>
         </div>

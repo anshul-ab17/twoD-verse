@@ -19,9 +19,8 @@ export async function handleMovement(
   const allowed = await allow(player.userId, "move")
   if (!allowed) return
 
-  // Boundary validation
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return
   if (x < 0 || y < 0) return
-  if (x > player.mapWidth || y > player.mapHeight) return
 
   const dx = x - player.x
   const dy = y - player.y

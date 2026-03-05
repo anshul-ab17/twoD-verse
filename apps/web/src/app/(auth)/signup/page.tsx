@@ -93,6 +93,7 @@ export default function SignUpPage() {
 
             <input
               type="email"
+              autoComplete="email"
               placeholder="Email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
@@ -101,6 +102,7 @@ export default function SignUpPage() {
 
             <input
               type="password"
+              autoComplete="new-password"
               placeholder="Password (8+ chars, uppercase, number, special)"
               value={password}
               onChange={(event) => setPassword(event.target.value)}

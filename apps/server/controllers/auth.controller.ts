@@ -150,6 +150,11 @@ export const meHandler: RequestHandler = async (req, res) => {
       id: true,
       email: true,
       role: true,
+      avatar: {
+        select: {
+          imageUrl: true,
+        },
+      },
       accounts: {
         select: {
           provider: true,

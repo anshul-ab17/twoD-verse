@@ -37,7 +37,9 @@ export const createSpace: RequestHandler = async (req, res) => {
 }
 
 export const getSpaceById: RequestHandler = async (req, res) => {
-  const { spaceId } = req.params
+  const spaceId = Array.isArray(req.params.spaceId)
+    ? req.params.spaceId[0]
+    : req.params.spaceId
   if (!spaceId) {
     return res.status(400).json({ error: "Missing space id" })
   }
@@ -55,7 +57,9 @@ export const deleteSpace: RequestHandler = async (req, res) => {
     return res.status(401).json({ error: "Unauthorized" })
   }
 
-  const { spaceId } = req.params
+  const spaceId = Array.isArray(req.params.spaceId)
+    ? req.params.spaceId[0]
+    : req.params.spaceId
   if (!spaceId) {
     return res.status(400).json({ error: "Missing space id" })
   }
