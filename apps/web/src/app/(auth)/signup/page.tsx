@@ -1,17 +1,54 @@
 "use client"
 
 import Hero from "@/components/home/Hero"
+import { useAuthSession } from "@/components/providers/AuthSessionProvider"
+import { apiFetch, getApiBaseUrl } from "@/lib/api"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { FormEvent, useEffect, useState } from "react"
 
 export default function SignUpPage() {
+  const router = useRouter()
+  const { status, refreshSession } = useAuthSession()
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    if (status !== "authenticated") return
+    router.replace("/dashboard")
+  }, [router, status])
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setLoading(true)
+    setError("")
+
+    try {
+      await apiFetch("/api/auth/signup", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+        skipAuthRetry: true,
+      })
+      await refreshSession()
+      router.replace("/dashboard")
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unable to sign up"
+      setError(message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleOAuth = (provider: "google" | "github") => {
+    window.location.href = `${getApiBaseUrl()}/api/auth/${provider}`
+  }
+
   return (
     <Hero overlay="bg-black/40" blur="backdrop-blur-xl">
-
       <div className="w-full max-w-6xl grid grid-cols-2 gap-16 text-white">
-
-
         <div className="flex flex-col justify-center">
-
           <h1 className="text-5xl font-extrabold mb-6 leading-tight">
             Build Your
             <br />
@@ -26,23 +63,28 @@ export default function SignUpPage() {
           <p className="text-sm text-white/60">
             TwoDverse makes it effortless.
           </p>
-
         </div>
- 
-        <div className="bg-white/10 backdrop-blur-2xl border border-white/20 p-10 rounded-3xl shadow-2xl">
 
+        <div className="bg-white/10 backdrop-blur-2xl border border-white/20 p-10 rounded-3xl shadow-2xl">
           <h2 className="text-2xl font-bold mb-6 text-center">
             Create Account
           </h2>
 
-          <div className="space-y-4">
-
-            <button className="w-full flex items-center justify-center gap-3 bg-white text-black py-3 rounded-lg font-semibold hover:bg-gray-200 transition">
-              🔴 Continue with Google
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <button
+              type="button"
+              onClick={() => handleOAuth("google")}
+              className="w-full flex items-center justify-center gap-3 bg-white text-black py-3 rounded-lg font-semibold hover:bg-gray-200 transition"
+            >
+              Continue with Google
             </button>
 
-            <button className="w-full flex items-center justify-center gap-3 bg-black text-white py-3 rounded-lg border border-white/20 hover:bg-gray-900 transition">
-              🐙 Continue with GitHub
+            <button
+              type="button"
+              onClick={() => handleOAuth("github")}
+              className="w-full flex items-center justify-center gap-3 bg-black text-white py-3 rounded-lg border border-white/20 hover:bg-gray-900 transition"
+            >
+              Continue with GitHub
             </button>
 
             <div className="text-center text-sm text-white/60 my-4">
@@ -52,20 +94,29 @@ export default function SignUpPage() {
             <input
               type="email"
               placeholder="Email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
               className="w-full p-3 rounded-lg bg-black/40 border border-white/20"
             />
 
             <input
               type="password"
-              placeholder="Password"
+              placeholder="Password (8+ chars, uppercase, number, special)"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
               className="w-full p-3 rounded-lg bg-black/40 border border-white/20"
             />
 
-            <button className="w-full bg-[#E59E2D] hover:bg-[#cc8c26] text-white p-3 rounded-lg font-semibold transition">
-              Sign Up
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-[#E59E2D] hover:bg-[#cc8c26] disabled:opacity-60 text-white p-3 rounded-lg font-semibold transition"
+            >
+              {loading ? "Creating account..." : "Sign Up"}
             </button>
 
-          </div>
+            {error && <p className="text-sm text-red-300">{error}</p>}
+          </form>
 
           <div className="mt-6 text-center text-sm text-white/70">
             Already have an account?{" "}
@@ -73,11 +124,8 @@ export default function SignUpPage() {
               Sign in
             </Link>
           </div>
-
         </div>
-
       </div>
-
     </Hero>
   )
 }
