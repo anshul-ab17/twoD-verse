@@ -2,6 +2,7 @@ import {
   Bell,
   Map,
   Search,
+  Music2,
   ChevronRight,
   ChevronLeft,
 } from "lucide-react";
@@ -21,10 +22,10 @@ export default function SidebarRail({ isOpen, toggle, onIconAction }: Props) {
     unreadNotificationCount,
   } = useSpaceSidebar()
 
-  const iconClass = (pane: "chat" | "notifications" | "map" | "search") =>
+  const iconClass = (pane: "chat" | "notifications" | "map" | "search" | "spotify") =>
     `relative cursor-pointer rounded-lg p-1 transition ${activePane === pane ? "bg-[#3b2a1a] text-yellow-200" : "text-yellow-300 hover:text-yellow-400"}`
 
-  const handlePaneClick = (pane: "chat" | "notifications" | "map" | "search") => {
+  const handlePaneClick = (pane: "chat" | "notifications" | "map" | "search" | "spotify") => {
     activatePane(pane)
     onIconAction?.()
   }
@@ -80,6 +81,14 @@ export default function SidebarRail({ isOpen, toggle, onIconAction }: Props) {
           onClick={() => handlePaneClick("search")}
         >
           <Search />
+        </button>
+
+        <button
+          title="Spotify"
+          className={iconClass("spotify")}
+          onClick={() => handlePaneClick("spotify")}
+        >
+          <Music2 />
         </button>
       </div>
 

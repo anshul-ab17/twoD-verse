@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation"
 import { useSpaceSidebar } from "@/components/sidebar/SpaceSidebarContext"
 import { useAuthSession } from "@/components/providers/AuthSessionProvider"
 import { getWebSocketUrl } from "@/lib/api"
-import { Camera, CameraOff, MapPinned, MessageCircle, Mic, MicOff, Send, UserRound } from "lucide-react"
+import { Camera, CameraOff, MapPinned, MessageCircle, Mic, MicOff, Music2, Send, UserRound } from "lucide-react"
 
 type PlayerStateEvent = {
   x: number
@@ -123,6 +123,7 @@ export default function SpacePage() {
   const [localVideoPreview, setLocalVideoPreview] = useState<MediaStream | null>(null)
   const [remoteVideoStreams, setRemoteVideoStreams] = useState<Array<{ userId: string; stream: MediaStream }>>([])
   const showChatPanel = activePane === "chat"
+  const showSpotifyPane = activePane === "spotify"
 
   const sendSocketMessage = useCallback((payload: unknown) => {
     const ws = wsRef.current
@@ -139,6 +140,7 @@ export default function SpacePage() {
       peer.close()
       peersRef.current.delete(userId)
     }
+    videoSendersRef.current.delete(userId)
 
     const audio = remoteAudioRef.current.get(userId)
     if (audio) {
@@ -146,6 +148,8 @@ export default function SpacePage() {
       audio.srcObject = null
       remoteAudioRef.current.delete(userId)
     }
+
+    setRemoteVideoStreams((prev) => prev.filter((entry) => entry.userId !== userId))
 
     setConnectedVoicePeers(peersRef.current.size)
   }, [])
@@ -166,6 +170,56 @@ export default function SpacePage() {
     } catch {
       return null
     }
+  }, [])
+
+  const ensureCameraTrack = useCallback(async () => {
+    const existing = localCameraTrackRef.current
+    if (existing && existing.readyState === "live") {
+      return existing
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: false,
+      })
+      const [track] = stream.getVideoTracks()
+      if (!track) {
+        stream.getTracks().forEach((item) => item.stop())
+        return null
+      }
+
+      localCameraStreamRef.current = stream
+      localCameraTrackRef.current = track
+      setLocalVideoPreview(stream)
+      return track
+    } catch {
+      return null
+    }
+  }, [])
+
+  const stopCameraTrack = useCallback(() => {
+    localCameraTrackRef.current?.stop()
+    localCameraTrackRef.current = null
+
+    if (localCameraStreamRef.current) {
+      localCameraStreamRef.current.getTracks().forEach((track) => track.stop())
+      localCameraStreamRef.current = null
+    }
+
+    setLocalVideoPreview(null)
+  }, [])
+
+  const replaceVideoTrackForPeers = useCallback(async (track: MediaStreamTrack | null) => {
+    await Promise.all(
+      Array.from(videoSendersRef.current.values()).map(async (sender) => {
+        try {
+          await sender.replaceTrack(track)
+        } catch {
+          // Ignore per-peer track replacement failures.
+        }
+      })
+    )
   }, [])
 
   useEffect(() => {
@@ -193,6 +247,16 @@ export default function SpacePage() {
     peersRef.current.set(targetUserId, peer)
     setConnectedVoicePeers(peersRef.current.size)
 
+    const videoSender = peer.addTransceiver("video", { direction: "sendrecv" }).sender
+    videoSendersRef.current.set(targetUserId, videoSender)
+    if (localCameraTrackRef.current) {
+      try {
+        await videoSender.replaceTrack(localCameraTrackRef.current)
+      } catch {
+        // Keep voice connection even if video attach fails.
+      }
+    }
+
     const stream = await ensureLocalStream()
     if (stream) {
       stream.getTracks().forEach((track) => {
@@ -213,6 +277,14 @@ export default function SpacePage() {
     peer.ontrack = (event) => {
       const [remoteStream] = event.streams
       if (!remoteStream) return
+
+      if (event.track.kind === "video") {
+        setRemoteVideoStreams((prev) => {
+          const next = prev.filter((entry) => entry.userId !== targetUserId)
+          next.push({ userId: targetUserId, stream: remoteStream })
+          return next
+        })
+      }
 
       let audio = remoteAudioRef.current.get(targetUserId)
       if (!audio) {
@@ -326,6 +398,9 @@ export default function SpacePage() {
             arcade: {
               debug: false,
             },
+          },
+          audio: {
+            noAudio: true,
           },
           scene: [MainScene],
           scale: {
@@ -539,15 +614,23 @@ export default function SpacePage() {
       }
     }
 
-    ws.onerror = () => {
+    ws.onerror = (event) => {
       setRealtimeStatus("realtime: error")
+      console.error("Realtime websocket error", {
+        event,
+        url: ws.url,
+        readyState: ws.readyState,
+      })
     }
 
-    ws.onclose = () => {
-      setRealtimeStatus("realtime: disconnected")
+    ws.onclose = (event) => {
+      const closeSuffix = event.code ? ` (${event.code}${event.reason ? `: ${event.reason}` : ""})` : ""
+      setRealtimeStatus(`realtime: disconnected${closeSuffix}`)
       wsRef.current = null
       replacePresence([], { includeCurrentUser: false })
       dispatchRemotePlayersSync([])
+      setRemoteVideoStreams([])
+      console.warn("Realtime websocket closed", { code: event.code, reason: event.reason })
 
       Array.from(peers.keys()).forEach((userId) => {
         destroyPeer(userId)
@@ -579,11 +662,16 @@ export default function SpacePage() {
         localStreamRef.current.getTracks().forEach((track) => track.stop())
         localStreamRef.current = null
       }
+
+      setCameraEnabled(false)
+      setRemoteVideoStreams([])
+      stopCameraTrack()
     }
   }, [
     destroyPeer,
     handleProximityUpdate,
     handleWebRTCSignal,
+    stopCameraTrack,
     sendSocketMessage,
     currentUser?.id,
     spaceId,
@@ -609,13 +697,31 @@ export default function SpacePage() {
     })
   }, [ensureLocalStream, micEnabled])
 
-  const handleToggleCamera = useCallback(() => {
-    setCameraEnabled((prev) => !prev)
-  }, [])
+  const handleToggleCamera = useCallback(async () => {
+    if (cameraEnabled) {
+      setCameraEnabled(false)
+      await replaceVideoTrackForPeers(null)
+      stopCameraTrack()
+      return
+    }
+
+    const cameraTrack = await ensureCameraTrack()
+    if (!cameraTrack) {
+      setCameraEnabled(false)
+      return
+    }
+
+    setCameraEnabled(true)
+    await replaceVideoTrackForPeers(cameraTrack)
+  }, [cameraEnabled, ensureCameraTrack, replaceVideoTrackForPeers, stopCameraTrack])
 
   const handleToggleChat = useCallback(() => {
     activatePane(showChatPanel ? "map" : "chat")
   }, [activatePane, showChatPanel])
+
+  const handleToggleSpotify = useCallback(() => {
+    activatePane(showSpotifyPane ? "map" : "spotify")
+  }, [activatePane, showSpotifyPane])
 
   const handleOpenProfile = useCallback(() => {
     router.push("/dashboard/profile")
@@ -634,6 +740,31 @@ export default function SpacePage() {
           {connectedVoicePeers > 0 && (
             <div className="absolute left-3 top-[4.25rem] z-10 rounded bg-black/70 px-2 py-1 text-xs text-yellow-200">
               Nearby voice: {connectedVoicePeers}
+            </div>
+          )}
+
+          {(localVideoPreview || remoteVideoStreams.length > 0) && (
+            <div className="absolute right-3 top-3 z-20 flex max-w-[40vw] flex-wrap justify-end gap-2">
+              {localVideoPreview && (
+                <div className="overflow-hidden rounded-lg border border-[#6b4b2a] bg-black/80">
+                  <StreamVideo
+                    stream={localVideoPreview}
+                    muted
+                    className="h-20 w-32 object-cover"
+                  />
+                  <p className="px-2 py-1 text-[10px] text-yellow-100/80">You</p>
+                </div>
+              )}
+
+              {remoteVideoStreams.map((entry) => (
+                <div key={entry.userId} className="overflow-hidden rounded-lg border border-[#6b4b2a] bg-black/80">
+                  <StreamVideo
+                    stream={entry.stream}
+                    className="h-20 w-32 object-cover"
+                  />
+                  <p className="px-2 py-1 text-[10px] text-yellow-100/80">{entry.userId.slice(0, 8)}</p>
+                </div>
+              ))}
             </div>
           )}
 
@@ -656,7 +787,7 @@ export default function SpacePage() {
 
               <button
                 type="button"
-                onClick={handleToggleCamera}
+                onClick={() => void handleToggleCamera()}
                 aria-pressed={cameraEnabled}
                 title={cameraEnabled ? "Turn camera off" : "Turn camera on"}
                 className={`rounded-full border p-2 transition-colors ${cameraEnabled ? "border-[#4d6f29] bg-[#243718] text-lime-100 hover:bg-[#2f471f]" : "border-[#6b4b2a] bg-[#2a1b11] text-yellow-100 hover:bg-[#3a2518]"}`}
@@ -672,6 +803,16 @@ export default function SpacePage() {
                 className={`rounded-full border p-2 transition-colors ${showChatPanel ? "border-[#4d6f29] bg-[#314a20] text-lime-100 hover:bg-[#3c5d28]" : "border-[#6b4b2a] bg-[#2a1b11] text-yellow-100 hover:bg-[#3a2518]"}`}
               >
                 <MessageCircle size={16} />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleToggleSpotify}
+                aria-pressed={showSpotifyPane}
+                title={showSpotifyPane ? "Close Spotify" : "Open Spotify"}
+                className={`rounded-full border p-2 transition-colors ${showSpotifyPane ? "border-[#2f8f4e] bg-[#1f4a2e] text-green-100 hover:bg-[#266139]" : "border-[#6b4b2a] bg-[#2a1b11] text-yellow-100 hover:bg-[#3a2518]"}`}
+              >
+                <Music2 size={16} />
               </button>
 
               <button

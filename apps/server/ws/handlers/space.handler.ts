@@ -31,6 +31,7 @@ export async function handleSpaceJoin(
     spaceId,
     x: 100,
     y: 100,
+    hasSyncedInitialPosition: false,
     roomId: null,
     mapWidth: space.width,
     mapHeight: space.height,

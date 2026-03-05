@@ -31,11 +31,13 @@ export async function handleMovement(
   const dx = x - player.x
   const dy = y - player.y
   const distance = Math.sqrt(dx * dx + dy * dy)
+  const initialSync = !player.hasSyncedInitialPosition
 
-  if (distance > MAX_SPEED) return
+  if (!initialSync && distance > MAX_SPEED) return
 
   player.x = x
   player.y = y
+  player.hasSyncedInitialPosition = true
   player.roomId = Number.isFinite(roomId) ? Math.trunc(roomId as number) : null
 
   try {

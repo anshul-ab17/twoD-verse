@@ -2,6 +2,7 @@
 
 import Hero from "@/components/home/Hero"
 import { useAuthSession } from "@/components/providers/AuthSessionProvider"
+import { GitHubLogo, GoogleLogo } from "@/components/auth/SocialLogos"
 import { apiFetch, getApiBaseUrl } from "@/lib/api"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -76,6 +77,7 @@ export default function SignUpPage() {
               onClick={() => handleOAuth("google")}
               className="w-full flex items-center justify-center gap-3 bg-white text-black py-3 rounded-lg font-semibold hover:bg-gray-200 transition"
             >
+              <GoogleLogo className="h-5 w-5" />
               Continue with Google
             </button>
 
@@ -84,6 +86,7 @@ export default function SignUpPage() {
               onClick={() => handleOAuth("github")}
               className="w-full flex items-center justify-center gap-3 bg-black text-white py-3 rounded-lg border border-white/20 hover:bg-gray-900 transition"
             >
+              <GitHubLogo className="h-5 w-5" />
               Continue with GitHub
             </button>
 

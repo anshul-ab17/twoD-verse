@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useParams } from "next/navigation"
 import { getGeneratedAvatarDataUrl } from "./avatar"
 
-type PaneMode = "map" | "chat" | "search" | "notifications"
+type PaneMode = "map" | "chat" | "search" | "notifications" | "spotify"
 
 export type SpaceUser = {
   id: string

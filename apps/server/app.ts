@@ -4,6 +4,7 @@ import passport from "./config/passport"
 import { authRouter } from "./routes/auth.routes"
 import { spaceRouter } from "./routes/space.routes"
 import { adminRouter } from "./routes/admin.routes"
+import { spotifyRouter } from "./routes/spotify.routes"
 import helmet from "helmet"
 import cors from "cors"
 import { errorMiddleware } from "./middleware/error.middleware"
@@ -27,6 +28,7 @@ app.use(passport.initialize())
 app.use("/api/auth", authRouter)
 app.use("/api/spaces", spaceRouter)
 app.use("/api/admin", adminRouter)
+app.use("/api/spotify", spotifyRouter)
 
 // health 
 app.get("/health", (_req, res) => {

@@ -849,16 +849,20 @@ export default class MainScene extends Phaser.Scene {
   }
 
   private createRemoteAvatar(player: RealtimePlayer) {
-    const sprite = this.add.sprite(player.x, player.y, CHARACTER_ATLAS_KEY, "Adam_idle_anim_1.png")
+    const safePosition =
+      this.findNearestWalkablePosition(player.x, player.y, 3) ??
+      { x: player.x, y: player.y }
+
+    const sprite = this.add.sprite(safePosition.x, safePosition.y, CHARACTER_ATLAS_KEY, "Adam_idle_anim_1.png")
     sprite.setOrigin(0.5, 1)
-    sprite.setDepth(player.y + 95)
+    sprite.setDepth(safePosition.y + 95)
     sprite.setTint(0xb8d6ff)
     sprite.play(PLAYER_IDLE_ANIM)
 
     const displayName =
       player.userId.length > 11 ? `${player.userId.slice(0, 8)}...` : player.userId
     const label = this.add
-      .text(player.x, player.y - 44, displayName, {
+      .text(safePosition.x, safePosition.y - 44, displayName, {
         fontFamily: "monospace",
         fontSize: "11px",
         color: "#e2e8f0",
@@ -872,20 +876,28 @@ export default class MainScene extends Phaser.Scene {
       userId: player.userId,
       sprite,
       label,
-      targetX: player.x,
-      targetY: player.y,
+      targetX: safePosition.x,
+      targetY: safePosition.y,
     })
   }
 
   private upsertRemotePlayer(player: RealtimePlayer) {
+    const safePosition =
+      this.findNearestWalkablePosition(player.x, player.y, 3) ??
+      { x: player.x, y: player.y }
+
     const existing = this.remotePlayers.get(player.userId)
     if (!existing) {
-      this.createRemoteAvatar(player)
+      this.createRemoteAvatar({
+        ...player,
+        x: safePosition.x,
+        y: safePosition.y,
+      })
       return
     }
 
-    existing.targetX = player.x
-    existing.targetY = player.y
+    existing.targetX = safePosition.x
+    existing.targetY = safePosition.y
   }
 
   private syncRemotePlayers(players: RealtimePlayer[]) {
@@ -926,9 +938,12 @@ export default class MainScene extends Phaser.Scene {
       const lerp = isMoving ? 0.35 : 1
       const nextX = Phaser.Math.Linear(remote.sprite.x, remote.targetX, lerp)
       const nextY = Phaser.Math.Linear(remote.sprite.y, remote.targetY, lerp)
+      const safeNextPosition =
+        this.findNearestWalkablePosition(nextX, nextY, 2) ??
+        { x: nextX, y: nextY }
 
-      remote.sprite.setPosition(nextX, nextY)
-      remote.sprite.setDepth(nextY + 95)
+      remote.sprite.setPosition(safeNextPosition.x, safeNextPosition.y)
+      remote.sprite.setDepth(safeNextPosition.y + 95)
 
       if (isMoving) {
         if (dx < -0.1) remote.sprite.setFlipX(true)
@@ -940,7 +955,10 @@ export default class MainScene extends Phaser.Scene {
         remote.sprite.play(PLAYER_IDLE_ANIM, true)
       }
 
-      remote.label.setPosition(nextX, nextY - remote.sprite.displayHeight - 6)
+      remote.label.setPosition(
+        safeNextPosition.x,
+        safeNextPosition.y - remote.sprite.displayHeight - 6
+      )
     }
   }
 

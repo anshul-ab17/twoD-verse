@@ -3,6 +3,11 @@ import { publishEvent } from "../redis.adapter"
 
 class SpaceManager {
   async broadcast(spaceId: string, payload: any) {
+    if (process.env.NODE_ENV !== "production") {
+      this.localBroadcast(spaceId, payload)
+      return
+    }
+
     try {
       // Publish to Redis so all instances receive it.
       await publishEvent(spaceId, payload)

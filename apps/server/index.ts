@@ -19,29 +19,64 @@ const wss = new WebSocketServer({
 })
 
 wss.on("connection", (ws, req) => {
-  try {
-    const rawCookie = req.headers.cookie
+  void (async () => {
+    try {
+      const rawCookie = req.headers.cookie
+      if (!rawCookie) {
+        ws.close(4401, "Missing cookies")
+        return
+      }
 
-    if (!rawCookie) {
-      ws.close()
-      return
+      const parsed = cookie.parse(rawCookie)
+      const accessToken = parsed.accessToken
+      const refreshToken = parsed.refreshToken
+
+      let user: { userId: string; role: string } | null = null
+
+      if (accessToken) {
+        try {
+          const decoded = verifyToken(accessToken)
+          if (decoded?.userId && decoded?.role) {
+            user = {
+              userId: String(decoded.userId),
+              role: String(decoded.role),
+            }
+          }
+        } catch {
+          // Fallback to refresh token below.
+        }
+      }
+
+      if (!user && refreshToken) {
+        try {
+          const decoded = verifyToken(refreshToken)
+          if (decoded?.userId) {
+            const dbUser = await client.user.findUnique({
+              where: { id: String(decoded.userId) },
+              select: { id: true, role: true },
+            })
+            if (dbUser) {
+              user = {
+                userId: dbUser.id,
+                role: dbUser.role,
+              }
+            }
+          }
+        } catch {
+          // Invalid refresh token.
+        }
+      }
+
+      if (!user) {
+        ws.close(4401, "Unauthorized")
+        return
+      }
+
+      registerWSHandlers(ws, client, user)
+    } catch {
+      ws.close(1011, "Internal WS auth error")
     }
-
-    const parsed = cookie.parse(rawCookie)
-    const token = parsed.accessToken
-
-    if (!token) {
-      ws.close()
-      return
-    }
-
-    const user = verifyToken(token)
-
-    registerWSHandlers(ws, client, user)
-
-  } catch (err) {
-    ws.close()
-  }
+  })()
 })
 
 async function bootstrap() {
