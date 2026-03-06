@@ -44,7 +44,6 @@ export default function SignInPage() {
       setLoading(false)
     }
   }
-
   const handleOAuth = (provider: "google" | "github") => {
     window.location.href = `${getApiBaseUrl()}/api/auth/${provider}`
   }
