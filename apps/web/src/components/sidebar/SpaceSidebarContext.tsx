@@ -258,7 +258,7 @@ export function SpaceSidebarProvider({ children }: { children: React.ReactNode }
   const lastChatUserIdRef = useRef<string | null>(null)
   const previousMemberIdsRef = useRef<Set<string>>(new Set())
 
-  // ── Friends (localStorage) ──────────────────────────────────────────────────
+  //  Friends (localStorage)   
   const loadFriends = useCallback(() => {
     if (typeof window === "undefined") return
     try {
@@ -293,7 +293,7 @@ export function SpaceSidebarProvider({ children }: { children: React.ReactNode }
     (userId: string) => friends.some((f) => f.id === userId),
     [friends]
   )
-  // ────────────────────────────────────────────────────────────────────────────
+  //  
 
   const refreshSpaceData = useCallback(() => {
     if (!spaceId) return

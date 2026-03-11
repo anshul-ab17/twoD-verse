@@ -13,7 +13,7 @@ import {
 import CharacterPicker from "@/components/game/CharacterPicker"
 import { useTheme, THEMES, type ThemeKey } from "@/hooks/useTheme"
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+//  Types 
 
 type PlayerStateEvent = { x: number; y: number; roomId: number }
 
@@ -44,7 +44,7 @@ type IncomingRealtimeMessage =
   | PlayerMovedMessage
   | PlayerLeftMessage
 
-// ─── StreamVideo ─────────────────────────────────────────────────────────────
+//  StreamVideo 
 
 function StreamVideo({ stream, muted = false, className }: { stream: MediaStream; muted?: boolean; className?: string }) {
   const videoRef = useRef<HTMLVideoElement | null>(null)
@@ -54,7 +54,7 @@ function StreamVideo({ stream, muted = false, className }: { stream: MediaStream
   return <video ref={videoRef} autoPlay playsInline muted={muted} className={className} />
 }
 
-// ─── ThemeMenu ───────────────────────────────────────────────────────────────
+//  ThemeMenu 
 
 function ThemeMenu({
   themeKey,
@@ -118,7 +118,7 @@ function ThemeMenu({
   )
 }
 
-// ─── SpacePage ───────────────────────────────────────────────────────────────
+//  SpacePage 
 
 export default function SpacePage() {
   const params = useParams<{ spaceId?: string }>()
@@ -137,7 +137,7 @@ export default function SpacePage() {
   const { status } = useAuthSession()
   const { themeKey, theme, setTheme } = useTheme()
 
-  // ── Character selection ──────────────────────────────────────────────────
+  //  Character selection   
   const [selectedCharacter, setSelectedCharacter] = useState<string | null>(() => {
     if (typeof window === "undefined") return null
     return localStorage.getItem("twodverse:character")
@@ -148,7 +148,7 @@ export default function SpacePage() {
     setSelectedCharacter(key)
   }, [])
 
-  // ── Refs ─────────────────────────────────────────────────────────────────
+  //  Refs 
   const containerRef = useRef<HTMLDivElement | null>(null)
   const gameRef = useRef<Phaser.Game | null>(null)
   const hasInitGameRef = useRef(false)
@@ -166,7 +166,7 @@ export default function SpacePage() {
   const latestPlayerStateRef = useRef<PlayerStateEvent | null>(null)
   const micEnabledRef = useRef(true)
 
-  // ── UI state ─────────────────────────────────────────────────────────────
+  //  UI state 
   const [realtimeStatus, setRealtimeStatus] = useState("disconnected")
   const [draft, setDraft] = useState("")
   const [connectedVoicePeers, setConnectedVoicePeers] = useState(0)
@@ -178,14 +178,14 @@ export default function SpacePage() {
   const showChatPanel = activePane === "chat"
   const showSpotifyPane = activePane === "spotify"
 
-  // ── WebSocket ─────────────────────────────────────────────────────────────
+  //  WebSocket 
   const sendSocketMessage = useCallback((payload: unknown) => {
     const ws = wsRef.current
     if (!ws || ws.readyState !== WebSocket.OPEN) return
     ws.send(JSON.stringify(payload))
   }, [])
 
-  // ── WebRTC ────────────────────────────────────────────────────────────────
+  //  WebRTC 
   const destroyPeer = useCallback((userId: string) => {
     const peer = peersRef.current.get(userId)
     if (peer) {
@@ -359,7 +359,7 @@ export default function SpacePage() {
     await peer.addIceCandidate(new RTCIceCandidate(message.data as RTCIceCandidateInit))
   }, [createPeer, sendSocketMessage])
 
-  // ── Phaser init (once, after character chosen) ────────────────────────────
+  //  Phaser init (once, after character chosen)  
   useEffect(() => {
     if (!selectedCharacter || hasInitGameRef.current) return
 
@@ -370,7 +370,7 @@ export default function SpacePage() {
 
       try {
         const Phaser = (await import("phaser")).default
-        const MainScene = (await import("@/phaser/MainScene")).default
+        const MainScene = (await import("@/phaser/main/MainScene")).default
 
         if (!isMounted) return
 
@@ -422,7 +422,7 @@ export default function SpacePage() {
     return () => window.removeEventListener("twodverse:scene-ready", handleSceneReady)
   }, [])
 
-  // ── WebSocket connection ──────────────────────────────────────────────────
+  //  WebSocket connection   
   useEffect(() => {
     if (status !== "authenticated" || !spaceId) return
 
@@ -606,13 +606,13 @@ export default function SpacePage() {
     activatePane(showSpotifyPane ? "map" : "spotify")
   }, [activatePane, showSpotifyPane])
 
-  // ── Status colour ─────────────────────────────────────────────────────────
+  //  Status colour 
   const statusDotColor =
     realtimeStatus === "connected" ? "#4ade80"
     : realtimeStatus === "connecting" ? "#facc15"
     : "#f87171"
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  //  Render 
   if (!selectedCharacter) {
     return <CharacterPicker onSelect={handleSelectCharacter} />
   }
@@ -623,7 +623,7 @@ export default function SpacePage() {
       style={{ borderColor: theme.containerBorder, background: theme.containerBg }}
     >
       <div className="flex h-full w-full">
-        {/* ── Game area ── */}
+        {/*  Game area  */}
         <div className={`${showChatPanel ? "w-full lg:w-[calc(100%-21rem)]" : "w-full"} relative h-full transition-all duration-200`}>
 
           {/* Status indicator */}
@@ -754,7 +754,7 @@ export default function SpacePage() {
           </div>
         </div>
 
-        {/* ── Chat panel ── */}
+        {/*  Chat panel  */}
         {showChatPanel && (
           <aside
             className="absolute inset-y-0 right-0 z-20 w-full max-w-84 border-l lg:relative lg:max-w-none lg:w-84"

@@ -1,141 +1,20 @@
 import Phaser from "phaser"
+import {
+  MAP_KEY, MAP_URL,
+  CHAR_KEYS, CHAR_CONFIGS,
+  THEME_BG, TILESETS,
+  COLLIDER_LAYER_NAMES, INTERACTABLE_LAYER_NAMES,
+} from "./constants"
+import { idleAnimKey, runAnimKey, charForUserId } from "./charUtils"
+import { markBlockedTiles, buildRooms } from "./roomUtils"
+import type {
+  CharKey, ColliderRect, InteractableKind,
+  Interactable, RealtimePlayer, RemoteAvatar,
+} from "./types"
 
-const MAP_KEY = "workspace-map"
-const MAP_URL = "/asset/map/map.json"
-
-// ─── Character configs ───────────────────────────────────────────────────────
-
-const CHAR_KEYS = ["adam", "ash", "lucy", "nancy"] as const
-type CharKey = (typeof CHAR_KEYS)[number]
-
-const CHAR_CONFIGS: Record<
-  CharKey,
-  {
-    imageUrl: string
-    atlasUrl: string
-    idlePrefix: string
-    runPrefix: string
-    sitFrame: string
-  }
-> = {
-  adam: {
-    imageUrl: "/asset/character/adam.png",
-    atlasUrl: "/asset/character/adam.json",
-    idlePrefix: "Adam_idle_anim_",
-    runPrefix: "Adam_run_",
-    sitFrame: "Adam_sit_down.png",
-  },
-  ash: {
-    imageUrl: "/asset/character/ash.png",
-    atlasUrl: "/asset/character/ash.json",
-    idlePrefix: "Ash_idle_anim_",
-    runPrefix: "Ash_run_",
-    sitFrame: "Ash_sit_down.png",
-  },
-  lucy: {
-    imageUrl: "/asset/character/lucy.png",
-    atlasUrl: "/asset/character/lucy.json",
-    idlePrefix: "Lucy_idle_anim_",
-    runPrefix: "Lucy_run_",
-    sitFrame: "Lucy_sit_down.png",
-  },
-  nancy: {
-    imageUrl: "/asset/character/nancy.png",
-    atlasUrl: "/asset/character/nancy.json",
-    idlePrefix: "Nancy_idle_anim_",
-    runPrefix: "Nancy_run_",
-    sitFrame: "Nancy_sit_down.png",
-  },
-}
-
-function idleAnimKey(char: CharKey) {
-  return `${char}-idle`
-}
-
-function runAnimKey(char: CharKey) {
-  return `${char}-run`
-}
-
-/** Deterministically assigns a character to a remote player based on their userId. */
-function charForUserId(userId: string): CharKey {
-  let hash = 0
-  for (let i = 0; i < userId.length; i++) {
-    hash = ((hash << 5) - hash + userId.charCodeAt(i)) | 0
-  }
-  return CHAR_KEYS[Math.abs(hash) % CHAR_KEYS.length]
-}
-
-// ─── Theme bg colours ────────────────────────────────────────────────────────
-
-const THEME_BG: Record<string, string> = {
-  woody: "#1e1e1e",
-  neon: "#0a0015",
-  forest: "#0a1a0a",
-  corporate: "#0f1520",
-  midnight: "#08080f",
-}
-
-// ─── Tilesets ────────────────────────────────────────────────────────────────
-
-const TILESETS = [
-  { mapName: "FloorAndGround", key: "FloorAndGround", url: "/asset/map/FloorAndGround.png", tileWidth: 32, tileHeight: 32 },
-  { mapName: "chair", key: "chair", url: "/asset/items/chair.png", tileWidth: 32, tileHeight: 64 },
-  { mapName: "Modern_Office_Black_Shadow", key: "Modern_Office_Black_Shadow", url: "/asset/tileset/Modern_Office_Black_Shadow.png", tileWidth: 32, tileHeight: 32 },
-  { mapName: "Generic", key: "Generic", url: "/asset/tileset/Generic.png", tileWidth: 32, tileHeight: 32 },
-  { mapName: "computer", key: "computer", url: "/asset/items/computer.png", tileWidth: 96, tileHeight: 64 },
-  { mapName: "whiteboard", key: "whiteboard", url: "/asset/items/whiteboard.png", tileWidth: 64, tileHeight: 64 },
-  { mapName: "Basement", key: "Basement", url: "/asset/tileset/Basement.png", tileWidth: 32, tileHeight: 32 },
-  { mapName: "vendingmachine", key: "vendingmachine", url: "/asset/items/vendingmachine.png", tileWidth: 48, tileHeight: 72 },
-] as const
-
-const COLLIDER_LAYER_NAMES = [
-  "Wall",
-  "ObjectsOnCollide",
-  "GenericObjectsOnCollide",
-  "Chair",
-  "Computer",
-  "Whiteboard",
-  "Basement",
-  "VendingMachine",
-] as const
-
-const INTERACTABLE_LAYER_NAMES = ["Chair", "Computer", "Whiteboard", "VendingMachine"] as const
-
-// ─── Types ───────────────────────────────────────────────────────────────────
-
-type ColliderRect = { x: number; y: number; width: number; height: number }
-type InteractableKind = (typeof INTERACTABLE_LAYER_NAMES)[number]
-
-type Interactable = {
-  id: string
-  kind: InteractableKind
-  x: number
-  y: number
-  radius: number
-  canSit: boolean
-  seatX: number
-  seatY: number
-}
-
-type RealtimePlayer = {
-  userId: string
-  x: number
-  y: number
-  roomId: number | null
-}
-
-type RemoteAvatar = {
-  userId: string
-  sprite: Phaser.GameObjects.Sprite
-  label: Phaser.GameObjects.Text
-  targetX: number
-  targetY: number
-}
-
-// ─── Scene ───────────────────────────────────────────────────────────────────
+//  Scene 
 
 export default class MainScene extends Phaser.Scene {
-  // Character config for local player
   private charKey: CharKey = "adam"
 
   player?: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody
@@ -187,8 +66,6 @@ export default class MainScene extends Phaser.Scene {
 
   constructor() {
     super("MainScene")
-
-    // Read selected character before Phaser initialises
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("twodverse:character")
       if (saved && saved in CHAR_CONFIGS) {
@@ -196,6 +73,8 @@ export default class MainScene extends Phaser.Scene {
       }
     }
   }
+
+  //  Preload 
 
   preload() {
     this.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, (file: Phaser.Loader.File) => {
@@ -215,7 +94,6 @@ export default class MainScene extends Phaser.Scene {
       }
     }
 
-    // Load all character atlases (needed for varied remote player appearances)
     for (const key of CHAR_KEYS) {
       if (!this.textures.exists(key)) {
         const cfg = CHAR_CONFIGS[key]
@@ -223,6 +101,8 @@ export default class MainScene extends Phaser.Scene {
       }
     }
   }
+
+  //  Animations 
 
   private ensurePlayerAnimations() {
     for (const key of CHAR_KEYS) {
@@ -233,12 +113,7 @@ export default class MainScene extends Phaser.Scene {
       if (!this.anims.exists(idle)) {
         this.anims.create({
           key: idle,
-          frames: this.anims.generateFrameNames(key, {
-            prefix: cfg.idlePrefix,
-            start: 1,
-            end: 24,
-            suffix: ".png",
-          }),
+          frames: this.anims.generateFrameNames(key, { prefix: cfg.idlePrefix, start: 1, end: 24, suffix: ".png" }),
           frameRate: 10,
           repeat: -1,
         })
@@ -247,12 +122,7 @@ export default class MainScene extends Phaser.Scene {
       if (!this.anims.exists(run)) {
         this.anims.create({
           key: run,
-          frames: this.anims.generateFrameNames(key, {
-            prefix: cfg.runPrefix,
-            start: 1,
-            end: 24,
-            suffix: ".png",
-          }),
+          frames: this.anims.generateFrameNames(key, { prefix: cfg.runPrefix, start: 1, end: 24, suffix: ".png" }),
           frameRate: 18,
           repeat: -1,
         })
@@ -260,13 +130,15 @@ export default class MainScene extends Phaser.Scene {
     }
   }
 
+  //  Map / object helpers   
+
   private getObjectTop(object: Phaser.Types.Tilemaps.TiledObject): number {
     const y = object.y ?? 0
     const height = object.height ?? 0
     return typeof object.gid === "number" ? y - height : y
   }
 
-  private getColliderRects(map: Phaser.Tilemaps.Tilemap) {
+  private getColliderRects(map: Phaser.Tilemaps.Tilemap): ColliderRect[] {
     const rects: ColliderRect[] = []
 
     for (const layerName of COLLIDER_LAYER_NAMES) {
@@ -275,11 +147,9 @@ export default class MainScene extends Phaser.Scene {
 
       for (const object of layer.objects) {
         if (object.visible === false) continue
-
         const width = object.width ?? map.tileWidth
         const height = object.height ?? map.tileHeight
         if (!width || !height) continue
-
         const x = object.x ?? 0
         const y = this.getObjectTop(object)
         rects.push({ x, y, width, height })
@@ -298,9 +168,7 @@ export default class MainScene extends Phaser.Scene {
     let skipped = 0
 
     for (const [layerIndex, objectLayer] of map.objects.entries()) {
-      const layerObjects = [...objectLayer.objects].sort((a, b) => {
-        return this.getObjectTop(a) - this.getObjectTop(b)
-      })
+      const layerObjects = [...objectLayer.objects].sort((a, b) => this.getObjectTop(a) - this.getObjectTop(b))
 
       for (const object of layerObjects) {
         if (object.visible === false) continue
@@ -351,20 +219,6 @@ export default class MainScene extends Phaser.Scene {
     this.colliders = staticGroup
   }
 
-  private getInteractableLabel(kind: InteractableKind) {
-    if (kind === "Chair") return "Chair"
-    if (kind === "Computer") return "Desk"
-    if (kind === "Whiteboard") return "Whiteboard"
-    return "Vending Machine"
-  }
-
-  private getInteractableVerb(kind: InteractableKind) {
-    if (kind === "Chair") return "Sit"
-    if (kind === "Computer") return "Sit At"
-    if (kind === "Whiteboard") return "Read"
-    return "Buy"
-  }
-
   private computePlayableBounds(map: Phaser.Tilemaps.Tilemap) {
     let minTileX = map.width - 1
     let minTileY = map.height - 1
@@ -376,7 +230,6 @@ export default class MainScene extends Phaser.Scene {
       for (let x = 0; x < map.width; x += 1) {
         const groundTile = map.getTileAt(x, y, false, "Ground")
         if (!groundTile || groundTile.index < 0) continue
-
         hasGround = true
         if (x < minTileX) minTileX = x
         if (y < minTileY) minTileY = y
@@ -397,18 +250,15 @@ export default class MainScene extends Phaser.Scene {
     )
   }
 
+  //  Interactables 
+
   private getObjectStringProperty(object: Phaser.Types.Tilemaps.TiledObject, key: string) {
     const property = object.properties?.find((entry: { name?: string; value?: unknown }) => entry.name === key)
     const value = property?.value
     return typeof value === "string" ? value : undefined
   }
 
-  private getSeatPosition(
-    kind: InteractableKind,
-    object: Phaser.Types.Tilemaps.TiledObject,
-    width: number,
-    height: number
-  ) {
+  private getSeatPosition(kind: InteractableKind, object: Phaser.Types.Tilemaps.TiledObject, width: number, height: number) {
     const centerX = (object.x ?? 0) + width / 2
     const bottomY = object.y ?? 0
 
@@ -420,10 +270,7 @@ export default class MainScene extends Phaser.Scene {
       return { x: centerX, y: bottomY + 8 }
     }
 
-    if (kind === "Computer") {
-      return { x: centerX, y: bottomY + 14 }
-    }
-
+    if (kind === "Computer") return { x: centerX, y: bottomY + 14 }
     return { x: centerX, y: bottomY - 4 }
   }
 
@@ -436,7 +283,6 @@ export default class MainScene extends Phaser.Scene {
 
       for (const [index, object] of layer.objects.entries()) {
         if (object.visible === false) continue
-
         const width = object.width ?? map.tileWidth
         const height = object.height ?? map.tileHeight
         if (!width || !height) continue
@@ -448,16 +294,7 @@ export default class MainScene extends Phaser.Scene {
         const canSit = layerName === "Chair" || layerName === "Computer"
         const seatPosition = this.getSeatPosition(layerName, object, width, height)
 
-        interactables.push({
-          id,
-          kind: layerName,
-          x,
-          y,
-          radius,
-          canSit,
-          seatX: seatPosition.x,
-          seatY: seatPosition.y,
-        })
+        interactables.push({ id, kind: layerName, x, y, radius, canSit, seatX: seatPosition.x, seatY: seatPosition.y })
       }
     }
 
@@ -482,6 +319,22 @@ export default class MainScene extends Phaser.Scene {
     }
   }
 
+  private getInteractableLabel(kind: InteractableKind) {
+    if (kind === "Chair") return "Chair"
+    if (kind === "Computer") return "Desk"
+    if (kind === "Whiteboard") return "Whiteboard"
+    return "Vending Machine"
+  }
+
+  private getInteractableVerb(kind: InteractableKind) {
+    if (kind === "Chair") return "Sit"
+    if (kind === "Computer") return "Sit At"
+    if (kind === "Whiteboard") return "Read"
+    return "Buy"
+  }
+
+  //  Player / room helpers   
+
   private getPlayerFeetPosition() {
     if (!this.player) return undefined
     const body = this.player.body as Phaser.Physics.Arcade.Body | undefined
@@ -491,7 +344,6 @@ export default class MainScene extends Phaser.Scene {
 
   private findNearestInteractable() {
     if (!this.interactables.length) return undefined
-
     const feet = this.getPlayerFeetPosition()
     if (!feet) return undefined
 
@@ -528,23 +380,53 @@ export default class MainScene extends Phaser.Scene {
         for (let tileX = centerTileX - radius; tileX <= centerTileX + radius; tileX += 1) {
           if (tileX < 0 || tileY < 0 || tileX >= this.mapWidthInTiles || tileY >= this.mapHeightInTiles) continue
           if (Math.max(Math.abs(tileX - centerTileX), Math.abs(tileY - centerTileY)) !== radius) continue
-
           const roomId = this.roomByTile[tileY * this.mapWidthInTiles + tileX]
           if (roomId < 0) continue
-
           const x = tileX * this.tileWidth + this.tileWidth / 2
           const y = tileY * this.tileHeight + this.tileHeight * 0.75
           const distanceSq = Phaser.Math.Distance.Squared(startX, startY, x, y)
-
           if (!best || distanceSq < best.distanceSq) best = { x, y, distanceSq }
         }
       }
-
       if (best) return { x: best.x, y: best.y }
     }
 
     return undefined
   }
+
+  private findSpawnPoint() {
+    const centerX = Math.floor(this.mapWidthInTiles / 2)
+    const centerY = Math.floor(this.mapHeightInTiles / 2)
+
+    if (!this.roomByTile) {
+      return {
+        x: centerX * this.tileWidth + this.tileWidth / 2,
+        y: centerY * this.tileHeight + this.tileHeight * 0.75,
+      }
+    }
+
+    let bestTileX = centerX
+    let bestTileY = centerY
+    let bestDist = Number.POSITIVE_INFINITY
+
+    for (let y = 0; y < this.mapHeightInTiles; y += 1) {
+      for (let x = 0; x < this.mapWidthInTiles; x += 1) {
+        if (this.roomByTile[y * this.mapWidthInTiles + x] < 0) continue
+        const d = Math.abs(centerX - x) + Math.abs(centerY - y)
+        if (d >= bestDist) continue
+        bestDist = d
+        bestTileX = x
+        bestTileY = y
+      }
+    }
+
+    return {
+      x: bestTileX * this.tileWidth + this.tileWidth / 2,
+      y: bestTileY * this.tileHeight + this.tileHeight * 0.75,
+    }
+  }
+
+  //  Sitting 
 
   private setPlayerCollisionEnabled(enabled: boolean) {
     if (!this.player) return
@@ -554,7 +436,6 @@ export default class MainScene extends Phaser.Scene {
 
   private sitAtInteractable(interactable: Interactable) {
     if (!this.player) return
-
     this.preSeatX = this.player.x
     this.preSeatY = this.player.y
 
@@ -572,7 +453,6 @@ export default class MainScene extends Phaser.Scene {
 
   private standUpFromSeat() {
     if (!this.player || !this.isSeated) return
-
     this.isSeated = false
     this.setPlayerCollisionEnabled(true)
 
@@ -617,6 +497,8 @@ export default class MainScene extends Phaser.Scene {
     this.lastSafeY = rescue.y
     this.showInteractionStatus("Adjusted position")
   }
+
+  //  Interaction prompts   
 
   private updateInteractionPrompt() {
     if (!this.interactionPrompt) return
@@ -677,114 +559,7 @@ export default class MainScene extends Phaser.Scene {
     this.showInteractionStatus("Bought a snack")
   }
 
-  private markBlockedTiles(map: Phaser.Tilemaps.Tilemap, rects: ColliderRect[]) {
-    const blocked = new Uint8Array(map.width * map.height)
-
-    for (let y = 0; y < map.height; y += 1) {
-      for (let x = 0; x < map.width; x += 1) {
-        const groundTile = map.getTileAt(x, y, false, "Ground")
-        if (groundTile && groundTile.index >= 0) continue
-        blocked[y * map.width + x] = 1
-      }
-    }
-
-    for (const rect of rects) {
-      const startX = Phaser.Math.Clamp(Math.floor(rect.x / map.tileWidth), 0, map.width - 1)
-      const startY = Phaser.Math.Clamp(Math.floor(rect.y / map.tileHeight), 0, map.height - 1)
-      const endX = Phaser.Math.Clamp(Math.ceil((rect.x + rect.width) / map.tileWidth) - 1, 0, map.width - 1)
-      const endY = Phaser.Math.Clamp(Math.ceil((rect.y + rect.height) / map.tileHeight) - 1, 0, map.height - 1)
-
-      for (let y = startY; y <= endY; y += 1) {
-        for (let x = startX; x <= endX; x += 1) {
-          blocked[y * map.width + x] = 1
-        }
-      }
-    }
-
-    return blocked
-  }
-
-  private buildRooms(map: Phaser.Tilemaps.Tilemap, blocked: Uint8Array) {
-    const roomByTile = new Int16Array(map.width * map.height)
-    roomByTile.fill(-1)
-
-    const queueX: number[] = []
-    const queueY: number[] = []
-    let roomId = 0
-
-    const explore = (startX: number, startY: number) => {
-      queueX.length = 0
-      queueY.length = 0
-      queueX.push(startX)
-      queueY.push(startY)
-      roomByTile[startY * map.width + startX] = roomId
-
-      let readIndex = 0
-      while (readIndex < queueX.length) {
-        const x = queueX[readIndex]
-        const y = queueY[readIndex]
-        readIndex += 1
-
-        for (const [nx, ny] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]]) {
-          if (nx < 0 || ny < 0 || nx >= map.width || ny >= map.height) continue
-          const index = ny * map.width + nx
-          if (blocked[index] || roomByTile[index] !== -1) continue
-          roomByTile[index] = roomId
-          queueX.push(nx)
-          queueY.push(ny)
-        }
-      }
-    }
-
-    for (let y = 0; y < map.height; y += 1) {
-      for (let x = 0; x < map.width; x += 1) {
-        const index = y * map.width + x
-        if (blocked[index] || roomByTile[index] !== -1) continue
-        explore(x, y)
-        roomId += 1
-      }
-    }
-
-    this.roomByTile = roomByTile
-    this.roomCount = roomId
-    this.mapWidthInTiles = map.width
-    this.mapHeightInTiles = map.height
-    this.tileWidth = map.tileWidth
-    this.tileHeight = map.tileHeight
-    console.log(`[MainScene] rooms: ${roomId}`)
-  }
-
-  private findSpawnPoint() {
-    const centerX = Math.floor(this.mapWidthInTiles / 2)
-    const centerY = Math.floor(this.mapHeightInTiles / 2)
-
-    if (!this.roomByTile) {
-      return {
-        x: centerX * this.tileWidth + this.tileWidth / 2,
-        y: centerY * this.tileHeight + this.tileHeight * 0.75,
-      }
-    }
-
-    let bestTileX = centerX
-    let bestTileY = centerY
-    let bestDist = Number.POSITIVE_INFINITY
-
-    for (let y = 0; y < this.mapHeightInTiles; y += 1) {
-      for (let x = 0; x < this.mapWidthInTiles; x += 1) {
-        if (this.roomByTile[y * this.mapWidthInTiles + x] < 0) continue
-        const d = Math.abs(centerX - x) + Math.abs(centerY - y)
-        if (d >= bestDist) continue
-        bestDist = d
-        bestTileX = x
-        bestTileY = y
-      }
-    }
-
-    return {
-      x: bestTileX * this.tileWidth + this.tileWidth / 2,
-      y: bestTileY * this.tileHeight + this.tileHeight * 0.75,
-    }
-  }
+  //  Room logic 
 
   private applyRoomLogic() {
     if (!this.player || !this.roomByTile || !this.roomLabel) return
@@ -811,6 +586,8 @@ export default class MainScene extends Phaser.Scene {
     this.roomLabel.setText(`Room ${roomId + 1}/${Math.max(this.roomCount, 1)}`)
   }
 
+  //  Camera 
+
   private clampPlayerSpriteToWorld() {
     if (!this.player) return
     const minX = this.worldMinX + this.player.displayWidth * this.player.originX
@@ -832,6 +609,8 @@ export default class MainScene extends Phaser.Scene {
     this.cameras.main.setFollowOffset(this.cameraLookX, this.cameraLookY)
     this.cameras.main.setZoom(Phaser.Math.Linear(this.cameras.main.zoom, targetZoom, 0.08))
   }
+
+  //  Player state event 
 
   private emitPlayerState(force = false) {
     if (!this.player || typeof window === "undefined") return
@@ -855,17 +634,16 @@ export default class MainScene extends Phaser.Scene {
     this.lastStateEmitRoom = roomId
     this.lastStateEmitAt = now
 
-    window.dispatchEvent(
-      new CustomEvent("twodverse:player-state", { detail: { x, y, roomId } })
-    )
+    window.dispatchEvent(new CustomEvent("twodverse:player-state", { detail: { x, y, roomId } }))
   }
+
+  //  Remote players 
 
   private createRemoteAvatar(player: RealtimePlayer) {
     const safePosition =
       this.findNearestWalkablePosition(player.x, player.y, 3) ??
       { x: player.x, y: player.y }
 
-    // Assign deterministic character based on userId
     const remoteChar = charForUserId(player.userId)
     const firstFrame = `${CHAR_CONFIGS[remoteChar].idlePrefix}1.png`
 
@@ -874,8 +652,7 @@ export default class MainScene extends Phaser.Scene {
     sprite.setDepth(safePosition.y + 95)
     sprite.play(idleAnimKey(remoteChar))
 
-    const displayName =
-      player.userId.length > 11 ? `${player.userId.slice(0, 8)}...` : player.userId
+    const displayName = player.userId.length > 11 ? `${player.userId.slice(0, 8)}...` : player.userId
 
     const label = this.add
       .text(safePosition.x, safePosition.y - 44, displayName, {
@@ -953,7 +730,6 @@ export default class MainScene extends Phaser.Scene {
       remote.sprite.setPosition(safePos.x, safePos.y)
       remote.sprite.setDepth(safePos.y + 95)
 
-      // Determine which anim this remote player uses
       const remoteChar = charForUserId(remote.userId)
       const idle = idleAnimKey(remoteChar)
       const run = runAnimKey(remoteChar)
@@ -970,35 +746,38 @@ export default class MainScene extends Phaser.Scene {
     }
   }
 
+  //  Theme 
+
   private applyTheme(themeKey: string) {
-    const bg = THEME_BG[themeKey] ?? "#1e1e1e"
-    this.cameras.main.setBackgroundColor(bg)
+    this.cameras.main.setBackgroundColor(THEME_BG[themeKey] ?? "#1e1e1e")
   }
+
+  //  Event binding 
 
   private bindRemotePlayerEvents() {
     if (typeof window === "undefined") return
 
     this.onRemotePlayersSync = (event: Event) => {
-      const customEvent = event as CustomEvent<{ players?: RealtimePlayer[] }>
-      const players = Array.isArray(customEvent.detail?.players) ? customEvent.detail.players : []
+      const e = event as CustomEvent<{ players?: RealtimePlayer[] }>
+      const players = Array.isArray(e.detail?.players) ? e.detail.players : []
       this.syncRemotePlayers(players)
     }
 
     this.onRemotePlayerUpsert = (event: Event) => {
-      const customEvent = event as CustomEvent<{ player?: RealtimePlayer }>
-      const player = customEvent.detail?.player
+      const e = event as CustomEvent<{ player?: RealtimePlayer }>
+      const player = e.detail?.player
       if (player?.userId) this.upsertRemotePlayer(player)
     }
 
     this.onRemotePlayerLeft = (event: Event) => {
-      const customEvent = event as CustomEvent<{ userId?: string }>
-      const userId = customEvent.detail?.userId
+      const e = event as CustomEvent<{ userId?: string }>
+      const userId = e.detail?.userId
       if (userId) this.removeRemotePlayer(userId)
     }
 
     this.onThemeChange = (event: Event) => {
-      const customEvent = event as CustomEvent<{ theme?: string }>
-      if (customEvent.detail?.theme) this.applyTheme(customEvent.detail.theme)
+      const e = event as CustomEvent<{ theme?: string }>
+      if (e.detail?.theme) this.applyTheme(e.detail.theme)
     }
 
     window.addEventListener("twodverse:remote-players:sync", this.onRemotePlayersSync)
@@ -1010,7 +789,6 @@ export default class MainScene extends Phaser.Scene {
 
   private unbindRemotePlayerEvents() {
     if (typeof window === "undefined") return
-
     if (this.onRemotePlayersSync) {
       window.removeEventListener("twodverse:remote-players:sync", this.onRemotePlayersSync)
       this.onRemotePlayersSync = undefined
@@ -1029,13 +807,12 @@ export default class MainScene extends Phaser.Scene {
     }
   }
 
-  create() {
-    // Apply saved theme background
-    const savedTheme = typeof window !== "undefined"
-      ? (localStorage.getItem("twodverse:theme") ?? "woody")
-      : "woody"
-    this.applyTheme(savedTheme)
+  //  Lifecycle 
 
+  create() {
+    const savedTheme =
+      typeof window !== "undefined" ? (localStorage.getItem("twodverse:theme") ?? "woody") : "woody"
+    this.applyTheme(savedTheme)
     this.ensurePlayerAnimations()
 
     const map = this.make.tilemap({ key: MAP_KEY })
@@ -1050,7 +827,6 @@ export default class MainScene extends Phaser.Scene {
 
     const candidateLayerNames = map.layers.map((layerData) => layerData.name)
     let renderedLayerCount = 0
-
     for (const layerName of candidateLayerNames) {
       const created = map.createLayer(layerName, mapTilesets)
       if (!created) continue
@@ -1072,8 +848,14 @@ export default class MainScene extends Phaser.Scene {
 
     const colliderRects = this.getColliderRects(map)
     this.createColliders(colliderRects)
-    const blockedTiles = this.markBlockedTiles(map, colliderRects)
-    this.buildRooms(map, blockedTiles)
+    const blockedTiles = markBlockedTiles(map, colliderRects)
+    const roomData = buildRooms(map, blockedTiles)
+    this.roomByTile = roomData.roomByTile
+    this.roomCount = roomData.roomCount
+    this.mapWidthInTiles = roomData.mapWidthInTiles
+    this.mapHeightInTiles = roomData.mapHeightInTiles
+    this.tileWidth = roomData.tileWidth
+    this.tileHeight = roomData.tileHeight
     this.buildInteractables(map)
 
     const spawn = this.findSpawnPoint()
@@ -1107,36 +889,18 @@ export default class MainScene extends Phaser.Scene {
     this.interactKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.E)
 
     this.roomLabel = this.add
-      .text(16, 16, "Room: --", {
-        fontFamily: "monospace",
-        fontSize: "14px",
-        color: "#e2e8f0",
-        backgroundColor: "#02061799",
-        padding: { x: 8, y: 4 },
-      })
+      .text(16, 16, "Room: --", { fontFamily: "monospace", fontSize: "14px", color: "#e2e8f0", backgroundColor: "#02061799", padding: { x: 8, y: 4 } })
       .setDepth(1200)
       .setScrollFactor(0)
 
     this.interactionPrompt = this.add
-      .text(16, 44, "", {
-        fontFamily: "monospace",
-        fontSize: "13px",
-        color: "#f8fafc",
-        backgroundColor: "#0f172aa6",
-        padding: { x: 8, y: 4 },
-      })
+      .text(16, 44, "", { fontFamily: "monospace", fontSize: "13px", color: "#f8fafc", backgroundColor: "#0f172aa6", padding: { x: 8, y: 4 } })
       .setDepth(1200)
       .setScrollFactor(0)
       .setVisible(false)
 
     this.interactionStatus = this.add
-      .text(16, 72, "", {
-        fontFamily: "monospace",
-        fontSize: "13px",
-        color: "#fde68a",
-        backgroundColor: "#451a03b0",
-        padding: { x: 8, y: 4 },
-      })
+      .text(16, 72, "", { fontFamily: "monospace", fontSize: "13px", color: "#fde68a", backgroundColor: "#451a03b0", padding: { x: 8, y: 4 } })
       .setDepth(1200)
       .setScrollFactor(0)
       .setVisible(false)

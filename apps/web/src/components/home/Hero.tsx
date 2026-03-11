@@ -4,6 +4,7 @@ import { useAuthSession } from "@/components/providers/AuthSessionProvider"
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
+import LogoText from "./LogoText"
 
 type HeroProps = {
   children: React.ReactNode
@@ -94,9 +95,7 @@ export default function Hero({
       <div className="absolute top-6 left-8 right-8 flex justify-between items-center z-20">
 
         {/* Brand */}
-        <div className="text-white text-2xl font-extrabold tracking-wide drop-shadow-lg">
-          TwoD<span className="text-[#E59E2D]">verse</span>
-        </div>
+        <LogoText className="text-2xl drop-shadow-lg" textClassName="text-white" />
 
         <div className="flex items-center gap-3">
 
