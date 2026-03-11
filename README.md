@@ -14,15 +14,14 @@ The project explores **real-time networking, multiplayer synchronization, and sc
 
 ## Tech Stack
 
-| Layer | Technology |
-|------|------------|
-| Frontend | Next.js, React, TypeScript |
-| Backend | Node.js / TypeScript |
-| Realtime | WebSockets |
-| Database | PostgreSQL |
-| Cache | Redis |
-| Monorepo | Turborepo |
-| Containerization | Docker |
+Frontend : Next.js, React, TypeScript 
+Backend  : Node.js / TypeScript
+Realtime : WebSockets , WebRTC
+Database : PostgreSQL 
+ORM      : Prisma
+Cache    : Redis
+Monorepo : Turborepo 
+Containerization :Docker 
 
 
 ## Run Locally
@@ -31,5 +30,8 @@ The project explores **real-time networking, multiplayer synchronization, and sc
 git clone https://github.com/yourusername/twod-verse
 cd twod-verse
 
-npm install
+bun install or
+bun i
+
 docker compose up --build
+docker compose up -b
