@@ -738,7 +738,7 @@ export default function SpacePage() {
             {realtimeStatus}
           </div>
           {connectedVoicePeers > 0 && (
-            <div className="absolute left-3 top-[4.25rem] z-10 rounded bg-black/70 px-2 py-1 text-xs text-yellow-200">
+            <div className="absolute left-3 top-17 z-10 rounded bg-black/70 px-2 py-1 text-xs text-yellow-200">
               Nearby voice: {connectedVoicePeers}
             </div>
           )}
@@ -829,7 +829,7 @@ export default function SpacePage() {
         </div>
 
         {showChatPanel && (
-          <aside className="absolute inset-y-0 right-0 z-20 w-full max-w-[21rem] border-l border-[#6b4b2a] bg-[#1f140c]/95 backdrop-blur-sm lg:relative lg:max-w-none lg:w-[21rem]">
+          <aside className="absolute inset-y-0 right-0 z-20 w-full max-w-84 border-l border-[#6b4b2a] bg-[#1f140c]/95 backdrop-blur-sm lg:relative lg:max-w-none lg:w-84">
             <div className="flex h-full flex-col">
               <div className="flex items-center justify-between border-b border-[#6b4b2a] px-3 py-3">
                 <div>

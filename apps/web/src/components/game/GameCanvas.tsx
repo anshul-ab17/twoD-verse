@@ -58,7 +58,7 @@ export default function GameCanvas() {
   return (
     <div
       ref={containerRef}
-      className="w-full h-[80vh] min-h-[640px] overflow-hidden rounded-xl"
+      className="w-full h-[80vh] min-h-160 overflow-hidden rounded-xl"
     />
   )
 }
