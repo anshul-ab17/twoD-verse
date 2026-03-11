@@ -11,52 +11,8 @@ export default function HeroSection() {
   return (
     <section
       id="hero"
-      style={{ paddingTop: "7rem", paddingBottom: "6rem", position: "relative", overflow: "hidden" }}
+      style={{ paddingTop: "7rem", paddingBottom: "6rem", position: "relative" }}
     >
-      {/* Dot grid */}
-      <div
-        aria-hidden
-        style={{
-          position: "absolute",
-          inset: 0,
-          backgroundImage: "radial-gradient(circle, var(--text-dim) 1px, transparent 1px)",
-          backgroundSize: "32px 32px",
-          opacity: 0.4,
-          pointerEvents: "none",
-        }}
-      />
-
-      {/* Ambient orbs */}
-      <div
-        aria-hidden
-        className="animate-orb"
-        style={{
-          position: "absolute",
-          top: "-10%",
-          left: "-5%",
-          width: "600px",
-          height: "600px",
-          borderRadius: "50%",
-          background: "radial-gradient(circle, var(--orb-1) 0%, transparent 70%)",
-          pointerEvents: "none",
-        }}
-      />
-      <div
-        aria-hidden
-        className="animate-orb"
-        style={{
-          position: "absolute",
-          bottom: "-15%",
-          right: "-8%",
-          width: "500px",
-          height: "500px",
-          borderRadius: "50%",
-          background: "radial-gradient(circle, var(--orb-2) 0%, transparent 70%)",
-          pointerEvents: "none",
-          animationDelay: "4s",
-        }}
-      />
-
       <div
         className="mx-auto px-6 text-center"
         style={{ maxWidth: "860px", position: "relative", zIndex: 1 }}
@@ -102,7 +58,7 @@ export default function HeroSection() {
           <Link
             href="/signup"
             className="rounded-xl px-8 py-3 text-base font-semibold transition-all duration-150 hover:-translate-y-0.5"
-            style={{ background: "var(--accent)", color: "#fff", boxShadow: "0 4px 20px var(--accent-bg)" }}
+            style={{ background: "#c07600", color: "#fff" }}
           >
             Get Started Free
           </Link>

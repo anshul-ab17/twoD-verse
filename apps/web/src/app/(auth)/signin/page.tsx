@@ -48,9 +48,12 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
+    <div
+      className="min-h-screen flex flex-col"
+      style={{ background: "var(--bg)" }}
+    >
       {/* Top bar */}
-      <header className="flex items-center justify-between px-6 py-4 absolute top-0 left-0 right-0 z-10">
+      <header className="flex items-center justify-between px-6 py-4">
         <Link href="/">
           <LogoText className="text-xl" textClassName="text-[var(--text)]" />
         </Link>
@@ -67,138 +70,124 @@ export default function SignInPage() {
         </Link>
       </header>
 
-      {/* Split layout */}
-      <div className="flex flex-1 min-h-screen">
-        {/* Left panel — branding */}
+      {/* Centered card */}
+      <div className="flex flex-1 items-center justify-center px-4 py-8">
         <div
-          className="hidden lg:flex flex-col justify-center px-16 w-[45%] relative overflow-hidden"
-          style={{ background: "var(--bg-alt)", borderRight: "1px solid var(--card-border)" }}
+          className="w-full max-w-3xl rounded-2xl border overflow-hidden flex"
+          style={{
+            background: "var(--bg-card)",
+            borderColor: "var(--card-border)",
+            boxShadow: "var(--shadow-card)",
+            minHeight: "480px",
+          }}
         >
-          {/* Ambient orbs */}
+          {/* Left — branding */}
           <div
-            className="absolute top-1/4 left-1/4 w-72 h-72 rounded-full blur-3xl pointer-events-none animate-orb"
-            style={{ background: "var(--orb-1)" }}
-          />
-          <div
-            className="absolute bottom-1/3 right-1/4 w-48 h-48 rounded-full blur-3xl pointer-events-none"
-            style={{ background: "var(--orb-2)", animationDelay: "2s" }}
-          />
+            className="hidden md:flex flex-col justify-between p-10 w-[44%] relative overflow-hidden"
+            style={{ background: "var(--bg-alt)", borderRight: "1px solid var(--card-border)" }}
+          >
+            {/* Orbs */}
+            <div
+              className="absolute top-0 left-0 w-64 h-64 rounded-full blur-3xl pointer-events-none animate-orb"
+              style={{ background: "var(--orb-1)", transform: "translate(-40%, -40%)" }}
+            />
+            <div
+              className="absolute bottom-0 right-0 w-48 h-48 rounded-full blur-3xl pointer-events-none"
+              style={{ background: "var(--orb-2)", transform: "translate(30%, 30%)" }}
+            />
 
-          <div className="relative z-10 max-w-sm">
-            <Link href="/">
-              <LogoText className="text-4xl mb-8 block" textClassName="text-[var(--text)]" />
-            </Link>
-            <h2 className="text-3xl font-bold leading-tight mb-4" style={{ color: "var(--text)" }}>
-              Your virtual office,{" "}
-              <span className="gradient-text">anywhere.</span>
-            </h2>
-            <p className="text-base leading-relaxed" style={{ color: "var(--text-muted)" }}>
-              Walk around, meet your team, and collaborate in a real-time 2D space — just like being in the same room.
-            </p>
+            <div className="relative z-10">
+              <LogoText className="text-2xl" textClassName="text-[var(--text)]" />
+            </div>
 
-            <div className="mt-10 flex flex-col gap-3">
-              {[
-                { icon: "🗺️", label: "Live 2D world with real-time movement" },
-                { icon: "🎙️", label: "Proximity voice & video via WebRTC" },
-                { icon: "💬", label: "Global and nearby team chat" },
-              ].map(({ icon, label }) => (
-                <div key={label} className="flex items-center gap-3">
-                  <span className="text-lg">{icon}</span>
-                  <span className="text-sm" style={{ color: "var(--text-muted)" }}>{label}</span>
-                </div>
-              ))}
+            <div className="relative z-10">
+              <h2 className="text-2xl font-bold leading-snug mb-3" style={{ color: "var(--text)" }}>
+                Your virtual office,{" "}
+                <span className="gradient-text">anywhere.</span>
+              </h2>
+              <p className="text-sm leading-relaxed mb-8" style={{ color: "var(--text-muted)" }}>
+                Walk around, meet your team, and collaborate in a real-time 2D space.
+              </p>
+              <div className="flex flex-col gap-2.5">
+                {[
+                  { icon: "🗺️", label: "Real-time 2D movement" },
+                  { icon: "🎙️", label: "Proximity voice & video" },
+                  { icon: "💬", label: "Global and nearby chat" },
+                ].map(({ icon, label }) => (
+                  <div key={label} className="flex items-center gap-2.5">
+                    <span className="text-base">{icon}</span>
+                    <span className="text-xs" style={{ color: "var(--text-muted)" }}>{label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Right panel — form */}
-        <div className="flex flex-1 flex-col items-center justify-center px-6 py-24">
-          <div className="w-full max-w-sm">
-            <div className="mb-8">
-              <h1 className="text-2xl font-bold mb-1" style={{ color: "var(--text)" }}>Welcome back</h1>
-              <p className="text-sm" style={{ color: "var(--text-muted)" }}>Sign in to your TwoDverse account</p>
+          {/* Right — form */}
+          <div className="flex flex-1 flex-col justify-center px-8 py-10">
+            <h1 className="text-xl font-bold mb-1" style={{ color: "var(--text)" }}>Welcome back</h1>
+            <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>Sign in to your account</p>
+
+            {/* OAuth */}
+            <div className="flex flex-col gap-2.5 mb-5">
+              <button
+                type="button"
+                onClick={() => handleOAuth("google")}
+                className="flex w-full items-center justify-center gap-3 rounded-lg border px-4 py-2.5 text-sm font-medium transition hover:opacity-80"
+                style={{ background: "var(--bg)", borderColor: "var(--card-border)", color: "var(--text)" }}
+              >
+                <GoogleLogo className="h-4 w-4" />
+                Continue with Google
+              </button>
+              <button
+                type="button"
+                onClick={() => handleOAuth("github")}
+                className="flex w-full items-center justify-center gap-3 rounded-lg border px-4 py-2.5 text-sm font-medium transition hover:opacity-80"
+                style={{ background: "var(--bg)", borderColor: "var(--card-border)", color: "var(--text)" }}
+              >
+                <GitHubLogo className="h-4 w-4" />
+                Continue with GitHub
+              </button>
             </div>
 
-            {/* Card */}
-            <div
-              className="rounded-2xl border p-8"
-              style={{
-                background: "var(--bg-card)",
-                borderColor: "var(--card-border)",
-                boxShadow: "var(--shadow-card)",
-              }}
-            >
-              {/* OAuth */}
-              <div className="flex flex-col gap-3 mb-6">
-                <button
-                  type="button"
-                  onClick={() => handleOAuth("google")}
-                  className="flex w-full items-center justify-center gap-3 rounded-lg border px-4 py-2.5 text-sm font-medium transition hover:opacity-80"
-                  style={{ background: "var(--bg)", borderColor: "var(--card-border)", color: "var(--text)" }}
-                >
-                  <GoogleLogo className="h-4 w-4" />
-                  Continue with Google
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleOAuth("github")}
-                  className="flex w-full items-center justify-center gap-3 rounded-lg border px-4 py-2.5 text-sm font-medium transition hover:opacity-80"
-                  style={{ background: "var(--bg)", borderColor: "var(--card-border)", color: "var(--text)" }}
-                >
-                  <GitHubLogo className="h-4 w-4" />
-                  Continue with GitHub
-                </button>
-              </div>
-
-              <div className="flex items-center gap-3 mb-6">
-                <div className="flex-1 h-px" style={{ background: "var(--divider)" }} />
-                <span className="text-xs" style={{ color: "var(--text-dim)" }}>or</span>
-                <div className="flex-1 h-px" style={{ background: "var(--divider)" }} />
-              </div>
-
-              {/* Form */}
-              <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
-                <input
-                  type="email"
-                  autoComplete="email"
-                  placeholder="Email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:border-[var(--accent)]"
-                  style={{
-                    background: "var(--input-bg)",
-                    borderColor: "var(--input-border)",
-                    color: "var(--text)",
-                  }}
-                />
-                <input
-                  type="password"
-                  autoComplete="current-password"
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:border-[var(--accent)]"
-                  style={{
-                    background: "var(--input-bg)",
-                    borderColor: "var(--input-border)",
-                    color: "var(--text)",
-                  }}
-                />
-
-                {error && (
-                  <p className="text-xs" style={{ color: "#f87171" }}>{error}</p>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="mt-1 w-full rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
-                  style={{ background: "var(--accent)" }}
-                >
-                  {loading ? "Signing in…" : "Sign In"}
-                </button>
-              </form>
+            <div className="flex items-center gap-3 mb-5">
+              <div className="flex-1 h-px" style={{ background: "var(--divider)" }} />
+              <span className="text-xs" style={{ color: "var(--text-dim)" }}>or</span>
+              <div className="flex-1 h-px" style={{ background: "var(--divider)" }} />
             </div>
+
+            {/* Form */}
+            <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
+              <input
+                type="email"
+                autoComplete="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:border-[var(--accent)]"
+                style={{ background: "var(--input-bg)", borderColor: "var(--input-border)", color: "var(--text)" }}
+              />
+              <input
+                type="password"
+                autoComplete="current-password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-lg border px-3 py-2.5 text-sm outline-none transition focus:border-[var(--accent)]"
+                style={{ background: "var(--input-bg)", borderColor: "var(--input-border)", color: "var(--text)" }}
+              />
+
+              {error && <p className="text-xs" style={{ color: "#f87171" }}>{error}</p>}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="mt-1 w-full rounded-lg px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+                style={{ background: "var(--accent)" }}
+              >
+                {loading ? "Signing in…" : "Sign In"}
+              </button>
+            </form>
 
             <p className="mt-5 text-center text-sm" style={{ color: "var(--text-muted)" }}>
               No account?{" "}
