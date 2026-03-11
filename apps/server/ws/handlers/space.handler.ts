@@ -26,6 +26,9 @@ export async function handleSpaceJoin(
       roomId: player.roomId,
     }))
 
+  // Remove any stale entry for this user (handles tab refresh / reconnect)
+  playerManager.removeByUserId(user.userId)
+
   playerManager.add({
     userId: user.userId,
     spaceId,

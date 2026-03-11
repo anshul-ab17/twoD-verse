@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useParams } from "next/navigation"
 import { getGeneratedAvatarDataUrl } from "./avatar"
 
-type PaneMode = "map" | "chat" | "search" | "notifications" | "spotify"
+type PaneMode = "map" | "chat" | "search" | "notifications" | "spotify" | "friends"
 
 export type SpaceUser = {
   id: string
@@ -53,6 +53,11 @@ type SpaceSidebarContextValue = {
   messages: SpaceChatMessage[]
   threadMessages: SpaceChatMessage[]
   sendMessage: (text: string) => void
+  // Friends
+  friends: SpaceUser[]
+  addFriend: (user: SpaceUser) => void
+  removeFriend: (userId: string) => void
+  isFriend: (userId: string) => boolean
 }
 
 const SpaceSidebarContext = createContext<SpaceSidebarContextValue | null>(null)
@@ -249,8 +254,46 @@ export function SpaceSidebarProvider({ children }: { children: React.ReactNode }
   const [notifications, setNotifications] = useState<JoinNotification[]>([])
   const [currentChatUserId, setCurrentChatUserId] = useState<string | null>(null)
   const [messages, setMessages] = useState<SpaceChatMessage[]>([])
+  const [friends, setFriends] = useState<SpaceUser[]>([])
   const lastChatUserIdRef = useRef<string | null>(null)
   const previousMemberIdsRef = useRef<Set<string>>(new Set())
+
+  // ── Friends (localStorage) ──────────────────────────────────────────────────
+  const loadFriends = useCallback(() => {
+    if (typeof window === "undefined") return
+    try {
+      const raw = JSON.parse(localStorage.getItem("twodverse:friends") || "[]")
+      if (!Array.isArray(raw)) return
+      setFriends(raw.map((u: unknown) => toSpaceUser(u)).filter((u): u is SpaceUser => u !== null))
+    } catch { /* ignore */ }
+  }, [])
+
+  useEffect(() => {
+    loadFriends()
+  }, [loadFriends])
+
+  const addFriend = useCallback((user: SpaceUser) => {
+    setFriends((prev) => {
+      if (prev.some((f) => f.id === user.id)) return prev
+      const next = [...prev, user]
+      localStorage.setItem("twodverse:friends", JSON.stringify(next))
+      return next
+    })
+  }, [])
+
+  const removeFriend = useCallback((userId: string) => {
+    setFriends((prev) => {
+      const next = prev.filter((f) => f.id !== userId)
+      localStorage.setItem("twodverse:friends", JSON.stringify(next))
+      return next
+    })
+  }, [])
+
+  const isFriend = useCallback(
+    (userId: string) => friends.some((f) => f.id === userId),
+    [friends]
+  )
+  // ────────────────────────────────────────────────────────────────────────────
 
   const refreshSpaceData = useCallback(() => {
     if (!spaceId) return
@@ -488,6 +531,10 @@ export function SpaceSidebarProvider({ children }: { children: React.ReactNode }
       messages,
       threadMessages,
       sendMessage,
+      friends,
+      addFriend,
+      removeFriend,
+      isFriend,
     }),
     [
       spaceId,
@@ -506,6 +553,10 @@ export function SpaceSidebarProvider({ children }: { children: React.ReactNode }
       messages,
       threadMessages,
       sendMessage,
+      friends,
+      addFriend,
+      removeFriend,
+      isFriend,
     ]
   )
 

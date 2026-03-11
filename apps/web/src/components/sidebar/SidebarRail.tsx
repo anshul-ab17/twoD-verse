@@ -5,6 +5,7 @@ import {
   Music2,
   ChevronRight,
   ChevronLeft,
+  Users,
 } from "lucide-react";
 import SidebarChatIcon from "./SidebarChatIcon";
 import { useSpaceSidebar } from "./SpaceSidebarContext";
@@ -20,15 +21,28 @@ export default function SidebarRail({ isOpen, toggle, onIconAction }: Props) {
     activePane,
     activatePane,
     unreadNotificationCount,
+    friends,
+    members,
   } = useSpaceSidebar()
 
-  const iconClass = (pane: "chat" | "notifications" | "map" | "search" | "spotify") =>
-    `relative cursor-pointer rounded-lg p-1 transition ${activePane === pane ? "bg-[#3b2a1a] text-yellow-200" : "text-yellow-300 hover:text-yellow-400"}`
+  type PaneId = "chat" | "notifications" | "map" | "search" | "spotify" | "friends"
 
-  const handlePaneClick = (pane: "chat" | "notifications" | "map" | "search" | "spotify") => {
+  const iconClass = (pane: PaneId) =>
+    `relative cursor-pointer rounded-lg p-1 transition ${
+      activePane === pane
+        ? "bg-[#3b2a1a] text-yellow-200"
+        : "text-yellow-300 hover:text-yellow-400"
+    }`
+
+  const handlePaneClick = (pane: PaneId) => {
     activatePane(pane)
     onIconAction?.()
   }
+
+  // Count online friends (in livePresence)
+  const onlineFriendCount = friends.filter((f) =>
+    members.some((m) => m.id === f.id)
+  ).length
 
   return (
     <div className="flex flex-col items-center h-full py-6 text-yellow-300">
@@ -37,15 +51,10 @@ export default function SidebarRail({ isOpen, toggle, onIconAction }: Props) {
         onClick={toggle}
         className="mb-10 p-2 rounded hover:bg-[#3b2a1a]"
       >
-        {isOpen ? (
-          <ChevronLeft />
-        ) : (
-          <ChevronRight />
-        )}
+        {isOpen ? <ChevronLeft /> : <ChevronRight />}
       </button>
 
-      {/* Icons */}
-      <div className="flex flex-col gap-10">
+      <div className="flex flex-col gap-8">
         <button
           title="Chat"
           className={iconClass("chat")}
@@ -55,11 +64,24 @@ export default function SidebarRail({ isOpen, toggle, onIconAction }: Props) {
         </button>
 
         <button
+          title="Friends"
+          className={iconClass("friends")}
+          onClick={() => handlePaneClick("friends")}
+        >
+          <Users size={20} />
+          {onlineFriendCount > 0 && (
+            <span className="absolute -right-2 -top-2 min-w-4 rounded-full bg-green-400 px-1 text-center text-[10px] font-semibold text-black">
+              {onlineFriendCount > 9 ? "9+" : onlineFriendCount}
+            </span>
+          )}
+        </button>
+
+        <button
           title="Notifications"
           className={iconClass("notifications")}
           onClick={() => handlePaneClick("notifications")}
         >
-          <Bell />
+          <Bell size={20} />
           {unreadNotificationCount > 0 && (
             <span className="absolute -right-2 -top-2 min-w-4 rounded-full bg-emerald-400 px-1 text-center text-[10px] font-semibold text-black">
               {unreadNotificationCount > 9 ? "9+" : unreadNotificationCount}
@@ -72,7 +94,7 @@ export default function SidebarRail({ isOpen, toggle, onIconAction }: Props) {
           className={iconClass("map")}
           onClick={() => handlePaneClick("map")}
         >
-          <Map />
+          <Map size={20} />
         </button>
 
         <button
@@ -80,7 +102,7 @@ export default function SidebarRail({ isOpen, toggle, onIconAction }: Props) {
           className={iconClass("search")}
           onClick={() => handlePaneClick("search")}
         >
-          <Search />
+          <Search size={20} />
         </button>
 
         <button
@@ -88,11 +110,10 @@ export default function SidebarRail({ isOpen, toggle, onIconAction }: Props) {
           className={iconClass("spotify")}
           onClick={() => handlePaneClick("spotify")}
         >
-          <Music2 />
+          <Music2 size={20} />
         </button>
       </div>
 
-      {/* Spacer pushes bottom content if needed later */}
       <div className="mt-auto" />
     </div>
   );

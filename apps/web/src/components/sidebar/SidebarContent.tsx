@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ExternalLink, Pause, Play } from "lucide-react";
+import { ExternalLink, Pause, Play, UserPlus, UserMinus, Wifi } from "lucide-react";
 import SidebarInviteCard from "./SidebarInviteCard";
 import SidebarUser from "./SidebarUser";
 import { useSpaceSidebar } from "./SpaceSidebarContext";
@@ -30,6 +30,10 @@ export default function SidebarContent({ toggle }: Props) {
     filteredMembers,
     notifications,
     openChatWithUser,
+    friends,
+    addFriend,
+    removeFriend,
+    isFriend,
   } = useSpaceSidebar()
   const searchInputRef = useRef<HTMLInputElement | null>(null)
   const previewAudioRef = useRef<HTMLAudioElement | null>(null)
@@ -45,15 +49,12 @@ export default function SidebarContent({ toggle }: Props) {
   )
 
   const panelTitle =
-    activePane === "chat"
-      ? "chat"
-      : activePane === "search"
-        ? "search users"
-      : activePane === "notifications"
-        ? "notifications"
-        : activePane === "spotify"
-          ? "spotify"
-          : "home"
+    activePane === "chat" ? "chat"
+    : activePane === "search" ? "search users"
+    : activePane === "notifications" ? "notifications"
+    : activePane === "spotify" ? "spotify"
+    : activePane === "friends" ? "friends"
+    : "home"
 
   useEffect(() => {
     if (activePane !== "search") return
@@ -147,7 +148,103 @@ export default function SidebarContent({ toggle }: Props) {
       {/* Invite Card */}
       {activePane === "map" && <SidebarInviteCard />}
 
-      {activePane !== "spotify" && (
+      {activePane === "friends" && (
+        <div className="mt-3 flex min-h-0 flex-1 flex-col gap-4">
+          {/* Online now in this space */}
+          <div>
+            <p className="mb-2 text-[11px] uppercase tracking-wide text-yellow-300/60">
+              Online in space ({members.filter((m) => m.id !== currentUser?.id).length})
+            </p>
+            <div className="rounded-lg border border-[#6b4b2a] bg-[#1a140f] max-h-40 overflow-y-auto">
+              {members.filter((m) => m.id !== currentUser?.id).length === 0 ? (
+                <p className="p-3 text-xs text-yellow-300/60">No one else here yet.</p>
+              ) : (
+                members
+                  .filter((m) => m.id !== currentUser?.id)
+                  .map((member) => (
+                    <div
+                      key={member.id}
+                      className="flex items-center justify-between border-b border-[#3e2a16] px-3 py-2 last:border-0"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="h-2 w-2 rounded-full bg-green-400 shrink-0" />
+                        <span className="text-sm text-yellow-100 truncate">{member.name}</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => isFriend(member.id) ? removeFriend(member.id) : addFriend(member)}
+                        title={isFriend(member.id) ? "Remove friend" : "Add friend"}
+                        className="ml-2 rounded p-1 transition hover:bg-[#3a2518]"
+                      >
+                        {isFriend(member.id)
+                          ? <UserMinus size={13} className="text-red-300" />
+                          : <UserPlus size={13} className="text-yellow-300" />
+                        }
+                      </button>
+                    </div>
+                  ))
+              )}
+            </div>
+          </div>
+
+          {/* Friends list */}
+          <div>
+            <p className="mb-2 text-[11px] uppercase tracking-wide text-yellow-300/60">
+              Friends ({friends.length})
+            </p>
+            <div className="rounded-lg border border-[#6b4b2a] bg-[#1a140f] max-h-56 overflow-y-auto">
+              {friends.length === 0 ? (
+                <p className="p-3 text-xs text-yellow-300/60">
+                  No friends added yet. Add people from the list above.
+                </p>
+              ) : (
+                friends.map((friend) => {
+                  const online = members.some((m) => m.id === friend.id)
+                  return (
+                    <div
+                      key={friend.id}
+                      className="flex items-center justify-between border-b border-[#3e2a16] px-3 py-2 last:border-0"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span
+                          className={`h-2 w-2 rounded-full shrink-0 ${online ? "bg-green-400" : "bg-yellow-900"}`}
+                          title={online ? "Online" : "Offline"}
+                        />
+                        <span className="text-sm text-yellow-100 truncate">{friend.name}</span>
+                        {online && (
+                          <Wifi size={10} className="text-green-400 shrink-0" />
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {online && (
+                          <button
+                            type="button"
+                            onClick={() => openChatWithUser(friend.id)}
+                            className="rounded p-1 text-xs text-yellow-300 hover:bg-[#3a2518]"
+                            title="Chat"
+                          >
+                            chat
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removeFriend(friend.id)}
+                          className="rounded p-1 transition hover:bg-[#3a2518]"
+                          title="Remove friend"
+                        >
+                          <UserMinus size={13} className="text-red-300" />
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activePane !== "spotify" && activePane !== "friends" && (
         <input
           ref={searchInputRef}
           value={searchQuery}

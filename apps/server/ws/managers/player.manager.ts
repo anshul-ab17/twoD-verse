@@ -36,6 +36,15 @@ class PlayerManager {
       if (player.userId === userId) return player
     }
   }
+
+  removeByUserId(userId: string) {
+    for (const [ws, player] of this.players.entries()) {
+      if (player.userId === userId) {
+        this.players.delete(ws)
+        return ws
+      }
+    }
+  }
 }
 
 export const playerManager = new PlayerManager()

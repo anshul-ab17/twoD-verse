@@ -2,11 +2,80 @@ import Phaser from "phaser"
 
 const MAP_KEY = "workspace-map"
 const MAP_URL = "/asset/map/map.json"
-const CHARACTER_ATLAS_KEY = "adam"
-const CHARACTER_IMAGE_URL = "/asset/character/adam.png"
-const CHARACTER_ATLAS_URL = "/asset/character/adam.json"
-const PLAYER_IDLE_ANIM = "adam-idle"
-const PLAYER_RUN_ANIM = "adam-run"
+
+// ─── Character configs ───────────────────────────────────────────────────────
+
+const CHAR_KEYS = ["adam", "ash", "lucy", "nancy"] as const
+type CharKey = (typeof CHAR_KEYS)[number]
+
+const CHAR_CONFIGS: Record<
+  CharKey,
+  {
+    imageUrl: string
+    atlasUrl: string
+    idlePrefix: string
+    runPrefix: string
+    sitFrame: string
+  }
+> = {
+  adam: {
+    imageUrl: "/asset/character/adam.png",
+    atlasUrl: "/asset/character/adam.json",
+    idlePrefix: "Adam_idle_anim_",
+    runPrefix: "Adam_run_",
+    sitFrame: "Adam_sit_down.png",
+  },
+  ash: {
+    imageUrl: "/asset/character/ash.png",
+    atlasUrl: "/asset/character/ash.json",
+    idlePrefix: "Ash_idle_anim_",
+    runPrefix: "Ash_run_",
+    sitFrame: "Ash_sit_down.png",
+  },
+  lucy: {
+    imageUrl: "/asset/character/lucy.png",
+    atlasUrl: "/asset/character/lucy.json",
+    idlePrefix: "Lucy_idle_anim_",
+    runPrefix: "Lucy_run_",
+    sitFrame: "Lucy_sit_down.png",
+  },
+  nancy: {
+    imageUrl: "/asset/character/nancy.png",
+    atlasUrl: "/asset/character/nancy.json",
+    idlePrefix: "Nancy_idle_anim_",
+    runPrefix: "Nancy_run_",
+    sitFrame: "Nancy_sit_down.png",
+  },
+}
+
+function idleAnimKey(char: CharKey) {
+  return `${char}-idle`
+}
+
+function runAnimKey(char: CharKey) {
+  return `${char}-run`
+}
+
+/** Deterministically assigns a character to a remote player based on their userId. */
+function charForUserId(userId: string): CharKey {
+  let hash = 0
+  for (let i = 0; i < userId.length; i++) {
+    hash = ((hash << 5) - hash + userId.charCodeAt(i)) | 0
+  }
+  return CHAR_KEYS[Math.abs(hash) % CHAR_KEYS.length]
+}
+
+// ─── Theme bg colours ────────────────────────────────────────────────────────
+
+const THEME_BG: Record<string, string> = {
+  woody: "#1e1e1e",
+  neon: "#0a0015",
+  forest: "#0a1a0a",
+  corporate: "#0f1520",
+  midnight: "#08080f",
+}
+
+// ─── Tilesets ────────────────────────────────────────────────────────────────
 
 const TILESETS = [
   { mapName: "FloorAndGround", key: "FloorAndGround", url: "/asset/map/FloorAndGround.png", tileWidth: 32, tileHeight: 32 },
@@ -32,13 +101,9 @@ const COLLIDER_LAYER_NAMES = [
 
 const INTERACTABLE_LAYER_NAMES = ["Chair", "Computer", "Whiteboard", "VendingMachine"] as const
 
-type ColliderRect = {
-  x: number
-  y: number
-  width: number
-  height: number
-}
+// ─── Types ───────────────────────────────────────────────────────────────────
 
+type ColliderRect = { x: number; y: number; width: number; height: number }
 type InteractableKind = (typeof INTERACTABLE_LAYER_NAMES)[number]
 
 type Interactable = {
@@ -67,7 +132,12 @@ type RemoteAvatar = {
   targetY: number
 }
 
+// ─── Scene ───────────────────────────────────────────────────────────────────
+
 export default class MainScene extends Phaser.Scene {
+  // Character config for local player
+  private charKey: CharKey = "adam"
+
   player?: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody
   colliders?: Phaser.Physics.Arcade.StaticGroup
   roomLabel?: Phaser.GameObjects.Text
@@ -113,18 +183,23 @@ export default class MainScene extends Phaser.Scene {
   onRemotePlayersSync?: (event: Event) => void
   onRemotePlayerUpsert?: (event: Event) => void
   onRemotePlayerLeft?: (event: Event) => void
+  onThemeChange?: (event: Event) => void
 
   constructor() {
     super("MainScene")
+
+    // Read selected character before Phaser initialises
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("twodverse:character")
+      if (saved && saved in CHAR_CONFIGS) {
+        this.charKey = saved as CharKey
+      }
+    }
   }
 
   preload() {
-    console.log("[MainScene] preload start")
     this.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, (file: Phaser.Loader.File) => {
-      console.error("MainScene asset load failed:", file.key, file.src)
-    })
-    this.load.once(Phaser.Loader.Events.COMPLETE, () => {
-      console.log("[MainScene] preload complete")
+      console.error("[MainScene] asset load failed:", file.key, file.src)
     })
 
     if (!this.cache.tilemap.exists(MAP_KEY)) {
@@ -140,38 +215,48 @@ export default class MainScene extends Phaser.Scene {
       }
     }
 
-    if (!this.textures.exists(CHARACTER_ATLAS_KEY)) {
-      this.load.atlas(CHARACTER_ATLAS_KEY, CHARACTER_IMAGE_URL, CHARACTER_ATLAS_URL)
+    // Load all character atlases (needed for varied remote player appearances)
+    for (const key of CHAR_KEYS) {
+      if (!this.textures.exists(key)) {
+        const cfg = CHAR_CONFIGS[key]
+        this.load.atlas(key, cfg.imageUrl, cfg.atlasUrl)
+      }
     }
   }
 
   private ensurePlayerAnimations() {
-    if (!this.anims.exists(PLAYER_IDLE_ANIM)) {
-      this.anims.create({
-        key: PLAYER_IDLE_ANIM,
-        frames: this.anims.generateFrameNames(CHARACTER_ATLAS_KEY, {
-          prefix: "Adam_idle_anim_",
-          start: 1,
-          end: 24,
-          suffix: ".png",
-        }),
-        frameRate: 10,
-        repeat: -1,
-      })
-    }
+    for (const key of CHAR_KEYS) {
+      const cfg = CHAR_CONFIGS[key]
+      const idle = idleAnimKey(key)
+      const run = runAnimKey(key)
 
-    if (!this.anims.exists(PLAYER_RUN_ANIM)) {
-      this.anims.create({
-        key: PLAYER_RUN_ANIM,
-        frames: this.anims.generateFrameNames(CHARACTER_ATLAS_KEY, {
-          prefix: "Adam_run_",
-          start: 1,
-          end: 24,
-          suffix: ".png",
-        }),
-        frameRate: 18,
-        repeat: -1,
-      })
+      if (!this.anims.exists(idle)) {
+        this.anims.create({
+          key: idle,
+          frames: this.anims.generateFrameNames(key, {
+            prefix: cfg.idlePrefix,
+            start: 1,
+            end: 24,
+            suffix: ".png",
+          }),
+          frameRate: 10,
+          repeat: -1,
+        })
+      }
+
+      if (!this.anims.exists(run)) {
+        this.anims.create({
+          key: run,
+          frames: this.anims.generateFrameNames(key, {
+            prefix: cfg.runPrefix,
+            start: 1,
+            end: 24,
+            suffix: ".png",
+          }),
+          frameRate: 18,
+          repeat: -1,
+        })
+      }
     }
   }
 
@@ -209,14 +294,12 @@ export default class MainScene extends Phaser.Scene {
   }
 
   private renderObjectLayers(map: Phaser.Tilemaps.Tilemap) {
-    let renderedCount = 0
-    let skippedCount = 0
+    let rendered = 0
+    let skipped = 0
 
     for (const [layerIndex, objectLayer] of map.objects.entries()) {
       const layerObjects = [...objectLayer.objects].sort((a, b) => {
-        const ay = this.getObjectTop(a)
-        const by = this.getObjectTop(b)
-        return ay - by
+        return this.getObjectTop(a) - this.getObjectTop(b)
       })
 
       for (const object of layerObjects) {
@@ -225,22 +308,13 @@ export default class MainScene extends Phaser.Scene {
 
         const gid = object.gid
         const tileset = map.tilesets.find((entry) => entry.containsTileIndex(gid))
-        if (!tileset) {
-          skippedCount += 1
-          continue
-        }
+        if (!tileset) { skipped += 1; continue }
 
         const textureKey = this.getTilesetTextureKey(tileset.name)
-        if (!textureKey || !this.textures.exists(textureKey)) {
-          skippedCount += 1
-          continue
-        }
+        if (!textureKey || !this.textures.exists(textureKey)) { skipped += 1; continue }
 
         const frame = gid - tileset.firstgid
-        if (frame < 0 || frame >= tileset.total) {
-          skippedCount += 1
-          continue
-        }
+        if (frame < 0 || frame >= tileset.total) { skipped += 1; continue }
 
         const width = object.width ?? tileset.tileWidth
         const height = object.height ?? tileset.tileHeight
@@ -251,11 +325,11 @@ export default class MainScene extends Phaser.Scene {
         sprite.setOrigin(0, 1)
         sprite.setDisplaySize(width, height)
         sprite.setDepth(y + layerIndex)
-        renderedCount += 1
+        rendered += 1
       }
     }
 
-    console.log(`[MainScene] object sprites rendered: ${renderedCount}, skipped: ${skippedCount}`)
+    console.log(`[MainScene] objects rendered: ${rendered}, skipped: ${skipped}`)
   }
 
   private createColliders(rects: ColliderRect[]) {
@@ -275,7 +349,6 @@ export default class MainScene extends Phaser.Scene {
     }
 
     this.colliders = staticGroup
-    console.log(`[MainScene] collider bodies created: ${rects.length}`)
   }
 
   private getInteractableLabel(kind: InteractableKind) {
@@ -393,39 +466,27 @@ export default class MainScene extends Phaser.Scene {
     const chairs = this.interactables.filter((entry) => entry.kind === "Chair")
     for (const computer of this.interactables.filter((entry) => entry.kind === "Computer")) {
       let nearestChair: Interactable | undefined
-      let nearestChairDistance = Number.POSITIVE_INFINITY
+      let nearestDist = Number.POSITIVE_INFINITY
 
       for (const chair of chairs) {
-        const distance = Phaser.Math.Distance.Between(computer.x, computer.y, chair.x, chair.y)
-        if (distance > 140) continue
-        if (distance >= nearestChairDistance) continue
+        const d = Phaser.Math.Distance.Between(computer.x, computer.y, chair.x, chair.y)
+        if (d > 140 || d >= nearestDist) continue
         nearestChair = chair
-        nearestChairDistance = distance
+        nearestDist = d
       }
 
-      if (!nearestChair) continue
-      computer.seatX = nearestChair.seatX
-      computer.seatY = nearestChair.seatY
+      if (nearestChair) {
+        computer.seatX = nearestChair.seatX
+        computer.seatY = nearestChair.seatY
+      }
     }
-
-    console.log(`[MainScene] interactables created: ${interactables.length}`)
   }
 
   private getPlayerFeetPosition() {
     if (!this.player) return undefined
-
     const body = this.player.body as Phaser.Physics.Arcade.Body | undefined
-    if (!body) {
-      return {
-        x: this.player.x,
-        y: this.player.y,
-      }
-    }
-
-    return {
-      x: body.center.x,
-      y: body.bottom - 1,
-    }
+    if (!body) return { x: this.player.x, y: this.player.y }
+    return { x: body.center.x, y: body.bottom - 1 }
   }
 
   private findNearestInteractable() {
@@ -435,38 +496,28 @@ export default class MainScene extends Phaser.Scene {
     if (!feet) return undefined
 
     let nearest: Interactable | undefined
-    let nearestDistance = Number.POSITIVE_INFINITY
+    let nearestDist = Number.POSITIVE_INFINITY
 
     for (const interactable of this.interactables) {
-      const distance = Phaser.Math.Distance.Between(feet.x, feet.y, interactable.x, interactable.y)
-      if (distance > interactable.radius) continue
-      if (distance >= nearestDistance) continue
-
+      const d = Phaser.Math.Distance.Between(feet.x, feet.y, interactable.x, interactable.y)
+      if (d > interactable.radius || d >= nearestDist) continue
       nearest = interactable
-      nearestDistance = distance
+      nearestDist = d
     }
 
     return nearest
   }
 
   private getRoomIdAtWorld(x: number, y: number) {
-    if (!this.roomByTile || this.mapWidthInTiles === 0 || this.mapHeightInTiles === 0) {
-      return -1
-    }
-
+    if (!this.roomByTile || this.mapWidthInTiles === 0 || this.mapHeightInTiles === 0) return -1
     const tileX = Phaser.Math.Clamp(Math.floor(x / this.tileWidth), 0, this.mapWidthInTiles - 1)
     const tileY = Phaser.Math.Clamp(Math.floor(y / this.tileHeight), 0, this.mapHeightInTiles - 1)
     return this.roomByTile[tileY * this.mapWidthInTiles + tileX]
   }
 
   private findNearestWalkablePosition(startX: number, startY: number, maxRadiusInTiles = 4) {
-    if (this.getRoomIdAtWorld(startX, startY) >= 0) {
-      return { x: startX, y: startY }
-    }
-
-    if (!this.roomByTile || this.mapWidthInTiles === 0 || this.mapHeightInTiles === 0) {
-      return undefined
-    }
+    if (this.getRoomIdAtWorld(startX, startY) >= 0) return { x: startX, y: startY }
+    if (!this.roomByTile || this.mapWidthInTiles === 0 || this.mapHeightInTiles === 0) return undefined
 
     const centerTileX = Phaser.Math.Clamp(Math.floor(startX / this.tileWidth), 0, this.mapWidthInTiles - 1)
     const centerTileY = Phaser.Math.Clamp(Math.floor(startY / this.tileHeight), 0, this.mapHeightInTiles - 1)
@@ -475,12 +526,8 @@ export default class MainScene extends Phaser.Scene {
     for (let radius = 1; radius <= maxRadiusInTiles; radius += 1) {
       for (let tileY = centerTileY - radius; tileY <= centerTileY + radius; tileY += 1) {
         for (let tileX = centerTileX - radius; tileX <= centerTileX + radius; tileX += 1) {
-          if (tileX < 0 || tileY < 0 || tileX >= this.mapWidthInTiles || tileY >= this.mapHeightInTiles) {
-            continue
-          }
-
-          const ringDistance = Math.max(Math.abs(tileX - centerTileX), Math.abs(tileY - centerTileY))
-          if (ringDistance !== radius) continue
+          if (tileX < 0 || tileY < 0 || tileX >= this.mapWidthInTiles || tileY >= this.mapHeightInTiles) continue
+          if (Math.max(Math.abs(tileX - centerTileX), Math.abs(tileY - centerTileY)) !== radius) continue
 
           const roomId = this.roomByTile[tileY * this.mapWidthInTiles + tileX]
           if (roomId < 0) continue
@@ -489,15 +536,11 @@ export default class MainScene extends Phaser.Scene {
           const y = tileY * this.tileHeight + this.tileHeight * 0.75
           const distanceSq = Phaser.Math.Distance.Squared(startX, startY, x, y)
 
-          if (!best || distanceSq < best.distanceSq) {
-            best = { x, y, distanceSq }
-          }
+          if (!best || distanceSq < best.distanceSq) best = { x, y, distanceSq }
         }
       }
 
-      if (best) {
-        return { x: best.x, y: best.y }
-      }
+      if (best) return { x: best.x, y: best.y }
     }
 
     return undefined
@@ -506,9 +549,7 @@ export default class MainScene extends Phaser.Scene {
   private setPlayerCollisionEnabled(enabled: boolean) {
     if (!this.player) return
     const body = this.player.body as Phaser.Physics.Arcade.Body | undefined
-    if (!body) return
-
-    body.checkCollision.none = !enabled
+    if (body) body.checkCollision.none = !enabled
   }
 
   private sitAtInteractable(interactable: Interactable) {
@@ -525,7 +566,7 @@ export default class MainScene extends Phaser.Scene {
     this.seatedInteractable = interactable
     this.player.setVelocity(0, 0)
     this.player.setPosition(snappedSeat.x, snappedSeat.y)
-    this.player.setFrame("Adam_sit_down.png")
+    this.player.setFrame(CHAR_CONFIGS[this.charKey].sitFrame)
     this.setPlayerCollisionEnabled(false)
   }
 
@@ -549,7 +590,7 @@ export default class MainScene extends Phaser.Scene {
 
     this.player.setPosition(standPosition.x, standPosition.y)
     this.player.setVelocity(0, 0)
-    this.player.play(PLAYER_IDLE_ANIM, true)
+    this.player.play(idleAnimKey(this.charKey), true)
     this.lastSafeX = standPosition.x
     this.lastSafeY = standPosition.y
     this.seatedInteractable = undefined
@@ -557,7 +598,6 @@ export default class MainScene extends Phaser.Scene {
 
   private rescueIfEmbedded() {
     if (!this.player) return
-
     const body = this.player.body as Phaser.Physics.Arcade.Body | undefined
     if (!body || !body.embedded) return
 
@@ -572,7 +612,7 @@ export default class MainScene extends Phaser.Scene {
 
     this.player.setPosition(rescue.x, rescue.y)
     body.reset(rescue.x, rescue.y)
-    this.player.play(PLAYER_IDLE_ANIM, true)
+    this.player.play(idleAnimKey(this.charKey), true)
     this.lastSafeX = rescue.x
     this.lastSafeY = rescue.y
     this.showInteractionStatus("Adjusted position")
@@ -603,7 +643,6 @@ export default class MainScene extends Phaser.Scene {
 
   private showInteractionStatus(message: string) {
     if (!this.interactionStatus) return
-
     this.interactionStatus.setText(message)
     this.interactionStatus.setVisible(true)
     this.interactionStatusTimer?.remove(false)
@@ -630,11 +669,6 @@ export default class MainScene extends Phaser.Scene {
       return
     }
 
-    if (this.activeInteractable.kind === "Computer") {
-      this.showInteractionStatus(`Using ${label}`)
-      return
-    }
-
     if (this.activeInteractable.kind === "Whiteboard") {
       this.showInteractionStatus(`Reading ${label}`)
       return
@@ -646,12 +680,10 @@ export default class MainScene extends Phaser.Scene {
   private markBlockedTiles(map: Phaser.Tilemaps.Tilemap, rects: ColliderRect[]) {
     const blocked = new Uint8Array(map.width * map.height)
 
-    // Tiles that are empty on the ground layer are outside playable rooms.
     for (let y = 0; y < map.height; y += 1) {
       for (let x = 0; x < map.width; x += 1) {
         const groundTile = map.getTileAt(x, y, false, "Ground")
         if (groundTile && groundTile.index >= 0) continue
-
         blocked[y * map.width + x] = 1
       }
     }
@@ -693,20 +725,10 @@ export default class MainScene extends Phaser.Scene {
         const y = queueY[readIndex]
         readIndex += 1
 
-        const neighbors = [
-          [x + 1, y],
-          [x - 1, y],
-          [x, y + 1],
-          [x, y - 1],
-        ]
-
-        for (const [nx, ny] of neighbors) {
+        for (const [nx, ny] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]]) {
           if (nx < 0 || ny < 0 || nx >= map.width || ny >= map.height) continue
-
           const index = ny * map.width + nx
-          if (blocked[index]) continue
-          if (roomByTile[index] !== -1) continue
-
+          if (blocked[index] || roomByTile[index] !== -1) continue
           roomByTile[index] = roomId
           queueX.push(nx)
           queueY.push(ny)
@@ -717,9 +739,7 @@ export default class MainScene extends Phaser.Scene {
     for (let y = 0; y < map.height; y += 1) {
       for (let x = 0; x < map.width; x += 1) {
         const index = y * map.width + x
-        if (blocked[index]) continue
-        if (roomByTile[index] !== -1) continue
-
+        if (blocked[index] || roomByTile[index] !== -1) continue
         explore(x, y)
         roomId += 1
       }
@@ -731,16 +751,12 @@ export default class MainScene extends Phaser.Scene {
     this.mapHeightInTiles = map.height
     this.tileWidth = map.tileWidth
     this.tileHeight = map.tileHeight
-    console.log(`[MainScene] rooms computed: ${roomId}`)
+    console.log(`[MainScene] rooms: ${roomId}`)
   }
 
   private findSpawnPoint() {
     const centerX = Math.floor(this.mapWidthInTiles / 2)
     const centerY = Math.floor(this.mapHeightInTiles / 2)
-
-    let bestTileX = centerX
-    let bestTileY = centerY
-    let bestDistance = Number.POSITIVE_INFINITY
 
     if (!this.roomByTile) {
       return {
@@ -749,15 +765,16 @@ export default class MainScene extends Phaser.Scene {
       }
     }
 
+    let bestTileX = centerX
+    let bestTileY = centerY
+    let bestDist = Number.POSITIVE_INFINITY
+
     for (let y = 0; y < this.mapHeightInTiles; y += 1) {
       for (let x = 0; x < this.mapWidthInTiles; x += 1) {
-        const index = y * this.mapWidthInTiles + x
-        if (this.roomByTile[index] < 0) continue
-
-        const distance = Math.abs(centerX - x) + Math.abs(centerY - y)
-        if (distance >= bestDistance) continue
-
-        bestDistance = distance
+        if (this.roomByTile[y * this.mapWidthInTiles + x] < 0) continue
+        const d = Math.abs(centerX - x) + Math.abs(centerY - y)
+        if (d >= bestDist) continue
+        bestDist = d
         bestTileX = x
         bestTileY = y
       }
@@ -790,19 +807,16 @@ export default class MainScene extends Phaser.Scene {
     this.lastSafeY = this.player.y
 
     if (roomId === this.currentRoomId) return
-
     this.currentRoomId = roomId
     this.roomLabel.setText(`Room ${roomId + 1}/${Math.max(this.roomCount, 1)}`)
   }
 
   private clampPlayerSpriteToWorld() {
     if (!this.player) return
-
     const minX = this.worldMinX + this.player.displayWidth * this.player.originX
     const maxX = this.worldMaxX - this.player.displayWidth * (1 - this.player.originX)
     const minY = this.worldMinY + this.player.displayHeight * this.player.originY
     const maxY = this.worldMaxY - this.player.displayHeight * (1 - this.player.originY)
-
     this.player.x = Phaser.Math.Clamp(this.player.x, minX, maxX)
     this.player.y = Phaser.Math.Clamp(this.player.y, minY, maxY)
   }
@@ -842,9 +856,7 @@ export default class MainScene extends Phaser.Scene {
     this.lastStateEmitAt = now
 
     window.dispatchEvent(
-      new CustomEvent("twodverse:player-state", {
-        detail: { x, y, roomId },
-      })
+      new CustomEvent("twodverse:player-state", { detail: { x, y, roomId } })
     )
   }
 
@@ -853,14 +865,18 @@ export default class MainScene extends Phaser.Scene {
       this.findNearestWalkablePosition(player.x, player.y, 3) ??
       { x: player.x, y: player.y }
 
-    const sprite = this.add.sprite(safePosition.x, safePosition.y, CHARACTER_ATLAS_KEY, "Adam_idle_anim_1.png")
+    // Assign deterministic character based on userId
+    const remoteChar = charForUserId(player.userId)
+    const firstFrame = `${CHAR_CONFIGS[remoteChar].idlePrefix}1.png`
+
+    const sprite = this.add.sprite(safePosition.x, safePosition.y, remoteChar, firstFrame)
     sprite.setOrigin(0.5, 1)
     sprite.setDepth(safePosition.y + 95)
-    sprite.setTint(0xb8d6ff)
-    sprite.play(PLAYER_IDLE_ANIM)
+    sprite.play(idleAnimKey(remoteChar))
 
     const displayName =
       player.userId.length > 11 ? `${player.userId.slice(0, 8)}...` : player.userId
+
     const label = this.add
       .text(safePosition.x, safePosition.y - 44, displayName, {
         fontFamily: "monospace",
@@ -888,11 +904,7 @@ export default class MainScene extends Phaser.Scene {
 
     const existing = this.remotePlayers.get(player.userId)
     if (!existing) {
-      this.createRemoteAvatar({
-        ...player,
-        x: safePosition.x,
-        y: safePosition.y,
-      })
+      this.createRemoteAvatar({ ...player, x: safePosition.x, y: safePosition.y })
       return
     }
 
@@ -910,15 +922,13 @@ export default class MainScene extends Phaser.Scene {
     }
 
     for (const userId of Array.from(this.remotePlayers.keys())) {
-      if (nextIds.has(userId)) continue
-      this.removeRemotePlayer(userId)
+      if (!nextIds.has(userId)) this.removeRemotePlayer(userId)
     }
   }
 
   private removeRemotePlayer(userId: string) {
     const remote = this.remotePlayers.get(userId)
     if (!remote) return
-
     remote.sprite.destroy()
     remote.label.destroy()
     this.remotePlayers.delete(userId)
@@ -938,28 +948,31 @@ export default class MainScene extends Phaser.Scene {
       const lerp = isMoving ? 0.35 : 1
       const nextX = Phaser.Math.Linear(remote.sprite.x, remote.targetX, lerp)
       const nextY = Phaser.Math.Linear(remote.sprite.y, remote.targetY, lerp)
-      const safeNextPosition =
-        this.findNearestWalkablePosition(nextX, nextY, 2) ??
-        { x: nextX, y: nextY }
+      const safePos = this.findNearestWalkablePosition(nextX, nextY, 2) ?? { x: nextX, y: nextY }
 
-      remote.sprite.setPosition(safeNextPosition.x, safeNextPosition.y)
-      remote.sprite.setDepth(safeNextPosition.y + 95)
+      remote.sprite.setPosition(safePos.x, safePos.y)
+      remote.sprite.setDepth(safePos.y + 95)
+
+      // Determine which anim this remote player uses
+      const remoteChar = charForUserId(remote.userId)
+      const idle = idleAnimKey(remoteChar)
+      const run = runAnimKey(remoteChar)
 
       if (isMoving) {
         if (dx < -0.1) remote.sprite.setFlipX(true)
         if (dx > 0.1) remote.sprite.setFlipX(false)
-        if (remote.sprite.anims.currentAnim?.key !== PLAYER_RUN_ANIM) {
-          remote.sprite.play(PLAYER_RUN_ANIM, true)
-        }
-      } else if (remote.sprite.anims.currentAnim?.key !== PLAYER_IDLE_ANIM) {
-        remote.sprite.play(PLAYER_IDLE_ANIM, true)
+        if (remote.sprite.anims.currentAnim?.key !== run) remote.sprite.play(run, true)
+      } else if (remote.sprite.anims.currentAnim?.key !== idle) {
+        remote.sprite.play(idle, true)
       }
 
-      remote.label.setPosition(
-        safeNextPosition.x,
-        safeNextPosition.y - remote.sprite.displayHeight - 6
-      )
+      remote.label.setPosition(safePos.x, safePos.y - remote.sprite.displayHeight - 6)
     }
+  }
+
+  private applyTheme(themeKey: string) {
+    const bg = THEME_BG[themeKey] ?? "#1e1e1e"
+    this.cameras.main.setBackgroundColor(bg)
   }
 
   private bindRemotePlayerEvents() {
@@ -967,29 +980,31 @@ export default class MainScene extends Phaser.Scene {
 
     this.onRemotePlayersSync = (event: Event) => {
       const customEvent = event as CustomEvent<{ players?: RealtimePlayer[] }>
-      const players = Array.isArray(customEvent.detail?.players)
-        ? customEvent.detail.players
-        : []
+      const players = Array.isArray(customEvent.detail?.players) ? customEvent.detail.players : []
       this.syncRemotePlayers(players)
     }
 
     this.onRemotePlayerUpsert = (event: Event) => {
       const customEvent = event as CustomEvent<{ player?: RealtimePlayer }>
       const player = customEvent.detail?.player
-      if (!player?.userId) return
-      this.upsertRemotePlayer(player)
+      if (player?.userId) this.upsertRemotePlayer(player)
     }
 
     this.onRemotePlayerLeft = (event: Event) => {
       const customEvent = event as CustomEvent<{ userId?: string }>
       const userId = customEvent.detail?.userId
-      if (!userId) return
-      this.removeRemotePlayer(userId)
+      if (userId) this.removeRemotePlayer(userId)
+    }
+
+    this.onThemeChange = (event: Event) => {
+      const customEvent = event as CustomEvent<{ theme?: string }>
+      if (customEvent.detail?.theme) this.applyTheme(customEvent.detail.theme)
     }
 
     window.addEventListener("twodverse:remote-players:sync", this.onRemotePlayersSync)
     window.addEventListener("twodverse:remote-player:upsert", this.onRemotePlayerUpsert)
     window.addEventListener("twodverse:remote-player:left", this.onRemotePlayerLeft)
+    window.addEventListener("twodverse:set-theme", this.onThemeChange)
     window.dispatchEvent(new Event("twodverse:scene-ready"))
   }
 
@@ -1000,21 +1015,27 @@ export default class MainScene extends Phaser.Scene {
       window.removeEventListener("twodverse:remote-players:sync", this.onRemotePlayersSync)
       this.onRemotePlayersSync = undefined
     }
-
     if (this.onRemotePlayerUpsert) {
       window.removeEventListener("twodverse:remote-player:upsert", this.onRemotePlayerUpsert)
       this.onRemotePlayerUpsert = undefined
     }
-
     if (this.onRemotePlayerLeft) {
       window.removeEventListener("twodverse:remote-player:left", this.onRemotePlayerLeft)
       this.onRemotePlayerLeft = undefined
     }
+    if (this.onThemeChange) {
+      window.removeEventListener("twodverse:set-theme", this.onThemeChange)
+      this.onThemeChange = undefined
+    }
   }
 
   create() {
-    console.log("[MainScene] create start")
-    this.cameras.main.setBackgroundColor("#1e1e1e")
+    // Apply saved theme background
+    const savedTheme = typeof window !== "undefined"
+      ? (localStorage.getItem("twodverse:theme") ?? "woody")
+      : "woody"
+    this.applyTheme(savedTheme)
+
     this.ensurePlayerAnimations()
 
     const map = this.make.tilemap({ key: MAP_KEY })
@@ -1023,10 +1044,9 @@ export default class MainScene extends Phaser.Scene {
       .filter((tileset): tileset is Phaser.Tilemaps.Tileset => Boolean(tileset))
 
     if (mapTilesets.length === 0) {
-      console.error("No tilesets could be bound for /asset/map/map.json")
+      console.error("[MainScene] no tilesets bound")
       return
     }
-    console.log(`[MainScene] tilesets bound: ${mapTilesets.length}`)
 
     const candidateLayerNames = map.layers.map((layerData) => layerData.name)
     let renderedLayerCount = 0
@@ -1038,7 +1058,6 @@ export default class MainScene extends Phaser.Scene {
       renderedLayerCount += 1
     }
 
-    console.log(`[MainScene] tile layers rendered: ${renderedLayerCount}`)
     this.renderObjectLayers(map)
 
     const playBounds = this.computePlayableBounds(map)
@@ -1058,13 +1077,16 @@ export default class MainScene extends Phaser.Scene {
     this.buildInteractables(map)
 
     const spawn = this.findSpawnPoint()
-    this.player = this.physics.add.sprite(spawn.x, spawn.y, CHARACTER_ATLAS_KEY, "Adam_idle_anim_1.png")
+    const charCfg = CHAR_CONFIGS[this.charKey]
+    const firstIdleFrame = `${charCfg.idlePrefix}1.png`
+
+    this.player = this.physics.add.sprite(spawn.x, spawn.y, this.charKey, firstIdleFrame)
     this.player.setOrigin(0.5, 1)
     this.player.setSize(18, 20)
     this.player.setOffset(7, 28)
     this.player.setCollideWorldBounds(true)
     this.player.setDepth(spawn.y + 100)
-    this.player.play(PLAYER_IDLE_ANIM)
+    this.player.play(idleAnimKey(this.charKey))
     this.lastSafeX = spawn.x
     this.lastSafeY = spawn.y
 
@@ -1080,12 +1102,7 @@ export default class MainScene extends Phaser.Scene {
 
     this.cursors = this.input.keyboard?.createCursorKeys()
     this.keys = this.input.keyboard?.addKeys("W,A,S,D") as
-      | {
-          W: Phaser.Input.Keyboard.Key
-          A: Phaser.Input.Keyboard.Key
-          S: Phaser.Input.Keyboard.Key
-          D: Phaser.Input.Keyboard.Key
-        }
+      | { W: Phaser.Input.Keyboard.Key; A: Phaser.Input.Keyboard.Key; S: Phaser.Input.Keyboard.Key; D: Phaser.Input.Keyboard.Key }
       | undefined
     this.interactKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.E)
 
@@ -1156,17 +1173,17 @@ export default class MainScene extends Phaser.Scene {
 
     if (this.isSeated) {
       this.player.setVelocity(0, 0)
-      this.player.setFrame("Adam_sit_down.png")
+      this.player.setFrame(CHAR_CONFIGS[this.charKey].sitFrame)
     } else {
       this.player.setVelocity(vx, vy)
 
       if (vx !== 0 || vy !== 0) {
         this.player.body.velocity.normalize().scale(speed)
-        this.player.play(PLAYER_RUN_ANIM, true)
+        this.player.play(runAnimKey(this.charKey), true)
         if (vx < 0) this.player.setFlipX(true)
         if (vx > 0) this.player.setFlipX(false)
       } else {
-        this.player.play(PLAYER_IDLE_ANIM, true)
+        this.player.play(idleAnimKey(this.charKey), true)
       }
     }
 
