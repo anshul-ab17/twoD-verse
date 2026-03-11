@@ -3,7 +3,7 @@
 TwoD Verse is a **real-time multiplayer 2D virtual world** where users can join a shared space, move around, and interact with others.  
 The project explores **real-time networking, multiplayer synchronization, and scalable system design**.
 
-![System Design](https://drive.google.com/file/d/1-eSLQE9JKFL3xQjdcC99q9qER902YGmc/view?usp=sharing)
+
 
 ## Features
 - Real-time multiplayer interactions
@@ -35,3 +35,4 @@ bun i
 
 docker compose up --build
 docker compose up -b
+![System Design](https://drive.google.com/file/d/1-eSLQE9JKFL3xQjdcC99q9qER902YGmc/view?usp=sharing)
