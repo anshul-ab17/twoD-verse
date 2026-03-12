@@ -32,7 +32,6 @@ export default class MainScene extends Phaser.Scene {
   interactKey?: Phaser.Input.Keyboard.Key
   isSeated = false
   cursors?: Phaser.Types.Input.Keyboard.CursorKeys
-  keys?: { W: Phaser.Input.Keyboard.Key; A: Phaser.Input.Keyboard.Key; S: Phaser.Input.Keyboard.Key; D: Phaser.Input.Keyboard.Key }
 
   roomByTile?: Int16Array
   roomCount = 0
@@ -163,8 +162,7 @@ export default class MainScene extends Phaser.Scene {
     this.cameras.main.roundPixels = true
 
     this.cursors = this.input.keyboard?.createCursorKeys()
-    this.keys = this.input.keyboard?.addKeys("W,A,S,D") as typeof this.keys
-    this.interactKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.E)
+    this.interactKey = this.input.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.ENTER)
 
     this.roomLabel = this.add
       .text(16, 16, "Room: --", { fontFamily: "monospace", fontSize: "14px", color: "#e2e8f0", backgroundColor: "#02061799", padding: { x: 8, y: 4 } })
@@ -190,16 +188,16 @@ export default class MainScene extends Phaser.Scene {
   }
 
   update() {
-    if (!this.cursors || !this.keys || !this.player) return
+    if (!this.cursors || !this.player) return
 
     const speed = 200
     let vx = 0
     let vy = 0
 
-    if (this.cursors.left?.isDown  || this.keys.A?.isDown) vx = -speed
-    else if (this.cursors.right?.isDown || this.keys.D?.isDown) vx = speed
-    if (this.cursors.up?.isDown    || this.keys.W?.isDown) vy = -speed
-    else if (this.cursors.down?.isDown  || this.keys.S?.isDown) vy = speed
+    if (this.cursors.left?.isDown) vx = -speed
+    else if (this.cursors.right?.isDown) vx = speed
+    if (this.cursors.up?.isDown) vy = -speed
+    else if (this.cursors.down?.isDown) vy = speed
 
     if (this.isSeated && (vx !== 0 || vy !== 0)) {
       standUpFromSeat(this)
