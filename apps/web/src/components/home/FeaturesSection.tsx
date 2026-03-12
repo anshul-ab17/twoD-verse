@@ -42,7 +42,7 @@ export default function FeaturesSection() {
           >
             Features
           </p>
-          <h2 className="text-3xl font-bold md:text-4xl" style={{ color: "var(--text)" }}>
+          <h2 className="text-4xl font-bold md:text-6xl" style={{ color: "var(--text)" }}>
             Everything you need to collaborate
           </h2>
           <p

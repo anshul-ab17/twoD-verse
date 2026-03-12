@@ -29,25 +29,24 @@ export default function HeroSection() {
           <span
             style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--green-bright)", display: "inline-block" }}
           />
-          Now in Early Access
+          Get in Now.
         </div>
 
         {/* Headline */}
         <h1
           className="animate-fadeUp text-5xl font-extrabold leading-tight tracking-tight md:text-7xl"
-          style={{ animationDelay: "80ms", color: "var(--text)" }}
+          style={{ animationDelay: "80ms" }}
         >
-          Virtual office for teams,{" "}
-          <span className="gradient-text">Reimagined.</span>
+          <span style={{ color: "var(--text)" }}>virtual 2d</span>{" "}
+          <span className="gradient-text">space</span>
         </h1>
 
         {/* Subtext */}
         <p
           className="animate-fadeUp mx-auto mt-6 text-lg leading-relaxed md:text-xl"
-          style={{ maxWidth: "600px", color: "var(--text-muted)", animationDelay: "160ms" }}
+          style={{ maxWidth: "520px", color: "var(--text-muted)", animationDelay: "160ms" }}
         >
-          Gather your team in immersive 2D spaces. Real-time movement, proximity
-          voice &amp; video, chat, Spotify — everything your team needs in one place.
+          interact with your team in an immersive 2d office
         </p>
 
         {/* CTAs */}

@@ -1,3 +1,7 @@
+"use client"
+
+import { useState } from "react"
+
 const STEPS = [
   {
     n: "01",
@@ -17,53 +21,89 @@ const STEPS = [
 ]
 
 export default function HowItWorksSection() {
+  const [current, setCurrent] = useState(0)
+  const step = STEPS[current]
+
   return (
     <section id="how-it-works" style={{ padding: "5rem 0" }}>
-      <div className="mx-auto px-6" style={{ maxWidth: "900px" }}>
-        <div className="mb-12 text-center">
+      <div className="mx-auto px-6" style={{ maxWidth: "700px" }}>
+        <div className="mb-14 text-center">
           <p
             className="text-xs font-semibold uppercase tracking-widest mb-3"
             style={{ color: "var(--accent)" }}
           >
             How it works
           </p>
-          <h2 className="text-3xl font-bold md:text-4xl" style={{ color: "var(--text)" }}>
+          <h2 className="text-4xl font-bold md:text-6xl" style={{ color: "var(--text)" }}>
             Up and running in minutes
           </h2>
         </div>
 
-        <div className="relative grid gap-8 md:grid-cols-3">
-          {/* Connector line */}
+        {/* Slide */}
+        <div
+          className="rounded-3xl border p-10 text-center transition-all duration-300"
+          style={{
+            background: "var(--bg-card)",
+            borderColor: "var(--card-border)",
+            boxShadow: "var(--shadow-card)",
+          }}
+        >
           <div
-            aria-hidden
-            className="hidden md:block absolute top-10 left-1/6 right-1/6"
+            className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full border-2 text-3xl font-extrabold"
             style={{
-              height: "1px",
-              background: "linear-gradient(90deg, transparent, var(--card-border), transparent)",
+              background: "var(--bg)",
+              borderColor: "var(--accent-border)",
+              color: "var(--accent)",
+              boxShadow: "0 0 32px var(--accent-bg)",
             }}
-          />
+          >
+            {step.n}
+          </div>
+          <h3 className="mb-3 text-2xl font-bold" style={{ color: "var(--text)" }}>
+            {step.title}
+          </h3>
+          <p className="text-base leading-relaxed" style={{ color: "var(--text-muted)", maxWidth: 420, margin: "0 auto" }}>
+            {step.desc}
+          </p>
+        </div>
 
-          {STEPS.map((step) => (
-            <div key={step.n} className="relative flex flex-col items-center text-center px-4">
-              <div
-                className="mb-5 flex h-20 w-20 items-center justify-center rounded-full border-2 text-2xl font-extrabold"
+        {/* Controls */}
+        <div className="mt-8 flex items-center justify-center gap-6">
+          <button
+            onClick={() => setCurrent((c) => Math.max(0, c - 1))}
+            disabled={current === 0}
+            className="flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-150 disabled:opacity-30"
+            style={{ background: "var(--bg-card)", borderColor: "var(--card-border)", color: "var(--text)" }}
+            aria-label="Previous step"
+          >
+            ←
+          </button>
+
+          <div className="flex gap-2">
+            {STEPS.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrent(i)}
+                className="rounded-full transition-all duration-200"
                 style={{
-                  background: "var(--bg-card)",
-                  borderColor: "var(--accent-border)",
-                  color: "var(--accent)",
-                  boxShadow: "0 0 24px var(--accent-bg)",
+                  width: i === current ? 28 : 10,
+                  height: 10,
+                  background: i === current ? "var(--accent)" : "var(--card-border)",
                 }}
-              >
-                {step.n}
-              </div>
-              <h3 className="mb-2 text-lg font-semibold" style={{ color: "var(--text)" }}>
-                {step.title}
-              </h3>
-              <p className="text-sm leading-relaxed" style={{ color: "var(--text-muted)" }}>
-                {step.desc}
-              </p>
-            </div>
-          ))}
+                aria-label={`Go to step ${i + 1}`}
+              />
+            ))}
+          </div>
+
+          <button
+            onClick={() => setCurrent((c) => Math.min(STEPS.length - 1, c + 1))}
+            disabled={current === STEPS.length - 1}
+            className="flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-150 disabled:opacity-30"
+            style={{ background: "var(--bg-card)", borderColor: "var(--card-border)", color: "var(--text)" }}
+            aria-label="Next step"
+          >
+            →
+          </button>
         </div>
       </div>
     </section>

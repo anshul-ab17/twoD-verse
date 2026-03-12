@@ -34,5 +34,5 @@ bun install or
 bun i
 
 docker compose up --build
-docker compose up -b
+docker compose up -d
 ![System Design](https://drive.google.com/file/d/1-eSLQE9JKFL3xQjdcC99q9qER902YGmc/view?usp=sharing)
