@@ -5,11 +5,19 @@ import type Phaser from "phaser"
 import { useParams, useRouter } from "next/navigation"
 import { useSpaceSidebar } from "@/components/sidebar/SpaceSidebarContext"
 import { useAuthSession } from "@/components/providers/AuthSessionProvider"
-import { getWebSocketUrl } from "@/lib/api"
+import { getWebSocketUrl, apiFetch } from "@/lib/api"
 import {
   Camera, CameraOff, MapPinned, MessageCircle, Mic, MicOff,
-  Music2, Send, UserRound, Palette,
+  Send, UserRound, Palette,
 } from "lucide-react"
+
+function SpotifyIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z" />
+    </svg>
+  )
+}
 import CharacterPicker from "@/components/game/CharacterPicker"
 import { useTheme, THEMES, type ThemeKey } from "@/hooks/useTheme"
 
@@ -35,6 +43,7 @@ type PlayerLeftMessage = { type: "player:left"; userId: string }
 type PlayerJoinedMessage = { type: "player:joined"; userId: string; x: number; y: number; roomId: number | null }
 type PlayerMovedMessage = { type: "player:moved"; userId: string; x: number; y: number; roomId: number | null }
 type SpaceStateMessage = { type: "space:state"; players: RealtimePlayer[] }
+type GlobalChatMessage = { type: "chat:global"; userId: string; content: string }
 
 type IncomingRealtimeMessage =
   | ProximityUpdateMessage
@@ -43,6 +52,7 @@ type IncomingRealtimeMessage =
   | PlayerJoinedMessage
   | PlayerMovedMessage
   | PlayerLeftMessage
+  | GlobalChatMessage
 
 //  StreamVideo 
 
@@ -86,10 +96,14 @@ function ThemeMenu({
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         title="Change theme"
-        className="rounded-full border p-2 transition-colors"
+        className="rounded-full border p-2 transition-colors flex items-center gap-1.5"
         style={{ background: btnBg, borderColor: btnBorder, color: btnText }}
       >
-        <Palette size={16} />
+        <Palette size={14} />
+        <span
+          className="h-3 w-3 rounded-full border"
+          style={{ background: btnBorder, borderColor: btnText + "44" }}
+        />
       </button>
 
       {open && (
@@ -134,7 +148,7 @@ export default function SpacePage() {
     activatePane,
   } = useSpaceSidebar()
 
-  const { status } = useAuthSession()
+  const { status, user } = useAuthSession()
   const { themeKey, theme, setTheme } = useTheme()
 
   //  Character selection   
@@ -147,6 +161,29 @@ export default function SpacePage() {
     localStorage.setItem("twodverse:character", key)
     setSelectedCharacter(key)
   }, [])
+
+  // Persist visited space to localStorage so invited users see it in their dashboard
+  useEffect(() => {
+    if (!spaceId || status !== "authenticated" || !user) return
+    apiFetch<{ id: string; name: string; width: number; height: number; creatorId: string; creator?: { id: string; email: string } }>(
+      `/api/spaces/${spaceId}`
+    ).then((space) => {
+      const visited: Array<{ id: string; name: string; width: number; height: number; creatorId: string; creatorName: string; members: { id: string; name: string }[] }> =
+        JSON.parse(localStorage.getItem("twodverse:visited-spaces") ?? "[]")
+      if (!visited.find((s) => s.id === space.id)) {
+        visited.push({
+          id: space.id,
+          name: space.name,
+          width: space.width,
+          height: space.height,
+          creatorId: space.creatorId,
+          creatorName: space.creator?.email ?? "Unknown",
+          members: [{ id: user.id, name: user.name }],
+        })
+        localStorage.setItem("twodverse:visited-spaces", JSON.stringify(visited))
+      }
+    }).catch(() => {})
+  }, [spaceId, status, user])
 
   //  Refs 
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -163,7 +200,10 @@ export default function SpacePage() {
   const videoSendersRef = useRef<Map<string, RTCRtpSender>>(new Map())
   const presenceUserIdsRef = useRef<Set<string>>(new Set())
   const remotePlayersStateRef = useRef<Map<string, RealtimePlayer>>(new Map())
+  const knownNamesRef = useRef<Map<string, string>>(new Map()) // userId → name
+  const pendingNameFetchRef = useRef<Set<string>>(new Set())
   const latestPlayerStateRef = useRef<PlayerStateEvent | null>(null)
+  const localRoomIdRef = useRef<number | null>(null)
   const micEnabledRef = useRef(true)
 
   //  UI state 
@@ -484,6 +524,31 @@ export default function SpacePage() {
       sendSocketMessage(payload)
     }
 
+    // Batch-fetch user names for unknown player IDs
+    const fetchNames = async (userIds: string[]) => {
+      const unknown = userIds.filter((id) => id && !knownNamesRef.current.has(id) && !pendingNameFetchRef.current.has(id))
+      if (unknown.length === 0) return
+      unknown.forEach((id) => pendingNameFetchRef.current.add(id))
+      try {
+        const payload = await apiFetch<{ users: Array<{ id: string; email: string }> }>(
+          `/api/users/batch?ids=${unknown.join(",")}`
+        )
+        if (Array.isArray(payload.users)) {
+          payload.users.forEach((u) => knownNamesRef.current.set(u.id, u.email))
+          window.dispatchEvent(new CustomEvent("twodverse:members:info", { detail: { users: payload.users } }))
+        }
+      } catch { /* ignore */ } finally {
+        unknown.forEach((id) => pendingNameFetchRef.current.delete(id))
+      }
+    }
+
+    // Listen for outgoing chat from sidebar
+    const handleChatSend = (event: Event) => {
+      const { content } = (event as CustomEvent<{ content: string }>).detail
+      sendSocketMessage({ type: "chat:global", content })
+    }
+    window.addEventListener("twodverse:chat:send", handleChatSend as EventListener)
+
     ws.onopen = () => {
       setRealtimeStatus("connected")
       replacePresence([], { includeCurrentUser: true })
@@ -502,13 +567,17 @@ export default function SpacePage() {
           const remotePlayers = players.filter((p) => p.userId !== currentUser?.id)
           dispatchRemotePlayersSync(remotePlayers)
           replacePresence(players.map((p) => p.userId), { includeCurrentUser: true })
+          void fetchNames(remotePlayers.map((p) => p.userId))
           return
         }
 
         if (message.type === "player:joined" || message.type === "player:moved") {
           const player: RealtimePlayer = { userId: message.userId, x: message.x, y: message.y, roomId: message.roomId }
           addPresenceUser(player.userId)
-          if (player.userId !== currentUser?.id) dispatchRemotePlayerUpsert(player)
+          if (player.userId !== currentUser?.id) {
+            dispatchRemotePlayerUpsert(player)
+            if (message.type === "player:joined") void fetchNames([player.userId])
+          }
           return
         }
 
@@ -527,6 +596,14 @@ export default function SpacePage() {
           destroyPeer(message.userId)
           removePresenceUser(message.userId)
           dispatchRemotePlayerLeft(message.userId)
+          return
+        }
+
+        if (message.type === "chat:global") {
+          const name = knownNamesRef.current.get(message.userId) ?? message.userId.slice(0, 8)
+          window.dispatchEvent(new CustomEvent("twodverse:chat:incoming", {
+            detail: { fromUserId: message.userId, fromUserName: name, content: message.content },
+          }))
         }
       } catch (error) {
         console.error("WS parse failed", error)
@@ -550,12 +627,51 @@ export default function SpacePage() {
       if (!detail) return
       latestPlayerStateRef.current = detail
       sendPlayerMove(detail)
+
+      // Room-based WebRTC: connect to all players in same room
+      const newRoomId = detail.roomId >= 0 ? detail.roomId : null
+      const prevRoomId = localRoomIdRef.current
+      if (newRoomId !== prevRoomId) {
+        localRoomIdRef.current = newRoomId
+
+        // Disconnect from players in old room (unless already connected via proximity)
+        if (prevRoomId !== null) {
+          for (const [uid, player] of remotePlayersStateRef.current) {
+            if (player.roomId === prevRoomId && !closeTargetsRef.current.has(uid)) {
+              destroyPeer(uid)
+            }
+          }
+        }
+
+        // Connect to players in new room
+        if (newRoomId !== null && currentUser?.id) {
+          for (const [uid, player] of remotePlayersStateRef.current) {
+            if (player.roomId === newRoomId && !peersRef.current.has(uid)) {
+              const shouldInitiate = currentUser.id.localeCompare(uid) < 0
+              if (shouldInitiate) {
+                void createPeer(uid, true)
+              }
+            }
+          }
+        }
+      } else if (newRoomId !== null && currentUser?.id) {
+        // Same room — connect to any newly arrived players
+        for (const [uid, player] of remotePlayersStateRef.current) {
+          if (player.roomId === newRoomId && !peersRef.current.has(uid)) {
+            const shouldInitiate = currentUser.id.localeCompare(uid) < 0
+            if (shouldInitiate) {
+              void createPeer(uid, true)
+            }
+          }
+        }
+      }
     }
 
     window.addEventListener("twodverse:player-state", handlePlayerState as EventListener)
 
     return () => {
       window.removeEventListener("twodverse:player-state", handlePlayerState as EventListener)
+      window.removeEventListener("twodverse:chat:send", handleChatSend as EventListener)
       ws.close()
       replacePresence([], { includeCurrentUser: false })
       dispatchRemotePlayersSync([])
@@ -567,7 +683,7 @@ export default function SpacePage() {
       stopCameraTrack()
     }
   }, [
-    destroyPeer, handleProximityUpdate, handleWebRTCSignal,
+    destroyPeer, createPeer, handleProximityUpdate, handleWebRTCSignal,
     stopCameraTrack, sendSocketMessage, currentUser?.id, spaceId, status,
   ])
 
@@ -723,11 +839,11 @@ export default function SpacePage() {
                 title={showSpotifyPane ? "Close Spotify" : "Open Spotify"}
                 className="rounded-full border p-2 transition-colors"
                 style={showSpotifyPane
-                  ? { background: "#15803d", borderColor: "#16a34a", color: "#f0fdf4" }
+                  ? { background: "#14532d", borderColor: "#1DB954", color: "#1DB954" }
                   : { background: theme.btnBg, borderColor: theme.btnBorder, color: theme.btnText }
                 }
               >
-                <Music2 size={16} />
+                <SpotifyIcon size={16} />
               </button>
 
               {/* Theme picker */}

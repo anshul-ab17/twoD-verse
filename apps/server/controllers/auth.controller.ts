@@ -15,14 +15,16 @@ const isProd = process.env.NODE_ENV === "production"
 const ACCESS_COOKIE = {
   httpOnly: true,
   secure: isProd,
-  sameSite: "strict" as const,
+  sameSite: "lax" as const,
+  path: "/",
   maxAge: 1000 * 60 * 15,
 }
 
 const REFRESH_COOKIE = {
   httpOnly: true,
   secure: isProd,
-  sameSite: "strict" as const,
+  sameSite: "lax" as const,
+  path: "/",
   maxAge: 1000 * 60 * 60 * 24 * 7,
 }
 
@@ -75,17 +77,24 @@ export const refreshHandler: RequestHandler = async (req, res) => {
       return res.status(401).json({ error: "Invalid token" })
     }
 
-    const exists = await redis.get(`refresh:${decoded.jti}`)
+    let exists = await redis.get(`refresh:${decoded.jti}`)
+
+    // Fallback: Redis may have lost data (restart) — check Postgres Session table
+    if (!exists) {
+      const session = await client.session.findUnique({
+        where: { jti: decoded.jti },
+        select: { userId: true, expiresAt: true },
+      })
+      if (session && session.expiresAt > new Date()) {
+        exists = session.userId
+      }
+    }
 
     if (!exists) {
       // Token reuse detected
       await redis.del(`sessions:${decoded.userId}`)
       return res.status(403).json({ error: "Token reuse detected" })
     }
-
-    // Delete old refresh token
-    await redis.del(`refresh:${decoded.jti}`)
-    await redis.sRem(`sessions:${decoded.userId}`, decoded.jti)
 
     const user = await client.user.findUnique({
       where: { id: decoded.userId },
@@ -96,14 +105,19 @@ export const refreshHandler: RequestHandler = async (req, res) => {
     }
 
     const newAccessToken = signAccessToken(user.id, user.role)
-    const { token: newRefreshToken, jti } =
-      signRefreshToken(user.id)
+    const { token: newRefreshToken, jti: newJti } = signRefreshToken(user.id)
 
-    await redis.set(`refresh:${jti}`, user.id, {
-      EX: 60 * 60 * 24 * 7,
-    })
+    const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
 
-    await redis.sAdd(`sessions:${user.id}`, jti)
+    // Atomically: delete old session, create new one in Postgres + Redis
+    await Promise.all([
+      redis.del(`refresh:${decoded.jti}`),
+      redis.sRem(`sessions:${decoded.userId}`, decoded.jti),
+      client.session.deleteMany({ where: { jti: decoded.jti } }),
+      redis.set(`refresh:${newJti}`, user.id, { EX: 60 * 60 * 24 * 7 }),
+      redis.sAdd(`sessions:${user.id}`, newJti),
+      client.session.create({ data: { userId: user.id, jti: newJti, expiresAt: newExpiresAt } }),
+    ])
 
     res.cookie("accessToken", newAccessToken, ACCESS_COOKIE)
     res.cookie("refreshToken", newRefreshToken, REFRESH_COOKIE)
@@ -133,8 +147,8 @@ export const logoutHandler: RequestHandler = async (req, res) => {
     }
   }
 
-  res.clearCookie("accessToken")
-  res.clearCookie("refreshToken")
+  res.clearCookie("accessToken", { path: "/", sameSite: "lax", httpOnly: true })
+  res.clearCookie("refreshToken", { path: "/", sameSite: "lax", httpOnly: true })
 
   return res.json({ success: true })
 }

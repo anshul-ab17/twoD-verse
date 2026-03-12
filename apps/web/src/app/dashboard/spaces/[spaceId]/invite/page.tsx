@@ -1,7 +1,6 @@
 "use client"
 
 import { useParams, useRouter } from "next/navigation"
-import Hero from "@/components/home/Hero"
 
 export default function InvitePage() {
   const { spaceId } = useParams()
@@ -13,17 +12,18 @@ export default function InvitePage() {
       : ""
 
   return (
-    <Hero overlay="bg-black/40" blur="backdrop-blur-md">
-
-      <div className="max-w-2xl w-full text-white text-center">
-
-        <div className="bg-[#8B5A2B] p-10 rounded-2xl border border-[#5A3B1C] shadow-2xl">
-
-          <h1 className="text-2xl font-bold text-yellow-200 mb-4">
+    <div
+      style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}
+    >
+      <div style={{ maxWidth: 520, width: "100%", textAlign: "center" }}>
+        <div
+          className="rounded-2xl border p-10 shadow-2xl"
+          style={{ background: "var(--bg-card)", borderColor: "var(--card-border)" }}
+        >
+          <h1 className="text-2xl font-bold mb-3" style={{ color: "var(--text)" }}>
             Invite your team
           </h1>
-
-          <p className="mb-6 text-white/80">
+          <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>
             Share this link to bring collaborators into your space.
           </p>
 
@@ -31,37 +31,31 @@ export default function InvitePage() {
             <input
               readOnly
               value={shareLink}
-              className="flex-1 p-3 rounded-lg text-black"
+              className="flex-1 rounded-lg border px-3 py-2 text-sm outline-none"
+              style={{
+                background: "var(--bg)",
+                borderColor: "var(--card-border)",
+                color: "var(--text)",
+              }}
             />
-
             <button
-              onClick={() =>
-                navigator.clipboard.writeText(shareLink)
-              }
-              className="px-6 bg-[#556B2F] hover:bg-[#6B8E23]
-                         rounded-lg"
+              onClick={() => navigator.clipboard.writeText(shareLink)}
+              className="rounded-lg px-5 py-2 text-sm font-semibold transition-all hover:-translate-y-0.5"
+              style={{ background: "var(--accent)", color: "#fff" }}
             >
               Copy
             </button>
           </div>
 
           <button
-            onClick={() =>
-              router.push(
-                `/dashboard/spaces/${spaceId}`
-              )
-            }
-            className="px-8 py-3 bg-[#556B2F]
-                       hover:bg-[#6B8E23]
-                       rounded-xl text-lg"
+            onClick={() => router.push(`/dashboard/spaces/${spaceId}`)}
+            className="rounded-xl px-8 py-3 text-sm font-semibold transition-all hover:-translate-y-0.5"
+            style={{ background: "var(--accent)", color: "#fff" }}
           >
-            Continue
+            Continue to Space
           </button>
-
         </div>
-
       </div>
-
-    </Hero>
+    </div>
   )
 }

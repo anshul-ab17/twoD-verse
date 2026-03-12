@@ -10,21 +10,30 @@ export default function Sidebar() {
   const [isOpen, setIsOpen] = useState(true);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
+  const railStyle = {
+    background: "var(--bg-card)",
+    borderRight: "1px solid var(--card-border)",
+  }
+
+  const panelStyle = {
+    background: "var(--bg-card)",
+    borderRight: "1px solid var(--card-border)",
+  }
+
   return (
     <>
       {/* Mobile Toggle */}
       <button
         onClick={() => setIsMobileOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-50 
-                   bg-[#3b2a1a] border border-[#6b4b2a] 
-                   p-2 rounded"
+        className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-lg border"
+        style={{ background: "var(--bg-card)", borderColor: "var(--card-border)", color: "var(--text)" }}
       >
-        <Menu size={20} className="text-yellow-200" />
+        <Menu size={20} />
       </button>
 
-      {/* COMPACT SIDEBAR (tablet / half-window) */}
+      {/* COMPACT SIDEBAR (tablet) */}
       <div className="hidden md:flex lg:hidden fixed left-0 top-0 z-40 h-screen">
-        <div className="w-20 bg-[#2b1a10] border-r-4 border-[#6b4b2a]">
+        <div className="w-20" style={railStyle}>
           <SidebarRail
             isOpen={false}
             toggle={() => setIsMobileOpen(true)}
@@ -34,30 +43,22 @@ export default function Sidebar() {
       </div>
 
       {/* DESKTOP SIDEBAR */}
-       <div className="hidden lg:flex fixed left-0 top-0 z-40 h-screen">
-
-        <div className="w-20 bg-[#2b1a10] border-r-4 border-[#6b4b2a]">
+      <div className="hidden lg:flex fixed left-0 top-0 z-40 h-screen">
+        <div className="w-20" style={railStyle}>
           <SidebarRail
             isOpen={isOpen}
             toggle={() => setIsOpen(!isOpen)}
-            onIconAction={() => {
-              if (!isOpen) setIsOpen(true)
-            }}
+            onIconAction={() => { if (!isOpen) setIsOpen(true) }}
           />
         </div>
 
         <motion.div
           animate={{ width: isOpen ? 280 : 0 }}
           transition={{ type: "spring", stiffness: 160, damping: 22 }}
-          className="
-            bg-[#3b2a1a]
-            border-r-4 border-[#6b4b2a]
-            overflow-hidden
-          "
+          className="overflow-hidden"
+          style={panelStyle}
         >
-          {isOpen && (
-            <SidebarContent toggle={() => setIsOpen(false)} />
-          )}
+          {isOpen && <SidebarContent toggle={() => setIsOpen(false)} />}
         </motion.div>
       </div>
 
@@ -65,11 +66,11 @@ export default function Sidebar() {
       {isMobileOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div
-            className="absolute inset-0 bg-black/40"
+            className="absolute inset-0"
+            style={{ background: "rgba(0,0,0,0.5)" }}
             onClick={() => setIsMobileOpen(false)}
           />
-
-          <div className="relative w-72 bg-[#3b2a1a] border-r-4 border-[#6b4b2a]">
+          <div className="relative w-72" style={panelStyle}>
             <SidebarContent toggle={() => setIsMobileOpen(false)} />
           </div>
         </div>

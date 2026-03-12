@@ -6,6 +6,14 @@ import {
 import { client } from "@repo/db"
 import { redis } from "@repo/pubsub"
 
+// OWASP-recommended minimum: 19 MB memory, 2 iterations, 1 thread
+// Default argon2 params (64 MB, 3 iter) are too slow for dev/low-spec machines
+const ARGON2_OPTIONS = {
+  memoryCost: 19456,
+  timeCost: 2,
+  parallelism: 1,
+} as const
+
 export async function signup(email: string, password: string) {
   const existing = await client.user.findUnique({
     where: { email },
@@ -15,7 +23,7 @@ export async function signup(email: string, password: string) {
     throw new Error("User already exists")
   }
 
-  const hashed = await argon2.hash(password)
+  const hashed = await argon2.hash(password, ARGON2_OPTIONS)
 
   const user = await client.user.create({
     data: {
@@ -40,7 +48,7 @@ export async function signin(email: string, password: string) {
   })
 
   if (!user || !user.password) {
-    await argon2.hash("fake-password")
+    await argon2.hash("fake-password", ARGON2_OPTIONS)
     throw new Error("Invalid credentials")
   }
 
@@ -49,11 +57,11 @@ export async function signin(email: string, password: string) {
   )
 
   if (!emailAccount) {
-    await argon2.hash("fake-password")
+    await argon2.hash("fake-password", ARGON2_OPTIONS)
     throw new Error("Invalid credentials")
   }
 
-  const valid = await argon2.verify(user.password, password)
+  const valid = await argon2.verify(user.password, password, ARGON2_OPTIONS)
 
   if (!valid) throw new Error("Invalid credentials")
 
