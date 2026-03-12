@@ -7,6 +7,26 @@ import { redis } from "@repo/pubsub"
 
 const MAX_SPEED = 300
 
+function sendProximity(ws: WebSocket, targetUserId: string, isClose: boolean) {
+  if (ws.readyState === ws.OPEN) {
+    ws.send(JSON.stringify({ type: "proximity:update", targetUserId, isClose }))
+  }
+}
+
+function computeIsClose(
+  ax: number, ay: number, aRoomId: number | null,
+  bx: number, by: number, bRoomId: number | null,
+): boolean {
+  // Both players have a known room: same room = connect, different room = disconnect
+  if (aRoomId !== null && bRoomId !== null) {
+    if (aRoomId !== bRoomId) return false
+    // Same room — always close (room-based WebRTC)
+    return true
+  }
+  // At least one player's room is unknown — fall back to pixel distance
+  return calculateDistance(ax, ay, bx, by) < 200
+}
+
 export async function handleMovement(
   ws: WebSocket,
   x: number,
@@ -20,7 +40,6 @@ export async function handleMovement(
   try {
     allowed = await allow(player.userId, "move")
   } catch {
-    // Allow movement in local/dev mode if Redis rate limiter is unavailable.
     allowed = true
   }
   if (!allowed) return
@@ -58,56 +77,36 @@ export async function handleMovement(
     roomId: player.roomId,
   })
 
-  // Proximity detection
+  // Proximity detection — runs for every move
   playerManager.getAll().forEach((target) => {
     if (target.userId === player.userId) return
     if (target.spaceId !== player.spaceId) return
-    if (player.roomId === null || target.roomId === null) return
-    if (player.roomId !== target.roomId) {
-      ws.send(
-        JSON.stringify({
-          type: "proximity:update",
-          targetUserId: target.userId,
-          isClose: false,
-        })
-      )
 
-      if (target.ws.readyState === target.ws.OPEN) {
-        target.ws.send(
-          JSON.stringify({
-            type: "proximity:update",
-            targetUserId: player.userId,
-            isClose: false,
-          })
-        )
-      }
-      return
-    }
-
-    const d = calculateDistance(
-      player.x,
-      player.y,
-      target.x,
-      target.y
-    )
-    const isClose = d < 200
-
-    ws.send(
-      JSON.stringify({
-        type: "proximity:update",
-        targetUserId: target.userId,
-        isClose,
-      })
+    const isClose = computeIsClose(
+      player.x, player.y, player.roomId,
+      target.x, target.y, target.roomId,
     )
 
-    if (target.ws.readyState === target.ws.OPEN) {
-      target.ws.send(
-        JSON.stringify({
-          type: "proximity:update",
-          targetUserId: player.userId,
-          isClose,
-        })
-      )
-    }
+    sendProximity(ws, target.userId, isClose)
+    sendProximity(target.ws, player.userId, isClose)
+  })
+}
+
+/** Call after a player joins to immediately evaluate proximity against all existing players. */
+export function broadcastProximityOnJoin(ws: WebSocket) {
+  const player = playerManager.get(ws)
+  if (!player) return
+
+  playerManager.getAll().forEach((target) => {
+    if (target.userId === player.userId) return
+    if (target.spaceId !== player.spaceId) return
+
+    const isClose = computeIsClose(
+      player.x, player.y, player.roomId,
+      target.x, target.y, target.roomId,
+    )
+
+    sendProximity(ws, target.userId, isClose)
+    sendProximity(target.ws, player.userId, isClose)
   })
 }

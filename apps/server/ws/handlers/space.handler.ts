@@ -1,6 +1,7 @@
 import { WebSocket } from "ws"
 import { playerManager } from "../managers/player.manager"
 import { spaceManager } from "../managers/space.manager"
+import { broadcastProximityOnJoin } from "./movement.handler"
 
 import { PrismaClient } from "@repo/db"
 import type { AuthUser } from "../types"
@@ -49,6 +50,9 @@ export async function handleSpaceJoin(
       })
     )
   }
+
+  // Immediately evaluate proximity so joining player can connect to nearby peers
+  broadcastProximityOnJoin(ws)
 
   await spaceManager.broadcast(spaceId, {
     type: "player:joined",
