@@ -7,6 +7,7 @@ import {
   refreshHandler,
   logoutHandler,
   meHandler,
+  changePasswordHandler,
   revokeSessionHandler,
 } from "../controllers/auth.controller"
 
@@ -20,6 +21,7 @@ authRouter.post("/signin", signinHandler)
 authRouter.post("/refresh", refreshHandler)
 authRouter.post("/logout", requireAuth, logoutHandler)
 authRouter.get("/me", requireAuth, meHandler)
+authRouter.patch("/me/password", requireAuth, changePasswordHandler)
 
 authRouter.delete(
   "/sessions/:jti",

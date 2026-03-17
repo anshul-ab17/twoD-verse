@@ -179,6 +179,19 @@ export const meHandler: RequestHandler = async (req, res) => {
 
   return res.json(user)
 }
+export const changePasswordHandler: RequestHandler = async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: "Unauthorized" })
+  const { currentPassword, newPassword } = req.body as { currentPassword?: string; newPassword?: string }
+  if (!currentPassword || !newPassword) return res.status(400).json({ error: "currentPassword and newPassword required" })
+  if (newPassword.length < 8) return res.status(400).json({ error: "New password must be at least 8 characters" })
+  try {
+    await changePassword(req.user.userId, currentPassword, newPassword)
+    return res.json({ success: true })
+  } catch (err) {
+    return res.status(400).json({ error: err instanceof Error ? err.message : "Failed to change password" })
+  }
+}
+
 export const revokeSessionHandler: RequestHandler = async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: "Unauthorized" })
