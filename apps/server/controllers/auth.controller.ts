@@ -1,6 +1,6 @@
 import type { RequestHandler } from "express"
 import { EmailSignupSchema, EmailSigninSchema } from "@repo/types"
-import { signup, signin } from "../services/auth.service"
+import { signup, signin, changePassword } from "../services/auth.service"
 import { client } from "@repo/db"
 import {
   verifyToken,
