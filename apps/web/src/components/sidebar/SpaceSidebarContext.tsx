@@ -53,6 +53,7 @@ type SpaceSidebarContextValue = {
   messages: SpaceChatMessage[]
   threadMessages: SpaceChatMessage[]
   sendMessage: (text: string) => void
+  unreadDmCount: number
   friends: SpaceUser[]
   addFriend: (user: SpaceUser) => void
   removeFriend: (userId: string) => void
@@ -161,7 +162,10 @@ export function SpaceSidebarProvider({ children }: { children: React.ReactNode }
   // Map of userId → SpaceUser resolved from server (for users not in localStorage)
   const [knownUsersMap, setKnownUsersMap] = useState<Map<string, SpaceUser>>(new Map())
 
+  const [unreadDmCount, setUnreadDmCount] = useState(0)
+
   const lastChatUserIdRef = useRef<string | null>(null)
+  const activePaneRef = useRef<PaneMode>("map")
   const previousMemberIdsRef = useRef<Set<string>>(new Set())
   const currentUserRef = useRef<SpaceUser | null>(null)
   const resolvedMembersRef = useRef<SpaceUser[]>([])
@@ -220,11 +224,7 @@ export function SpaceSidebarProvider({ children }: { children: React.ReactNode }
     }
     previousMemberIdsRef.current = nextMemberIds
     setMembers(nextMembers)
-    if (!currentChatUserId && nextMembers.length > 0) {
-      const fallback = nextMembers.find((m) => m.id !== user?.id) ?? nextMembers[0]
-      if (fallback) { setCurrentChatUserId(fallback.id); lastChatUserIdRef.current = fallback.id }
-    }
-  }, [currentChatUserId, spaceId])
+  }, [spaceId])
 
   useEffect(() => {
     if (!spaceId) return
@@ -282,16 +282,21 @@ export function SpaceSidebarProvider({ children }: { children: React.ReactNode }
   useEffect(() => {
     if (!spaceId) return
     const handler = (event: Event) => {
-      const { fromUserId, fromUserName, content } = (event as CustomEvent<{
-        fromUserId: string; fromUserName: string; content: string
+      const { fromUserId, fromUserName, content, isDm } = (event as CustomEvent<{
+        fromUserId: string; fromUserName: string; content: string; isDm?: boolean
       }>).detail
       // Skip our own messages (already saved on send)
       if (fromUserId === currentUserRef.current?.id) return
+      // Count unread DMs when the chat pane isn't open
+      if (isDm && activePaneRef.current !== "chat") {
+        setUnreadDmCount((n) => n + 1)
+      }
       const msg: SpaceChatMessage = {
         id: crypto.randomUUID(),
         fromUserId,
         fromUserName,
-        toUserId: null,
+        // DMs are stored as a thread between sender and recipient
+        toUserId: isDm ? (currentUserRef.current?.id ?? null) : null,
         text: content,
         createdAt: Date.now(),
       }
@@ -323,8 +328,9 @@ export function SpaceSidebarProvider({ children }: { children: React.ReactNode }
     return result
   }, [hasLivePresenceSnapshot, knownUsersMap, livePresenceUserIds, members])
 
-  // Keep ref in sync for use in event handlers
+  // Keep refs in sync for use in event handlers
   resolvedMembersRef.current = resolvedMembers
+  activePaneRef.current = activePane
 
   const currentChatUser = useMemo(
     () => resolvedMembers.find((m) => m.id === currentChatUserId) ?? null,
@@ -356,16 +362,13 @@ export function SpaceSidebarProvider({ children }: { children: React.ReactNode }
       if (activePane === "map" && lastChatUserIdRef.current) { setCurrentChatUserId(lastChatUserIdRef.current); setActivePane("chat"); return }
       setActivePane("map"); return
     }
-    if (pane === "chat" && !currentChatUserId) {
-      const fallback = resolvedMembers.find((m) => m.id !== currentUser?.id) ?? resolvedMembers[0]
-      if (fallback) { setCurrentChatUserId(fallback.id); lastChatUserIdRef.current = fallback.id }
-    }
+    if (pane === "chat") setUnreadDmCount(0)
     if (pane === "notifications") markNotificationsRead()
     setActivePane(pane)
-  }, [activePane, currentChatUserId, currentUser?.id, markNotificationsRead, resolvedMembers])
+  }, [activePane, currentChatUserId, markNotificationsRead])
 
   const openChatWithUser = useCallback((userId: string | null) => {
-    setCurrentChatUserId(userId); lastChatUserIdRef.current = userId; setActivePane("chat")
+    setCurrentChatUserId(userId); lastChatUserIdRef.current = userId; setActivePane("chat"); setUnreadDmCount(0)
   }, [])
 
   const sendMessage = useCallback((text: string) => {
@@ -382,9 +385,11 @@ export function SpaceSidebarProvider({ children }: { children: React.ReactNode }
     }
     // Save locally immediately (optimistic)
     setMessages((prev) => { const next = [...prev, msg]; persistMessages(spaceId, next); return next })
-    // Send through WebSocket via event bridge (global chat only, not DMs)
+    // Send through WebSocket via event bridge
     if (!currentChatUserId) {
       window.dispatchEvent(new CustomEvent("twodverse:chat:send", { detail: { content: trimmed } }))
+    } else {
+      window.dispatchEvent(new CustomEvent("twodverse:chat:dm", { detail: { targetUserId: currentChatUserId, content: trimmed } }))
     }
   }, [currentChatUserId, spaceId])
 
@@ -396,12 +401,12 @@ export function SpaceSidebarProvider({ children }: { children: React.ReactNode }
     spaceId, activePane, activatePane, currentUser, members: resolvedMembers,
     searchQuery, setSearchQuery, filteredMembers, notifications, unreadNotificationCount,
     markNotificationsRead, currentChatUserId, currentChatUser, openChatWithUser,
-    messages, threadMessages, sendMessage, friends, addFriend, removeFriend, isFriend,
+    messages, threadMessages, sendMessage, unreadDmCount, friends, addFriend, removeFriend, isFriend,
   }), [
     spaceId, activePane, activatePane, currentUser, resolvedMembers, searchQuery,
     filteredMembers, notifications, unreadNotificationCount, markNotificationsRead,
     currentChatUserId, currentChatUser, openChatWithUser, messages, threadMessages,
-    sendMessage, friends, addFriend, removeFriend, isFriend,
+    sendMessage, unreadDmCount, friends, addFriend, removeFriend, isFriend,
   ])
 
   return <SpaceSidebarContext.Provider value={value}>{children}</SpaceSidebarContext.Provider>

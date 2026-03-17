@@ -2,7 +2,7 @@ import { WebSocket } from "ws"
 import { PrismaClient } from "@repo/db"
 import { handleSpaceJoin } from "./handlers/space.handler"
 import { handleMovement } from "./handlers/movement.handler"
-import { handleGlobalChat, handleNearbyChat } from "./handlers/chat.handler"
+import { handleGlobalChat, handleNearbyChat, handleDmChat } from "./handlers/chat.handler"
 import { handleWebRTC } from "./handlers/webrtc.handler"
 import type { AuthUser, IncomingMessage } from "./types"
 
@@ -29,6 +29,10 @@ export async function routeMessage(
 
     case "chat:nearby":
       await handleNearbyChat(ws, message.content)
+      break
+
+    case "chat:dm":
+      await handleDmChat(ws, message.targetUserId, message.content)
       break
 
     case "webrtc:offer":

@@ -31,6 +31,29 @@ export async function handleGlobalChat(
   })
 }
 
+export async function handleDmChat(
+  ws: WebSocket,
+  targetUserId: string,
+  content: string
+) {
+  const sender = playerManager.get(ws)
+  if (!sender) return
+
+  const allowed = await allow(sender.userId, "chat")
+  if (!allowed) return
+
+  const target = playerManager.findByUserId(targetUserId)
+  if (!target) return
+
+  target.ws.send(
+    JSON.stringify({
+      type: "chat:dm",
+      fromUserId: sender.userId,
+      content,
+    })
+  )
+}
+
 export async function handleNearbyChat(
   ws: WebSocket,
   content: string

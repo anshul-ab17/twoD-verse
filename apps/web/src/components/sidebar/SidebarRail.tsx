@@ -28,6 +28,7 @@ export default function SidebarRail({ isOpen, toggle, onIconAction }: Props) {
     activePane,
     activatePane,
     unreadNotificationCount,
+    unreadDmCount,
     friends,
     members,
   } = useSpaceSidebar()
@@ -73,7 +74,7 @@ export default function SidebarRail({ isOpen, toggle, onIconAction }: Props) {
           style={iconBtn("chat")}
           onClick={() => handlePaneClick("chat")}
         >
-          <SidebarChatIcon active={activePane === "chat"} />
+          <SidebarChatIcon active={activePane === "chat"} unreadCount={unreadDmCount} />
         </button>
 
         <button

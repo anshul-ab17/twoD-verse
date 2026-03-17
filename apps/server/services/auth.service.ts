@@ -68,6 +68,24 @@ export async function signin(email: string, password: string) {
   return generateTokens(user.id, user.role)
 }
 
+export async function changePassword(userId: string, currentPassword: string, newPassword: string) {
+  const user = await client.user.findUnique({
+    where: { id: userId },
+    include: { accounts: true },
+  })
+
+  if (!user || !user.password) throw new Error("No password set for this account")
+
+  const emailAccount = user.accounts.find((acc) => acc.provider === "EMAIL")
+  if (!emailAccount) throw new Error("No password set for this account")
+
+  const valid = await argon2.verify(user.password, currentPassword, ARGON2_OPTIONS)
+  if (!valid) throw new Error("Current password is incorrect")
+
+  const hashed = await argon2.hash(newPassword, ARGON2_OPTIONS)
+  await client.user.update({ where: { id: userId }, data: { password: hashed } })
+}
+
 async function generateTokens(userId: string, role: string) {
   const accessToken = signAccessToken(userId, role)
   const { token: refreshToken, jti } = signRefreshToken(userId)

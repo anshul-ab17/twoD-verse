@@ -44,6 +44,7 @@ type PlayerJoinedMessage = { type: "player:joined"; userId: string; x: number; y
 type PlayerMovedMessage = { type: "player:moved"; userId: string; x: number; y: number; roomId: number | null }
 type SpaceStateMessage = { type: "space:state"; players: RealtimePlayer[] }
 type GlobalChatMessage = { type: "chat:global"; userId: string; content: string }
+type DmChatMessage = { type: "chat:dm"; fromUserId: string; content: string }
 
 type IncomingRealtimeMessage =
   | ProximityUpdateMessage
@@ -53,6 +54,7 @@ type IncomingRealtimeMessage =
   | PlayerMovedMessage
   | PlayerLeftMessage
   | GlobalChatMessage
+  | DmChatMessage
 
 //  StreamVideo 
 
@@ -367,13 +369,13 @@ export default function SpacePage() {
     }
     closeTargetsRef.current.add(message.targetUserId)
     const shouldInitiate =
-      typeof currentUser?.id === "string" &&
-      currentUser.id.localeCompare(message.targetUserId) < 0
+      typeof user?.id === "string" &&
+      user.id.localeCompare(message.targetUserId) < 0
 
     if (!peersRef.current.has(message.targetUserId) && shouldInitiate) {
       await createPeer(message.targetUserId, true)
     }
-  }, [createPeer, currentUser?.id, destroyPeer])
+  }, [createPeer, user?.id, destroyPeer])
 
   const handleWebRTCSignal = useCallback(async (message: WebRTCMessage) => {
     const fromUserId = message.fromUserId
@@ -497,7 +499,7 @@ export default function SpacePage() {
     const replacePresence = (userIds: Iterable<string>, opts?: { includeCurrentUser?: boolean }) => {
       const nextIds = new Set<string>()
       for (const id of userIds) if (id) nextIds.add(id)
-      if (opts?.includeCurrentUser !== false && currentUser?.id) nextIds.add(currentUser.id)
+      if (opts?.includeCurrentUser !== false && user?.id) nextIds.add(user.id)
       presenceUserIdsRef.current = nextIds
       emitPresence()
     }
@@ -547,7 +549,12 @@ export default function SpacePage() {
       const { content } = (event as CustomEvent<{ content: string }>).detail
       sendSocketMessage({ type: "chat:global", content })
     }
+    const handleChatDm = (event: Event) => {
+      const { targetUserId, content } = (event as CustomEvent<{ targetUserId: string; content: string }>).detail
+      sendSocketMessage({ type: "chat:dm", targetUserId, content })
+    }
     window.addEventListener("twodverse:chat:send", handleChatSend as EventListener)
+    window.addEventListener("twodverse:chat:dm", handleChatDm as EventListener)
 
     ws.onopen = () => {
       setRealtimeStatus("connected")
@@ -564,7 +571,7 @@ export default function SpacePage() {
 
         if (message.type === "space:state") {
           const players = message.players.filter((p) => !!p?.userId)
-          const remotePlayers = players.filter((p) => p.userId !== currentUser?.id)
+          const remotePlayers = players.filter((p) => p.userId !== user?.id)
           dispatchRemotePlayersSync(remotePlayers)
           replacePresence(players.map((p) => p.userId), { includeCurrentUser: true })
           void fetchNames(remotePlayers.map((p) => p.userId))
@@ -574,7 +581,7 @@ export default function SpacePage() {
         if (message.type === "player:joined" || message.type === "player:moved") {
           const player: RealtimePlayer = { userId: message.userId, x: message.x, y: message.y, roomId: message.roomId }
           addPresenceUser(player.userId)
-          if (player.userId !== currentUser?.id) {
+          if (player.userId !== user?.id) {
             dispatchRemotePlayerUpsert(player)
             if (message.type === "player:joined") void fetchNames([player.userId])
           }
@@ -603,6 +610,15 @@ export default function SpacePage() {
           const name = knownNamesRef.current.get(message.userId) ?? message.userId.slice(0, 8)
           window.dispatchEvent(new CustomEvent("twodverse:chat:incoming", {
             detail: { fromUserId: message.userId, fromUserName: name, content: message.content },
+          }))
+          return
+        }
+
+        if (message.type === "chat:dm") {
+          void fetchNames([message.fromUserId])
+          const name = knownNamesRef.current.get(message.fromUserId) ?? message.fromUserId.slice(0, 8)
+          window.dispatchEvent(new CustomEvent("twodverse:chat:incoming", {
+            detail: { fromUserId: message.fromUserId, fromUserName: name, content: message.content, isDm: true },
           }))
         }
       } catch (error) {
@@ -644,21 +660,21 @@ export default function SpacePage() {
         }
 
         // Connect to players in new room
-        if (newRoomId !== null && currentUser?.id) {
+        if (newRoomId !== null && user?.id) {
           for (const [uid, player] of remotePlayersStateRef.current) {
             if (player.roomId === newRoomId && !peersRef.current.has(uid)) {
-              const shouldInitiate = currentUser.id.localeCompare(uid) < 0
+              const shouldInitiate = user.id.localeCompare(uid) < 0
               if (shouldInitiate) {
                 void createPeer(uid, true)
               }
             }
           }
         }
-      } else if (newRoomId !== null && currentUser?.id) {
+      } else if (newRoomId !== null && user?.id) {
         // Same room — connect to any newly arrived players
         for (const [uid, player] of remotePlayersStateRef.current) {
           if (player.roomId === newRoomId && !peersRef.current.has(uid)) {
-            const shouldInitiate = currentUser.id.localeCompare(uid) < 0
+            const shouldInitiate = user.id.localeCompare(uid) < 0
             if (shouldInitiate) {
               void createPeer(uid, true)
             }
@@ -672,6 +688,7 @@ export default function SpacePage() {
     return () => {
       window.removeEventListener("twodverse:player-state", handlePlayerState as EventListener)
       window.removeEventListener("twodverse:chat:send", handleChatSend as EventListener)
+      window.removeEventListener("twodverse:chat:dm", handleChatDm as EventListener)
       ws.close()
       replacePresence([], { includeCurrentUser: false })
       dispatchRemotePlayersSync([])
@@ -684,7 +701,7 @@ export default function SpacePage() {
     }
   }, [
     destroyPeer, createPeer, handleProximityUpdate, handleWebRTCSignal,
-    stopCameraTrack, sendSocketMessage, currentUser?.id, spaceId, status,
+    stopCameraTrack, sendSocketMessage, user?.id, spaceId, status,
   ])
 
   const handleSend = (event: FormEvent<HTMLFormElement>) => {
