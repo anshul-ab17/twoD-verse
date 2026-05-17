@@ -17,6 +17,12 @@ enum AuthProvider {
   GITHUB
 }
 
+enum FriendRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -31,6 +37,11 @@ model User {
 
   spaces    Space[]  @relation("UserSpaces")
   messages  Message[]
+
+  sentRequests       FriendRequest[] @relation("SentRequests")
+  receivedRequests   FriendRequest[] @relation("ReceivedRequests")
+  friendshipsA       Friendship[]    @relation("FriendshipsA")
+  friendshipsB       Friendship[]    @relation("FriendshipsB")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -148,4 +159,34 @@ model Message {
   createdAt DateTime @default(now())
 
   @@index([spaceId])
+}
+
+model FriendRequest {
+  id         String              @id @default(cuid())
+  senderId   String
+  receiverId String
+  status     FriendRequestStatus @default(PENDING)
+  createdAt  DateTime            @default(now())
+  updatedAt  DateTime            @updatedAt
+
+  sender   User @relation("SentRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("ReceivedRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([senderId, receiverId])
+  @@index([receiverId])
+  @@index([senderId])
+}
+
+model Friendship {
+  id        String   @id @default(cuid())
+  userAId   String
+  userBId   String
+  createdAt DateTime @default(now())
+
+  userA User @relation("FriendshipsA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB User @relation("FriendshipsB", fields: [userBId], references: [id], onDelete: Cascade)
+
+  @@unique([userAId, userBId])
+  @@index([userAId])
+  @@index([userBId])
 }
