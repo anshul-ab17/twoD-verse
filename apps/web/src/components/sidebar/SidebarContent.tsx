@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ExternalLink, Pause, Play, UserPlus, UserMinus, Wifi, Link, Search, LogOut } from "lucide-react";
+import { ExternalLink, Pause, Play, UserPlus, UserMinus, Wifi, Link, Search, LogOut, Check, X } from "lucide-react";
 import SidebarInviteCard from "./SidebarInviteCard";
 import SidebarUser from "./SidebarUser";
 import { useSpaceSidebar } from "./SpaceSidebarContext";
@@ -61,6 +61,9 @@ export default function SidebarContent({ toggle }: Props) {
     addFriend,
     removeFriend,
     isFriend,
+    pendingRequests,
+    acceptRequest,
+    rejectRequest,
   } = useSpaceSidebar()
 
   const searchInputRef = useRef<HTMLInputElement | null>(null)
@@ -290,7 +293,7 @@ export default function SidebarContent({ toggle }: Props) {
   }
 
   const addGlobalFriend = (u: GlobalUser) => {
-    addFriend({ id: u.id, name: u.email.split("@")[0], email: u.email })
+    void addFriend({ id: u.id, name: u.email.split("@")[0], email: u.email })
   }
 
   const border = "var(--card-border)"
@@ -455,6 +458,54 @@ export default function SidebarContent({ toggle }: Props) {
       {/* ── FRIENDS PANE ── */}
       {activePane === "friends" && (
         <div className="mt-1 flex min-h-0 flex-1 flex-col gap-4">
+
+          {/* Pending requests */}
+          {pendingRequests.length > 0 && (
+            <div>
+              <p className="mb-2 text-[11px] uppercase tracking-wide font-semibold" style={{ color: "var(--accent)" }}>
+                Friend requests ({pendingRequests.length})
+              </p>
+              <div className="rounded-lg border max-h-40 overflow-y-auto" style={{ borderColor: border, background: cardBg }}>
+                {pendingRequests.map((req) => (
+                  <div key={req.id} className="flex items-center justify-between px-3 py-2 border-b last:border-0" style={{ borderColor: border }}>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                        style={{ background: "var(--accent-bg)", color: accent }}
+                      >
+                        {req.senderName[0]?.toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm" style={{ color: text }}>{req.senderName}</p>
+                        <p className="truncate text-[10px]" style={{ color: muted }}>{req.senderEmail}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0 ml-2">
+                      <button
+                        type="button"
+                        title="Accept"
+                        onClick={() => void acceptRequest(req.id)}
+                        className="rounded-md border p-1.5 transition"
+                        style={{ borderColor: "#4ade80", background: "var(--bg)", color: "#4ade80" }}
+                      >
+                        <Check size={12} />
+                      </button>
+                      <button
+                        type="button"
+                        title="Reject"
+                        onClick={() => void rejectRequest(req.id)}
+                        className="rounded-md border p-1.5 transition"
+                        style={{ borderColor: "#f87171", background: "var(--bg)", color: "#f87171" }}
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div>
             <p className="mb-2 text-[11px] uppercase tracking-wide font-semibold" style={{ color: muted }}>
               Online in space ({members.filter((m) => m.id !== currentUser?.id).length})
@@ -471,7 +522,7 @@ export default function SidebarContent({ toggle }: Props) {
                     </div>
                     <button
                       type="button"
-                      onClick={() => isFriend(member.id) ? removeFriend(member.id) : addFriend(member)}
+                      onClick={() => isFriend(member.id) ? void removeFriend(member.id) : void addFriend(member)}
                       title={isFriend(member.id) ? "Remove friend" : "Add friend"}
                       className="ml-2 rounded p-1 transition"
                     >
@@ -509,7 +560,7 @@ export default function SidebarContent({ toggle }: Props) {
                             chat
                           </button>
                         )}
-                        <button type="button" onClick={() => removeFriend(friend.id)} className="rounded p-1 transition">
+                        <button type="button" onClick={() => void removeFriend(friend.id)} className="rounded p-1 transition">
                           <UserMinus size={13} style={{ color: "#f87171" }} />
                         </button>
                       </div>

@@ -4,8 +4,7 @@ import { requireRole } from "../middleware/role.middleware"
 
 export const adminRouter = Router()
 
-adminRouter.get(
-  "/stats",
+adminRouter.get("/stats",
   requireAuth,
   requireRole("ADMIN"),
   (_req, res) => {

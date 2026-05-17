@@ -5,6 +5,7 @@ import {
   getSpaceById as getSpaceByIdService,
   deleteSpace as deleteSpaceService,
 } from "../services/space.service"
+import { client } from "@repo/db"
 
 export const getSpaces: RequestHandler = async (req, res) => {
   if (!req.user) {
@@ -74,4 +75,32 @@ export const deleteSpace: RequestHandler = async (req, res) => {
   }
 
   return res.json({ success: true })
+}
+
+export const getMessages: RequestHandler = async (req, res) => {
+  if (!req.user) return res.status(401).json({ error: "Unauthorized" })
+
+  const spaceId = Array.isArray(req.params.spaceId)
+    ? req.params.spaceId[0]
+    : req.params.spaceId
+  if (!spaceId) return res.status(400).json({ error: "Missing space id" })
+
+  const limit = 20
+  const before = typeof req.query.before === "string" ? req.query.before : undefined
+
+  const rows = await client.message.findMany({
+    where: {
+      spaceId,
+      ...(before ? { id: { lt: before } } : {}),
+    },
+    orderBy: { createdAt: "desc" },
+    take: limit + 1,
+    select: { id: true, content: true, userId: true, spaceId: true, createdAt: true },
+  })
+
+  const hasMore = rows.length > limit
+  const page = hasMore ? rows.slice(0, limit) : rows
+  page.reverse()
+
+  return res.json({ messages: page, hasMore })
 }

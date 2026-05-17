@@ -3,6 +3,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { useParams } from "next/navigation"
 import { getGeneratedAvatarDataUrl } from "./avatar"
+import { useAuthSession } from "@/components/providers/AuthSessionProvider"
+import { apiFetch } from "@/lib/api"
 
 type PaneMode = "map" | "chat" | "search" | "notifications" | "spotify" | "friends"
 
@@ -35,6 +37,14 @@ export type SpaceChatMessage = {
   createdAt: number
 }
 
+export type PendingFriendRequest = {
+  id: string
+  senderId: string
+  senderEmail: string
+  senderName: string
+  createdAt: string
+}
+
 type SpaceSidebarContextValue = {
   spaceId: string
   activePane: PaneMode
@@ -55,9 +65,15 @@ type SpaceSidebarContextValue = {
   sendMessage: (text: string) => void
   unreadDmCount: number
   friends: SpaceUser[]
-  addFriend: (user: SpaceUser) => void
-  removeFriend: (userId: string) => void
+  addFriend: (user: SpaceUser) => Promise<void>
+  removeFriend: (userId: string) => Promise<void>
   isFriend: (userId: string) => boolean
+  pendingRequests: PendingFriendRequest[]
+  pendingRequestCount: number
+  acceptRequest: (requestId: string) => Promise<void>
+  rejectRequest: (requestId: string) => Promise<void>
+  hasMoreMessages: boolean
+  loadOlderMessages: () => Promise<void>
 }
 
 const SpaceSidebarContext = createContext<SpaceSidebarContextValue | null>(null)
@@ -148,6 +164,7 @@ function persistMessages(spaceId: string, messages: SpaceChatMessage[]) {
 export function SpaceSidebarProvider({ children }: { children: React.ReactNode }) {
   const params = useParams<{ spaceId?: string }>()
   const spaceId = typeof params?.spaceId === "string" ? params.spaceId : ""
+  const { status } = useAuthSession()
 
   const [activePane, setActivePane] = useState<PaneMode>("map")
   const [searchQuery, setSearchQuery] = useState("")
@@ -159,10 +176,13 @@ export function SpaceSidebarProvider({ children }: { children: React.ReactNode }
   const [currentChatUserId, setCurrentChatUserId] = useState<string | null>(null)
   const [messages, setMessages] = useState<SpaceChatMessage[]>([])
   const [friends, setFriends] = useState<SpaceUser[]>([])
+  const [pendingRequests, setPendingRequests] = useState<PendingFriendRequest[]>([])
   // Map of userId → SpaceUser resolved from server (for users not in localStorage)
   const [knownUsersMap, setKnownUsersMap] = useState<Map<string, SpaceUser>>(new Map())
 
   const [unreadDmCount, setUnreadDmCount] = useState(0)
+  const [hasMoreMessages, setHasMoreMessages] = useState(false)
+  const [isLoadingOlderMessages, setIsLoadingOlderMessages] = useState(false)
 
   const lastChatUserIdRef = useRef<string | null>(null)
   const activePaneRef = useRef<PaneMode>("map")
@@ -170,36 +190,69 @@ export function SpaceSidebarProvider({ children }: { children: React.ReactNode }
   const currentUserRef = useRef<SpaceUser | null>(null)
   const resolvedMembersRef = useRef<SpaceUser[]>([])
 
-  // Friends
-  const loadFriends = useCallback(() => {
-    if (typeof window === "undefined") return
+  // Friends — API-backed
+  const reloadFriends = useCallback(async () => {
     try {
-      const raw = JSON.parse(localStorage.getItem("twodverse:friends") || "[]")
-      if (!Array.isArray(raw)) return
-      setFriends(raw.map((u: unknown) => toSpaceUser(u)).filter((u): u is SpaceUser => u !== null))
+      const data = await apiFetch<{ friends: Array<{ id: string; email: string; name: string }> }>("/api/friends")
+      setFriends(data.friends.map((f) => ({
+        id: f.id, name: f.name, email: f.email,
+        avatarUrl: getGeneratedAvatarDataUrl(f.name, f.id),
+      })))
     } catch { /* ignore */ }
   }, [])
 
-  useEffect(() => { loadFriends() }, [loadFriends])
-
-  const addFriend = useCallback((user: SpaceUser) => {
-    setFriends((prev) => {
-      if (prev.some((f) => f.id === user.id)) return prev
-      const next = [...prev, user]
-      localStorage.setItem("twodverse:friends", JSON.stringify(next))
-      return next
-    })
+  const reloadPending = useCallback(async () => {
+    try {
+      const data = await apiFetch<{ requests: PendingFriendRequest[] }>("/api/friends/requests/pending")
+      setPendingRequests(Array.isArray(data.requests) ? data.requests : [])
+    } catch { /* ignore */ }
   }, [])
 
-  const removeFriend = useCallback((userId: string) => {
-    setFriends((prev) => {
-      const next = prev.filter((f) => f.id !== userId)
-      localStorage.setItem("twodverse:friends", JSON.stringify(next))
-      return next
-    })
-  }, [])
+  useEffect(() => {
+    if (status !== "authenticated") return
+    void reloadFriends()
+    void reloadPending()
+  }, [status, reloadFriends, reloadPending])
+
+  const addFriend = useCallback(async (user: SpaceUser) => {
+    try {
+      await apiFetch("/api/friends/request", {
+        method: "POST",
+        body: JSON.stringify({ targetUserId: user.id }),
+      })
+      await Promise.all([reloadFriends(), reloadPending()])
+    } catch { /* ignore */ }
+  }, [reloadFriends, reloadPending])
+
+  const removeFriend = useCallback(async (userId: string) => {
+    try {
+      await apiFetch(`/api/friends/${userId}`, { method: "DELETE" })
+      await reloadFriends()
+    } catch { /* ignore */ }
+  }, [reloadFriends])
+
+  const acceptRequest = useCallback(async (requestId: string) => {
+    try {
+      await apiFetch(`/api/friends/request/${requestId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ action: "accept" }),
+      })
+      await Promise.all([reloadFriends(), reloadPending()])
+    } catch { /* ignore */ }
+  }, [reloadFriends, reloadPending])
+
+  const rejectRequest = useCallback(async (requestId: string) => {
+    try {
+      await apiFetch(`/api/friends/request/${requestId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ action: "reject" }),
+      })
+      await reloadPending()
+    } catch { /* ignore */ }
+  }, [reloadPending])
 
   const isFriend = useCallback((userId: string) => friends.some((f) => f.id === userId), [friends])
+  const pendingRequestCount = pendingRequests.length
 
   // Space data from localStorage
   const refreshSpaceData = useCallback(() => {
@@ -228,15 +281,37 @@ export function SpaceSidebarProvider({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     if (!spaceId) return
-    const sync = () => { refreshSpaceData(); setMessages(readMessages(spaceId)) }
-    const t0 = window.setTimeout(sync, 0)
+    const sync = () => { refreshSpaceData() }
+    const t0 = window.setTimeout(async () => {
+      sync()
+      if (status !== "authenticated") { setMessages(readMessages(spaceId)); return }
+      try {
+        const data = await apiFetch<{
+          messages: Array<{ id: string; content: string; userId: string; createdAt: string }>
+          hasMore: boolean
+        }>(`/api/spaces/${spaceId}/messages`)
+        const apiMessages: SpaceChatMessage[] = data.messages.map((m) => ({
+          id: m.id,
+          fromUserId: m.userId,
+          fromUserName: "User",
+          toUserId: null,
+          text: m.content,
+          createdAt: new Date(m.createdAt).getTime(),
+        }))
+        setMessages(apiMessages)
+        setHasMoreMessages(data.hasMore)
+        persistMessages(spaceId, apiMessages)
+      } catch {
+        setMessages(readMessages(spaceId))
+      }
+    }, 0)
     const interval = window.setInterval(sync, 1500)
     const onStorage = (e: StorageEvent) => {
       if (e.key === "spaces" || e.key === getChatKey(spaceId)) sync()
     }
     window.addEventListener("storage", onStorage)
     return () => { window.clearTimeout(t0); window.clearInterval(interval); window.removeEventListener("storage", onStorage) }
-  }, [refreshSpaceData, spaceId])
+  }, [refreshSpaceData, spaceId, status])
 
   // Live presence
   useEffect(() => {
@@ -397,16 +472,46 @@ export function SpaceSidebarProvider({ children }: { children: React.ReactNode }
     () => notifications.filter((n) => n.unread).length, [notifications]
   )
 
+  const loadOlderMessages = useCallback(async () => {
+    if (!spaceId || isLoadingOlderMessages || !hasMoreMessages) return
+    setIsLoadingOlderMessages(true)
+    try {
+      const oldest = messages[0]
+      const cursor = oldest ? `&before=${oldest.id}` : ""
+      const data = await apiFetch<{
+        messages: Array<{ id: string; content: string; userId: string; createdAt: string }>
+        hasMore: boolean
+      }>(`/api/spaces/${spaceId}/messages?limit=20${cursor}`)
+      const older: SpaceChatMessage[] = data.messages.map((m) => ({
+        id: m.id,
+        fromUserId: m.userId,
+        fromUserName: "User",
+        toUserId: null,
+        text: m.content,
+        createdAt: new Date(m.createdAt).getTime(),
+      }))
+      setMessages((prev) => [...older, ...prev])
+      setHasMoreMessages(data.hasMore)
+    } catch { /* ignore */ } finally {
+      setIsLoadingOlderMessages(false)
+    }
+  }, [spaceId, isLoadingOlderMessages, hasMoreMessages, messages])
+
   const value = useMemo<SpaceSidebarContextValue>(() => ({
     spaceId, activePane, activatePane, currentUser, members: resolvedMembers,
     searchQuery, setSearchQuery, filteredMembers, notifications, unreadNotificationCount,
     markNotificationsRead, currentChatUserId, currentChatUser, openChatWithUser,
-    messages, threadMessages, sendMessage, unreadDmCount, friends, addFriend, removeFriend, isFriend,
+    messages, threadMessages, sendMessage, unreadDmCount,
+    friends, addFriend, removeFriend, isFriend,
+    pendingRequests, pendingRequestCount, acceptRequest, rejectRequest,
+    hasMoreMessages, loadOlderMessages,
   }), [
     spaceId, activePane, activatePane, currentUser, resolvedMembers, searchQuery,
     filteredMembers, notifications, unreadNotificationCount, markNotificationsRead,
     currentChatUserId, currentChatUser, openChatWithUser, messages, threadMessages,
     sendMessage, unreadDmCount, friends, addFriend, removeFriend, isFriend,
+    pendingRequests, pendingRequestCount, acceptRequest, rejectRequest,
+    hasMoreMessages, loadOlderMessages,
   ])
 
   return <SpaceSidebarContext.Provider value={value}>{children}</SpaceSidebarContext.Provider>

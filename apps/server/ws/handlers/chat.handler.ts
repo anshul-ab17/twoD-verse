@@ -5,6 +5,8 @@ import { spaceManager } from "../managers/space.manager"
 import { allow } from "@repo/pubsub"
 import { calculateDistance } from "../utils/distance"
 
+const MAX_CHAT_LENGTH = 500
+
 export async function handleGlobalChat(
   ws: WebSocket,
   prisma: PrismaClient,
@@ -13,12 +15,15 @@ export async function handleGlobalChat(
   const player = playerManager.get(ws)
   if (!player) return
 
+  const trimmed = typeof content === "string" ? content.trim().slice(0, MAX_CHAT_LENGTH) : ""
+  if (!trimmed) return
+
   const allowed = await allow(player.userId, "chat")
   if (!allowed) return
 
   await prisma.message.create({
     data: {
-      content,
+      content: trimmed,
       userId: player.userId,
       spaceId: player.spaceId,
     },
@@ -27,7 +32,7 @@ export async function handleGlobalChat(
   await spaceManager.broadcast(player.spaceId, {
     type: "chat:global",
     userId: player.userId,
-    content,
+    content: trimmed,
   })
 }
 
@@ -39,6 +44,9 @@ export async function handleDmChat(
   const sender = playerManager.get(ws)
   if (!sender) return
 
+  const trimmed = typeof content === "string" ? content.trim().slice(0, MAX_CHAT_LENGTH) : ""
+  if (!trimmed) return
+
   const allowed = await allow(sender.userId, "chat")
   if (!allowed) return
 
@@ -49,7 +57,7 @@ export async function handleDmChat(
     JSON.stringify({
       type: "chat:dm",
       fromUserId: sender.userId,
-      content,
+      content: trimmed,
     })
   )
 }
@@ -60,6 +68,9 @@ export async function handleNearbyChat(
 ) {
   const sender = playerManager.get(ws)
   if (!sender) return
+
+  const trimmed = typeof content === "string" ? content.trim().slice(0, MAX_CHAT_LENGTH) : ""
+  if (!trimmed) return
 
   const allowed = await allow(sender.userId, "chat")
   if (!allowed) return

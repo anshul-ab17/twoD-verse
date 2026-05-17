@@ -29,6 +29,7 @@ export default function SidebarRail({ isOpen, toggle, onIconAction }: Props) {
     activatePane,
     unreadNotificationCount,
     unreadDmCount,
+    pendingRequestCount,
     friends,
     members,
   } = useSpaceSidebar()
@@ -83,7 +84,15 @@ export default function SidebarRail({ isOpen, toggle, onIconAction }: Props) {
           onClick={() => handlePaneClick("friends")}
         >
           <Users size={20} />
-          {onlineFriendCount > 0 && (
+          {pendingRequestCount > 0 && (
+            <span
+              className="absolute -right-2 -top-2 min-w-4 rounded-full px-1 text-center text-[10px] font-semibold"
+              style={{ background: "var(--accent)", color: "#fff" }}
+            >
+              {pendingRequestCount > 9 ? "9+" : pendingRequestCount}
+            </span>
+          )}
+          {pendingRequestCount === 0 && onlineFriendCount > 0 && (
             <span
               className="absolute -right-2 -top-2 min-w-4 rounded-full px-1 text-center text-[10px] font-semibold"
               style={{ background: "#4ade80", color: "#000" }}

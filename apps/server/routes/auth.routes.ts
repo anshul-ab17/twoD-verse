@@ -12,13 +12,14 @@ import {
 } from "../controllers/auth.controller"
 
 import { requireAuth } from "../middleware/auth.middleware"
+import { authLimiter } from "../middleware/rateLimit.middleware"
 
 export const authRouter = Router()
 
-//email 
-authRouter.post("/signup", signupHandler)
-authRouter.post("/signin", signinHandler)
-authRouter.post("/refresh", refreshHandler)
+//email
+authRouter.post("/signup", authLimiter, signupHandler)
+authRouter.post("/signin", authLimiter, signinHandler)
+authRouter.post("/refresh", authLimiter, refreshHandler)
 authRouter.post("/logout", requireAuth, logoutHandler)
 authRouter.get("/me", requireAuth, meHandler)
 authRouter.patch("/me/password", requireAuth, changePasswordHandler)

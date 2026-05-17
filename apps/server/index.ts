@@ -11,14 +11,42 @@ import { client } from "@repo/db"
 import { connectRedis } from "@repo/pubsub"
 import { initRedisSubscriber } from "./ws/redis.adapter"
 
+const ALLOWED_ORIGIN = process.env.WEB_BASE_URL || "http://localhost:3000"
+const MAX_WS_PER_IP = 10
+
 const server = http.createServer(app)
+
+// Track concurrent WS connections per IP to limit connection floods
+const wsConnectionsByIp = new Map<string, number>()
 
 const wss = new WebSocketServer({
   server,
   path: "/ws",
+  maxPayload: 64 * 1024, // 64 KB — prevents memory exhaustion from giant frames
 })
 
 wss.on("connection", (ws, req) => {
+  // ── Origin check ──
+  const origin = req.headers.origin
+  if (origin && origin !== ALLOWED_ORIGIN) {
+    ws.close(4403, "Forbidden origin")
+    return
+  }
+
+  // ── Per-IP connection cap ──
+  const ip = (req.socket.remoteAddress ?? "unknown").replace(/^::ffff:/, "")
+  const current = wsConnectionsByIp.get(ip) ?? 0
+  if (current >= MAX_WS_PER_IP) {
+    ws.close(4429, "Too many connections from this IP")
+    return
+  }
+  wsConnectionsByIp.set(ip, current + 1)
+  ws.once("close", () => {
+    const remaining = (wsConnectionsByIp.get(ip) ?? 1) - 1
+    if (remaining <= 0) wsConnectionsByIp.delete(ip)
+    else wsConnectionsByIp.set(ip, remaining)
+  })
+
   void (async () => {
     try {
       const rawCookie = req.headers.cookie

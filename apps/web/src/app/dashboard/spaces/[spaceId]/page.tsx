@@ -148,6 +148,8 @@ export default function SpacePage() {
     currentUser,
     sendMessage,
     activatePane,
+    hasMoreMessages,
+    loadOlderMessages,
   } = useSpaceSidebar()
 
   const { status, user } = useAuthSession()
@@ -187,7 +189,14 @@ export default function SpacePage() {
     }).catch(() => {})
   }, [spaceId, status, user])
 
-  //  Refs 
+  useEffect(() => {
+    if (status !== "authenticated") return
+    apiFetch<{ iceServers: RTCIceServer[] }>("/api/rtc/ice-servers")
+      .then((data) => { iceConfigRef.current = data.iceServers })
+      .catch(() => { /* keep STUN-only fallback */ })
+  }, [status])
+
+  //  Refs
   const containerRef = useRef<HTMLDivElement | null>(null)
   const gameRef = useRef<Phaser.Game | null>(null)
   const hasInitGameRef = useRef(false)
@@ -207,6 +216,9 @@ export default function SpacePage() {
   const latestPlayerStateRef = useRef<PlayerStateEvent | null>(null)
   const localRoomIdRef = useRef<number | null>(null)
   const micEnabledRef = useRef(true)
+  const iceConfigRef = useRef<RTCIceServer[]>([{ urls: "stun:stun.l.google.com:19302" }])
+  const reconnectAttemptRef = useRef(0)
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   //  UI state 
   const [realtimeStatus, setRealtimeStatus] = useState("disconnected")
@@ -303,7 +315,7 @@ export default function SpacePage() {
     const existing = peersRef.current.get(targetUserId)
     if (existing) return existing
 
-    const peer = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] })
+    const peer = new RTCPeerConnection({ iceServers: iceConfigRef.current })
     peersRef.current.set(targetUserId, peer)
     setConnectedVoicePeers(peersRef.current.size)
 
@@ -464,15 +476,14 @@ export default function SpacePage() {
     return () => window.removeEventListener("twodverse:scene-ready", handleSceneReady)
   }, [])
 
-  //  WebSocket connection   
+  //  WebSocket connection
   useEffect(() => {
     if (status !== "authenticated" || !spaceId) return
 
-    const ws = new WebSocket(getWebSocketUrl())
     const peers = peersRef.current
-    wsRef.current = ws
-    setRealtimeStatus("connecting")
+    let isDeliberate = false
 
+    // ── Dispatch helpers ──
     const dispatchRemotePlayersSync = (players: RealtimePlayer[]) => {
       remotePlayersStateRef.current = new Map(players.map((p) => [p.userId, p]))
       window.dispatchEvent(new CustomEvent("twodverse:remote-players:sync", { detail: { players } }))
@@ -489,11 +500,9 @@ export default function SpacePage() {
     }
 
     const emitPresence = () => {
-      window.dispatchEvent(
-        new CustomEvent("twodverse:presence:update", {
-          detail: { userIds: Array.from(presenceUserIdsRef.current) },
-        })
-      )
+      window.dispatchEvent(new CustomEvent("twodverse:presence:update", {
+        detail: { userIds: Array.from(presenceUserIdsRef.current) },
+      }))
     }
 
     const replacePresence = (userIds: Iterable<string>, opts?: { includeCurrentUser?: boolean }) => {
@@ -518,15 +527,12 @@ export default function SpacePage() {
 
     const sendPlayerMove = (detail: PlayerStateEvent) => {
       const payload: { type: "player:move"; x: number; y: number; roomId?: number } = {
-        type: "player:move",
-        x: detail.x,
-        y: detail.y,
+        type: "player:move", x: detail.x, y: detail.y,
       }
       if (detail.roomId >= 0) payload.roomId = detail.roomId
       sendSocketMessage(payload)
     }
 
-    // Batch-fetch user names for unknown player IDs
     const fetchNames = async (userIds: string[]) => {
       const unknown = userIds.filter((id) => id && !knownNamesRef.current.has(id) && !pendingNameFetchRef.current.has(id))
       if (unknown.length === 0) return
@@ -544,7 +550,7 @@ export default function SpacePage() {
       }
     }
 
-    // Listen for outgoing chat from sidebar
+    // ── Window event listeners — added once, use wsRef.current via sendSocketMessage ──
     const handleChatSend = (event: Event) => {
       const { content } = (event as CustomEvent<{ content: string }>).detail
       sendSocketMessage({ type: "chat:global", content })
@@ -556,87 +562,114 @@ export default function SpacePage() {
     window.addEventListener("twodverse:chat:send", handleChatSend as EventListener)
     window.addEventListener("twodverse:chat:dm", handleChatDm as EventListener)
 
-    ws.onopen = () => {
-      setRealtimeStatus("connected")
-      replacePresence([], { includeCurrentUser: true })
-      dispatchRemotePlayersSync([])
-      sendSocketMessage({ type: "space:join", spaceId })
-      const last = latestPlayerStateRef.current
-      if (last) sendPlayerMove(last)
-    }
+    // ── WS factory — called on connect and each reconnect ──
+    const connectWS = () => {
+      if (reconnectTimerRef.current) { clearTimeout(reconnectTimerRef.current); reconnectTimerRef.current = null }
+      const ws = new WebSocket(getWebSocketUrl())
+      wsRef.current = ws
+      setRealtimeStatus("connecting")
 
-    ws.onmessage = (event) => {
-      try {
-        const message = JSON.parse(event.data) as IncomingRealtimeMessage
+      ws.onopen = () => {
+        reconnectAttemptRef.current = 0
+        setRealtimeStatus("connected")
+        replacePresence([], { includeCurrentUser: true })
+        dispatchRemotePlayersSync([])
+        sendSocketMessage({ type: "space:join", spaceId })
+        const last = latestPlayerStateRef.current
+        if (last) sendPlayerMove(last)
+      }
 
-        if (message.type === "space:state") {
-          const players = message.players.filter((p) => !!p?.userId)
-          const remotePlayers = players.filter((p) => p.userId !== user?.id)
-          dispatchRemotePlayersSync(remotePlayers)
-          replacePresence(players.map((p) => p.userId), { includeCurrentUser: true })
-          void fetchNames(remotePlayers.map((p) => p.userId))
-          return
-        }
+      ws.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data) as IncomingRealtimeMessage
 
-        if (message.type === "player:joined" || message.type === "player:moved") {
-          const player: RealtimePlayer = { userId: message.userId, x: message.x, y: message.y, roomId: message.roomId }
-          addPresenceUser(player.userId)
-          if (player.userId !== user?.id) {
-            dispatchRemotePlayerUpsert(player)
-            if (message.type === "player:joined") void fetchNames([player.userId])
+          if (message.type === "space:state") {
+            const players = message.players.filter((p) => !!p?.userId)
+            const remotePlayers = players.filter((p) => p.userId !== user?.id)
+            dispatchRemotePlayersSync(remotePlayers)
+            replacePresence(players.map((p) => p.userId), { includeCurrentUser: true })
+            void fetchNames(remotePlayers.map((p) => p.userId))
+            return
           }
+
+          if (message.type === "player:joined" || message.type === "player:moved") {
+            const player: RealtimePlayer = { userId: message.userId, x: message.x, y: message.y, roomId: message.roomId }
+            addPresenceUser(player.userId)
+            if (player.userId !== user?.id) {
+              dispatchRemotePlayerUpsert(player)
+              if (message.type === "player:joined") void fetchNames([player.userId])
+            }
+            return
+          }
+
+          if (message.type === "proximity:update") {
+            void handleProximityUpdate(message)
+            return
+          }
+
+          if (message.type === "webrtc:offer" || message.type === "webrtc:answer" || message.type === "webrtc:ice") {
+            void handleWebRTCSignal(message)
+            return
+          }
+
+          if (message.type === "player:left") {
+            closeTargetsRef.current.delete(message.userId)
+            destroyPeer(message.userId)
+            removePresenceUser(message.userId)
+            dispatchRemotePlayerLeft(message.userId)
+            return
+          }
+
+          if (message.type === "chat:global") {
+            const name = knownNamesRef.current.get(message.userId) ?? message.userId.slice(0, 8)
+            window.dispatchEvent(new CustomEvent("twodverse:chat:incoming", {
+              detail: { fromUserId: message.userId, fromUserName: name, content: message.content },
+            }))
+            return
+          }
+
+          if (message.type === "chat:dm") {
+            void fetchNames([message.fromUserId])
+            const name = knownNamesRef.current.get(message.fromUserId) ?? message.fromUserId.slice(0, 8)
+            window.dispatchEvent(new CustomEvent("twodverse:chat:incoming", {
+              detail: { fromUserId: message.fromUserId, fromUserName: name, content: message.content, isDm: true },
+            }))
+          }
+        } catch (error) {
+          console.error("WS parse failed", error)
+        }
+      }
+
+      ws.onerror = () => setRealtimeStatus("error")
+
+      ws.onclose = (event) => {
+        wsRef.current = null
+        replacePresence([], { includeCurrentUser: false })
+        dispatchRemotePlayersSync([])
+
+        if (isDeliberate || event.code === 1000) {
+          setRealtimeStatus("disconnected")
+          setRemoteVideoStreams([])
+          Array.from(peers.keys()).forEach((id) => destroyPeer(id))
           return
         }
 
-        if (message.type === "proximity:update") {
-          void handleProximityUpdate(message)
+        const attempt = reconnectAttemptRef.current
+        if (attempt >= 10) {
+          setRealtimeStatus("disconnected")
+          setRemoteVideoStreams([])
+          Array.from(peers.keys()).forEach((id) => destroyPeer(id))
           return
         }
 
-        if (message.type === "webrtc:offer" || message.type === "webrtc:answer" || message.type === "webrtc:ice") {
-          void handleWebRTCSignal(message)
-          return
-        }
-
-        if (message.type === "player:left") {
-          closeTargetsRef.current.delete(message.userId)
-          destroyPeer(message.userId)
-          removePresenceUser(message.userId)
-          dispatchRemotePlayerLeft(message.userId)
-          return
-        }
-
-        if (message.type === "chat:global") {
-          const name = knownNamesRef.current.get(message.userId) ?? message.userId.slice(0, 8)
-          window.dispatchEvent(new CustomEvent("twodverse:chat:incoming", {
-            detail: { fromUserId: message.userId, fromUserName: name, content: message.content },
-          }))
-          return
-        }
-
-        if (message.type === "chat:dm") {
-          void fetchNames([message.fromUserId])
-          const name = knownNamesRef.current.get(message.fromUserId) ?? message.fromUserId.slice(0, 8)
-          window.dispatchEvent(new CustomEvent("twodverse:chat:incoming", {
-            detail: { fromUserId: message.fromUserId, fromUserName: name, content: message.content, isDm: true },
-          }))
-        }
-      } catch (error) {
-        console.error("WS parse failed", error)
+        const delay = Math.min(1000 * Math.pow(2, attempt), 30000) * (0.8 + Math.random() * 0.4)
+        setRealtimeStatus(`reconnecting (${attempt + 1})`)
+        reconnectAttemptRef.current += 1
+        reconnectTimerRef.current = setTimeout(connectWS, delay)
       }
     }
 
-    ws.onerror = () => setRealtimeStatus("error")
-
-    ws.onclose = (event) => {
-      const suffix = event.code ? ` (${event.code})` : ""
-      setRealtimeStatus(`disconnected${suffix}`)
-      wsRef.current = null
-      replacePresence([], { includeCurrentUser: false })
-      dispatchRemotePlayersSync([])
-      setRemoteVideoStreams([])
-      Array.from(peers.keys()).forEach((id) => destroyPeer(id))
-    }
+    connectWS()
 
     const handlePlayerState = (event: Event) => {
       const detail = (event as CustomEvent<PlayerStateEvent>).detail
@@ -644,13 +677,11 @@ export default function SpacePage() {
       latestPlayerStateRef.current = detail
       sendPlayerMove(detail)
 
-      // Room-based WebRTC: connect to all players in same room
       const newRoomId = detail.roomId >= 0 ? detail.roomId : null
       const prevRoomId = localRoomIdRef.current
       if (newRoomId !== prevRoomId) {
         localRoomIdRef.current = newRoomId
 
-        // Disconnect from players in old room (unless already connected via proximity)
         if (prevRoomId !== null) {
           for (const [uid, player] of remotePlayersStateRef.current) {
             if (player.roomId === prevRoomId && !closeTargetsRef.current.has(uid)) {
@@ -659,25 +690,17 @@ export default function SpacePage() {
           }
         }
 
-        // Connect to players in new room
         if (newRoomId !== null && user?.id) {
           for (const [uid, player] of remotePlayersStateRef.current) {
             if (player.roomId === newRoomId && !peersRef.current.has(uid)) {
-              const shouldInitiate = user.id.localeCompare(uid) < 0
-              if (shouldInitiate) {
-                void createPeer(uid, true)
-              }
+              if (user.id.localeCompare(uid) < 0) void createPeer(uid, true)
             }
           }
         }
       } else if (newRoomId !== null && user?.id) {
-        // Same room — connect to any newly arrived players
         for (const [uid, player] of remotePlayersStateRef.current) {
           if (player.roomId === newRoomId && !peersRef.current.has(uid)) {
-            const shouldInitiate = user.id.localeCompare(uid) < 0
-            if (shouldInitiate) {
-              void createPeer(uid, true)
-            }
+            if (user.id.localeCompare(uid) < 0) void createPeer(uid, true)
           }
         }
       }
@@ -686,10 +709,12 @@ export default function SpacePage() {
     window.addEventListener("twodverse:player-state", handlePlayerState as EventListener)
 
     return () => {
+      isDeliberate = true
       window.removeEventListener("twodverse:player-state", handlePlayerState as EventListener)
       window.removeEventListener("twodverse:chat:send", handleChatSend as EventListener)
       window.removeEventListener("twodverse:chat:dm", handleChatDm as EventListener)
-      ws.close()
+      if (reconnectTimerRef.current) { clearTimeout(reconnectTimerRef.current); reconnectTimerRef.current = null }
+      wsRef.current?.close(1000)
       replacePresence([], { includeCurrentUser: false })
       dispatchRemotePlayersSync([])
       Array.from(peers.keys()).forEach((id) => destroyPeer(id))
@@ -914,6 +939,21 @@ export default function SpacePage() {
               </div>
 
               <div className="flex-1 overflow-y-auto px-3 py-3">
+                {hasMoreMessages && (
+                  <button
+                    type="button"
+                    onClick={() => void loadOlderMessages()}
+                    className="mb-3 w-full rounded-md border px-3 py-1.5 text-xs transition-colors"
+                    style={{
+                      borderColor: theme.chatBorder,
+                      color: theme.btnText,
+                      background: theme.chatMsgBg,
+                      opacity: 0.8,
+                    }}
+                  >
+                    Load earlier messages
+                  </button>
+                )}
                 {threadMessages.length === 0 ? (
                   <p
                     className="rounded-md border px-3 py-2 text-xs"

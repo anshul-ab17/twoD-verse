@@ -9,8 +9,10 @@ export async function registerWSHandlers(
   prisma: PrismaClient,
   user: any
 ) {
-  ws.on("message", async (data) => {
-    await routeMessage(ws, prisma, user, data.toString())
+  ws.on("message", (data) => {
+    // Catch synchronous throws and rejected promises so they don't become
+    // unhandled rejections that leak memory and can crash the process.
+    void routeMessage(ws, prisma, user, data.toString()).catch(() => { /* drop */ })
   })
 
   ws.on("close", () => {

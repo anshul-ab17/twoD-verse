@@ -6,13 +6,26 @@ import { handleGlobalChat, handleNearbyChat, handleDmChat } from "./handlers/cha
 import { handleWebRTC } from "./handlers/webrtc.handler"
 import type { AuthUser, IncomingMessage } from "./types"
 
+const MAX_MESSAGE_LENGTH = 64 * 1024 // 64 KB (same as maxPayload — belt-and-suspenders)
+
 export async function routeMessage(
   ws: WebSocket,
   prisma: PrismaClient,
   user: AuthUser,
   raw: string
 ) {
-  const message: IncomingMessage = JSON.parse(raw)
+  // Reject oversized strings before JSON parsing
+  if (raw.length > MAX_MESSAGE_LENGTH) return
+
+  let message: IncomingMessage
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (!parsed || typeof parsed !== "object" || !("type" in parsed)) return
+    message = parsed as IncomingMessage
+  } catch {
+    // Silently drop malformed JSON — no need to surface an error to attackers
+    return
+  }
 
   switch (message.type) {
     case "space:join":

@@ -61,7 +61,7 @@ export async function signin(email: string, password: string) {
     throw new Error("Invalid credentials")
   }
 
-  const valid = await argon2.verify(user.password, password, ARGON2_OPTIONS)
+  const valid = await argon2.verify(user.password, password)
 
   if (!valid) throw new Error("Invalid credentials")
 
@@ -79,7 +79,7 @@ export async function changePassword(userId: string, currentPassword: string, ne
   const emailAccount = user.accounts.find((acc) => acc.provider === "EMAIL")
   if (!emailAccount) throw new Error("No password set for this account")
 
-  const valid = await argon2.verify(user.password, currentPassword, ARGON2_OPTIONS)
+  const valid = await argon2.verify(user.password, currentPassword)
   if (!valid) throw new Error("Current password is incorrect")
 
   const hashed = await argon2.hash(newPassword, ARGON2_OPTIONS)
