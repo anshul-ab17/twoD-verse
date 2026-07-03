@@ -1,0 +1,22 @@
+{
+  "name": "@verse/realtime",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts",
+    "check-types": "tsc --noEmit",
+    "test:spike": "bun run test/two-clients.ts"
+  },
+  "dependencies": {
+    "@colyseus/core": "^0.16",
+    "@colyseus/ws-transport": "^0.16",
+    "@verse/net-schema": "workspace:*"
+  },
+  "devDependencies": {
+    "@verse/typescript-config": "workspace:*",
+    "@types/bun": "latest",
+    "colyseus.js": "^0.16",
+    "typescript": "^5.9.2"
+  }
+}
