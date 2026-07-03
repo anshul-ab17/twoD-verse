@@ -17,6 +17,13 @@ enum AuthProvider {
   GITHUB
 }
 
+enum OrgRole {
+  OWNER
+  ADMIN
+  MEMBER
+  GUEST
+}
+
 enum FriendRequestStatus {
   PENDING
   ACCEPTED
@@ -31,6 +38,8 @@ model User {
 
   accounts  Account[]
   sessions  Session[]
+  orgMemberships  OrgMember[]
+  magicLinkTokens MagicLinkToken[]
 
   avatarId  String?
   avatar    Avatar?  @relation(fields: [avatarId], references: [id])
@@ -71,6 +80,47 @@ model Session {
   expiresAt DateTime
 
   @@index([userId])
+}
+
+model Org {
+  id        String   @id @default(cuid())
+  name      String
+  plan      String   @default("free")
+
+  members   OrgMember[]
+
+  createdAt DateTime @default(now())
+}
+
+model OrgMember {
+  id        String   @id @default(cuid())
+  orgId     String
+  userId    String
+  role      OrgRole  @default(MEMBER)
+
+  org       Org      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([orgId, userId])
+  @@index([userId])
+}
+
+// ponytail: stores sha256(token) only — plaintext never persisted
+model MagicLinkToken {
+  id         String    @id @default(cuid())
+  email      String
+  userId     String?
+  tokenHash  String    @unique
+  expiresAt  DateTime
+  consumedAt DateTime?
+
+  user       User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime  @default(now())
+
+  @@index([email])
 }
 
 model Space {

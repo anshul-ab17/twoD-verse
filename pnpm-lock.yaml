@@ -48,6 +48,9 @@ importers:
       '@types/jsonwebtoken':
         specifier: ^9.0.10
         version: 9.0.10
+      '@verse/db':
+        specifier: workspace:*
+        version: link:../db
       argon2:
         specifier: ^0.44.0
         version: 0.44.0
@@ -57,6 +60,9 @@ importers:
       typescript:
         specifier: ^5
         version: 5.9.2
+      zod:
+        specifier: ^4.3.6
+        version: 4.4.3
     devDependencies:
       '@types/bun':
         specifier: latest

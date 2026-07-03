@@ -12,8 +12,10 @@
   },
   "dependencies": {
     "@types/jsonwebtoken": "^9.0.10",
+    "@verse/db": "workspace:*",
     "argon2": "^0.44.0",
-    "jsonwebtoken": "^9.0.3"
+    "jsonwebtoken": "^9.0.3",
+    "zod": "^4.3.6"
   },
   "scripts": {
     "check-types": "tsc --noEmit"
