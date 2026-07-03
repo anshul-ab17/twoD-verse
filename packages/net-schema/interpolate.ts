@@ -52,7 +52,7 @@ export class SnapshotBuffer {
 }
 
 /** Assert-based self-check: `bun run interpolate.ts` */
-export function demo() {
+function demo() {
   const buf = new SnapshotBuffer(100)
   buf.push({ t: 0, x: 0, y: 0 })
   buf.push({ t: 100, x: 10, y: 20 })

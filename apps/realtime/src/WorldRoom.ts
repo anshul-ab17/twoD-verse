@@ -6,6 +6,8 @@ import {
   MOVE_SPEED,
   WORLD,
   MSG,
+  SPIKE_ZONES,
+  zoneAt,
   type MoveInput,
 } from "@verse/net-schema"
 
@@ -53,6 +55,8 @@ export class WorldRoom extends Room<WorldRoomState> {
       const input = this.inputs.get(sessionId)
       if (!input || (input.dx === 0 && input.dy === 0)) continue
 
+      // ponytail: zone check only when moving — stationary players can't change zones.
+
       // normalize so diagonals aren't faster (speed clamp)
       const len = Math.hypot(input.dx, input.dy)
       const nx = input.dx / len
@@ -62,6 +66,12 @@ export class WorldRoom extends Room<WorldRoomState> {
       player.y = clamp(player.y + ny * MOVE_SPEED * dt, 0, WORLD.height)
       player.dir =
         Math.abs(nx) > Math.abs(ny) ? (nx > 0 ? "right" : "left") : ny > 0 ? "down" : "up"
+
+      // zone -> media mapping (plan §6): LiveKit room = zoneId.
+      // ponytail: client watches its own zoneId, POSTs apps/media /token and
+      // joins/leaves the LiveKit room — client side not built in this spike.
+      const zoneId = zoneAt(SPIKE_ZONES, player.x, player.y)?.id ?? ""
+      if (player.zoneId !== zoneId) player.zoneId = zoneId
     }
   }
 

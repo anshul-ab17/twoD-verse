@@ -19,6 +19,7 @@ export class PlayerState extends Schema {
   @type("number") x = 0
   @type("number") y = 0
   @type("string") dir = "down"
+  @type("string") zoneId = "" // current media zone ("" = none); LiveKit room name
 }
 
 export class WorldRoomState extends Schema {
@@ -26,3 +27,4 @@ export class WorldRoomState extends Schema {
 }
 
 export * from "./interpolate"
+export * from "./zones"
