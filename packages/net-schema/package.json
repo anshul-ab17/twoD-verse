@@ -6,12 +6,14 @@
   "devDependencies": {
     "@verse/typescript-config": "workspace:*",
     "@types/bun": "latest",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vitest": "^4"
   },
   "dependencies": {
     "@colyseus/schema": "^3"
   },
   "scripts": {
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "test": "vitest run"
   }
 }
