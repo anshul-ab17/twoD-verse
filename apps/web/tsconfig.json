@@ -1,0 +1,10 @@
+{
+  "extends": "@verse/typescript-config/nextjs.json",
+  "compilerOptions": {
+    // @verse/net-schema ships raw TS using @colyseus/schema decorators
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
