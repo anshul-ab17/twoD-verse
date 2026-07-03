@@ -1,0 +1,19 @@
+{
+  "name": "@verse/pubsub",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@verse/typescript-config": "workspace:*",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "redis": "^5.11.0"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  }
+}

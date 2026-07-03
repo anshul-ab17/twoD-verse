@@ -1,0 +1,16 @@
+node_modules
+dist
+out
+.next
+.turbo
+coverage
+*.tsbuildinfo
+.env
+.env.*.local
+.env.local
+logs
+*.log
+.DS_Store
+.idea
+.eslintcache
+.cache

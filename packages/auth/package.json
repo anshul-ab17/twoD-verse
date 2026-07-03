@@ -1,0 +1,21 @@
+{
+  "name": "@verse/auth",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@verse/typescript-config": "workspace:*",
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
+    "argon2": "^0.44.0",
+    "jsonwebtoken": "^9.0.3"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  }
+}
