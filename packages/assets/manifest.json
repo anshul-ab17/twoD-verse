@@ -1,0 +1,26 @@
+[
+  {
+    "id": "player-orb",
+    "kind": "avatar",
+    "path": "programmatic:pixi-graphics",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": ["spike", "placeholder"]
+  },
+  {
+    "id": "world-grid",
+    "kind": "tileset",
+    "path": "programmatic:pixi-graphics",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": ["spike", "placeholder"]
+  },
+  {
+    "id": "zone-overlay",
+    "kind": "ui",
+    "path": "programmatic:pixi-graphics",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": ["spike", "placeholder", "voice-zone"]
+  }
+]

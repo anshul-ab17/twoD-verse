@@ -22,4 +22,6 @@ jobs:
           DATABASE_URL: postgresql://user:password@localhost:5432/db
       - run: pnpm run lint
       - run: pnpm run check-types
+      - uses: oven-sh/setup-bun@v2 # validate script runs TS directly via bun (repo convention)
+      - run: pnpm --filter @verse/assets run validate # §27 provenance gate
       # ponytail: add vitest + playwright jobs when first app with tests lands (plan appendix step 6)
