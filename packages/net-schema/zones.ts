@@ -3,7 +3,7 @@
 
 export interface Zone {
   id: string
-  kind: "voice" | "stage" | "quiet"
+  kind: "voice" | "stage" | "quiet" | "meeting"
   bounds: { x: number; y: number; w: number; h: number }
 }
 
@@ -16,9 +16,10 @@ export function zoneAt(zones: readonly Zone[], x: number, y: number): Zone | nul
   return null
 }
 
-/** One voice zone inside WORLD (1600x1200) for the LiveKit spike. */
+/** Spike zones inside WORLD (1600x1200): voice lounge + meeting room (voice + AI notes). */
 export const SPIKE_ZONES: readonly Zone[] = [
   { id: "voice-lounge", kind: "voice", bounds: { x: 200, y: 200, w: 400, h: 300 } },
+  { id: "meeting-room", kind: "meeting", bounds: { x: 1000, y: 700, w: 400, h: 300 } },
 ]
 
 /** Assert-based self-check: `bun run zones.ts` */

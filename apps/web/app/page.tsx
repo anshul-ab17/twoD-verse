@@ -5,9 +5,12 @@
 // Auth gate: no access token -> login/signup form; token -> mount world.
 
 import { useEffect, useRef, useState } from "react"
+import { SPIKE_ZONES } from "@verse/net-schema/zones"
 import { bridge } from "../lib/bridge"
 import { login, signup, clearTokens, getAccessToken, GATEWAY } from "../lib/auth"
 import { startMediaWatcher } from "../lib/media"
+
+const AI = process.env.NEXT_PUBLIC_AI_URL ?? "http://localhost:2570"
 
 type ChatMsg = { from: string; text: string; ts: number }
 
@@ -228,6 +231,38 @@ export default function Page() {
     setDraft("")
   }
 
+  const inMeeting = SPIKE_ZONES.find((z) => z.id === zoneId)?.kind === "meeting"
+  const [notesBusy, setNotesBusy] = useState(false)
+  const requestNotes = async () => {
+    // ponytail: transcript = this client's chat log (last 50); server-side
+    // capture + audio/STT is the upgrade path (plan §13)
+    const chat = messages.filter((m) => m.from !== "system")
+    if (!chat.length || notesBusy) return
+    setNotesBusy(true)
+    try {
+      const res = await fetch(`${AI}/v1/ai/notes`, {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${getAccessToken()}` },
+        body: JSON.stringify({ zoneId, messages: chat }),
+      })
+      const now = Date.now()
+      if (res.ok) {
+        const notes = (await res.json()) as { summary: string; actionItems: string[]; decisions: string[] }
+        const lines = [
+          `📝 ${notes.summary}`,
+          ...notes.decisions.map((d) => `✔ decision: ${d}`),
+          ...notes.actionItems.map((a) => `→ action: ${a}`),
+        ]
+        setMessages((m) => [...m, ...lines.map((text, i) => ({ from: "system", text, ts: now + i }))].slice(-50))
+      } else {
+        const err = await res.json().then((j) => (j as { error?: string }).error).catch(() => null)
+        setMessages((m) => [...m, { from: "system", text: `notes failed: ${err ?? res.status}`, ts: now }].slice(-50))
+      }
+    } finally {
+      setNotesBusy(false)
+    }
+  }
+
   if (!ready) return null
   if (!token) return <AuthForm onToken={setToken} />
 
@@ -239,7 +274,14 @@ export default function Page() {
           net: {status}
           {sessionId ? ` (${sessionId})` : ""}
         </div>
-        <div>zone: {zoneId || "none"}</div>
+        <div>
+          zone: {zoneId || "none"}
+          {inMeeting && (
+            <button onClick={requestNotes} disabled={notesBusy} style={{ marginLeft: 8 }}>
+              {notesBusy ? "…" : "📝 notes"}
+            </button>
+          )}
+        </div>
         <div>
           lv {xp.level} · xp {xp.xp}
         </div>
