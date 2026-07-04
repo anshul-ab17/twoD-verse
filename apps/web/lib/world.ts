@@ -1,8 +1,8 @@
 // Pixi world client (plain TS, no React). Renders the authoritative Colyseus
 // "world" room state; talks to React only via the bridge (plan §12).
-// Art is owned: programmatic Graphics only — no images, no third-party atlases.
+// Art is owned: hand-authored SVG kit (lib/art.ts) + Graphics — no third-party atlases.
 
-import { Application, Container, Graphics, Text } from "pixi.js"
+import { Application, Container, Graphics, Sprite, Text } from "pixi.js"
 import { Client, getStateCallbacks } from "colyseus.js"
 import {
   MSG,
@@ -19,6 +19,7 @@ import {
   type PlayerState,
 } from "@repo/net-schema"
 import { bridge } from "./bridge"
+import { avatarTexture, furnitureTexture } from "./art"
 
 const REALTIME_URL = process.env.NEXT_PUBLIC_REALTIME_URL ?? "ws://localhost:2567"
 
@@ -38,31 +39,38 @@ type Avatar = {
   lastY: number
 }
 
-/** Simple owned character: capsule body + head + direction eyes + name label. */
+/** Owned SVG character (lib/art.ts kit) + direction eyes + name label. */
 function makeAvatar(id: string, own: boolean): Avatar {
   const root = new Container()
   const body = new Container()
-  const color = colorFor(id)
 
-  const g = new Graphics()
-    .roundRect(-10, -8, 20, 24, 9) // torso
-    .fill(color)
-    .circle(0, -16, 9) // head
-    .fill(0xf1d3b3)
-    .ellipse(0, 18, 11, 4) // shadow
-    .fill({ color: 0x000000, alpha: 0.25 })
-  if (own) g.circle(0, -2, 24).stroke({ width: 2, color: 0xffffff, alpha: 0.7 })
+  if (own) {
+    const ring = new Graphics().circle(0, -12, 26).stroke({ width: 2, color: 0xffffff, alpha: 0.7 })
+    body.addChild(ring)
+  }
 
-  const eyes = new Graphics().circle(-3, -17, 1.6).circle(3, -17, 1.6).fill(0x222222)
+  // texture loads async; container is placed immediately, sprite pops in
+  const sprite = new Sprite()
+  sprite.anchor.set(0.5, 1)
+  sprite.y = 20 // feet at old shadow line
+  body.addChild(sprite)
+  avatarTexture(id)
+    .then((tex) => {
+      sprite.texture = tex
+    })
+    .catch(console.error)
+
+  // eyes sit on the SVG head (center ≈ -31 with feet at +20)
+  const eyes = new Graphics().circle(-3.5, -30, 1.7).circle(3.5, -30, 1.7).fill(0x222222)
 
   const label = new Text({
     text: id,
     style: { fontSize: 11, fill: 0xffffff, stroke: { color: 0x000000, width: 3 } },
   })
   label.anchor.set(0.5)
-  label.y = -36
+  label.y = -52
 
-  body.addChild(g, eyes)
+  body.addChild(eyes)
   root.addChild(body, label)
   return { root, body, eyes, lastX: 0, lastY: 0 }
 }
@@ -70,7 +78,7 @@ function makeAvatar(id: string, own: boolean): Avatar {
 /** Face eyes toward a direction ("up" hides them — back of head). */
 function face(a: Avatar, dir: string) {
   a.eyes.visible = dir !== "up"
-  a.eyes.x = dir === "left" ? -3 : dir === "right" ? 3 : 0
+  a.eyes.x = dir === "left" ? -4 : dir === "right" ? 4 : 0
 }
 
 /** Code-drawn office floorplan — owned art by construction (plan §27). */
@@ -101,35 +109,48 @@ function drawOffice(): Container {
     g.rect(x, y + h - 6, (w - door) / 2, 6).rect(x + (w + door) / 2, y + h - 6, (w - door) / 2, 6).fill(0x454b6b)
   }
 
-  // desk pods in the open area (rows of desk+chair)
-  const desk = (x: number, y: number) => {
-    g.roundRect(x, y, 88, 44, 4).fill(0x6b4f35) // desktop
-    g.roundRect(x + 8, y + 8, 30, 18, 2).fill(0x9fb4c7) // monitor
-    g.circle(x + 44, y + 66, 12).fill(0x51576f) // chair
-  }
-  for (let row = 0; row < 2; row++)
-    for (let col = 0; col < 4; col++) desk(700 + col * 160, 150 + row * 160)
+  c.addChild(g)
 
-  // meeting room: table + chairs (inside meeting-room zone)
+  // furniture: owned SVG sprites (lib/art.ts), loaded async and popped in
+  const place = (kind: Parameters<typeof furnitureTexture>[0], x: number, y: number, rotation = 0) => {
+    furnitureTexture(kind)
+      .then((tex) => {
+        const sp = new Sprite(tex)
+        sp.anchor.set(0.5)
+        sp.position.set(x, y)
+        sp.rotation = rotation
+        c.addChild(sp)
+      })
+      .catch(console.error)
+  }
+
+  // desk pods in the open area (desk + chair below)
+  for (let row = 0; row < 2; row++)
+    for (let col = 0; col < 4; col++) {
+      const x = 744 + col * 160
+      const y = 172 + row * 160
+      place("desk", x, y)
+      place("chair", x, y + 52)
+    }
+
+  // meeting room: table + chairs around it
   const m = SPIKE_ZONES.find((z) => z.kind === "meeting")!.bounds
-  g.roundRect(m.x + m.w / 2 - 90, m.y + m.h / 2 - 40, 180, 80, 12).fill(0x6b4f35)
+  place("meetingTable", m.x + m.w / 2, m.y + m.h / 2)
   for (let i = 0; i < 4; i++) {
-    g.circle(m.x + m.w / 2 - 60 + i * 40, m.y + m.h / 2 - 58, 10).fill(0x51576f)
-    g.circle(m.x + m.w / 2 - 60 + i * 40, m.y + m.h / 2 + 58, 10).fill(0x51576f)
+    place("chair", m.x + m.w / 2 - 60 + i * 40, m.y + m.h / 2 - 62)
+    place("chair", m.x + m.w / 2 - 60 + i * 40, m.y + m.h / 2 + 62)
   }
 
   // lounge: sofas (voice zone)
   const v = SPIKE_ZONES.find((z) => z.kind === "voice")!.bounds
-  g.roundRect(v.x + 30, v.y + 40, 120, 34, 10).fill(0x7a3b4f)
-  g.roundRect(v.x + 30, v.y + v.h - 74, 120, 34, 10).fill(0x7a3b4f)
-  g.roundRect(v.x + v.w - 70, v.y + 90, 34, 120, 10).fill(0x7a3b4f)
+  place("sofa", v.x + 90, v.y + 57)
+  place("sofa", v.x + 90, v.y + v.h - 57)
+  place("sofa", v.x + v.w - 53, v.y + 150, Math.PI / 2)
 
   // plants in the corners
   for (const [px, py] of [[50, 50], [WORLD.width - 50, 50], [50, WORLD.height - 50], [WORLD.width - 50, WORLD.height - 50]] as const) {
-    g.circle(px, py, 16).fill(0x2f6b3a).circle(px, py, 7).fill(0x3f8f4e)
+    place("plant", px, py)
   }
-
-  c.addChild(g)
 
   // room labels
   for (const z of SPIKE_ZONES) {

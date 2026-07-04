@@ -5,7 +5,10 @@
     "path": "programmatic:pixi-graphics",
     "origin": "in-house",
     "license": "owned",
-    "tags": ["spike", "placeholder"]
+    "tags": [
+      "spike",
+      "placeholder"
+    ]
   },
   {
     "id": "world-grid",
@@ -13,7 +16,10 @@
     "path": "programmatic:pixi-graphics",
     "origin": "in-house",
     "license": "owned",
-    "tags": ["spike", "placeholder"]
+    "tags": [
+      "spike",
+      "placeholder"
+    ]
   },
   {
     "id": "zone-overlay",
@@ -21,6 +27,34 @@
     "path": "programmatic:pixi-graphics",
     "origin": "in-house",
     "license": "owned",
-    "tags": ["spike", "placeholder", "voice-zone"]
+    "tags": [
+      "spike",
+      "placeholder",
+      "voice-zone"
+    ]
+  },
+  {
+    "id": "avatar-svg-kit",
+    "kind": "avatar",
+    "path": "programmatic:svg-art-kit",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "character",
+      "svg",
+      "variants"
+    ]
+  },
+  {
+    "id": "office-furniture-svg",
+    "kind": "tileset",
+    "path": "programmatic:svg-art-kit",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "svg",
+      "office"
+    ]
   }
 ]
