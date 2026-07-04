@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from "react"
 import { SPIKE_ZONES } from "@repo/net-schema/zones"
 import { bridge } from "../lib/bridge"
-import { login, signup, clearTokens, getAccessToken, GATEWAY } from "../lib/auth"
+import { login, signup, refresh, clearTokens, getAccessToken, GATEWAY } from "../lib/auth"
 import { startMediaWatcher } from "../lib/media"
 
 const AI = process.env.NEXT_PUBLIC_AI_URL ?? "http://localhost:2570"
@@ -205,14 +205,23 @@ export default function Page() {
     const stopMedia = startMediaWatcher()
     // dynamic import keeps pixi/colyseus out of SSR
     import("../lib/world")
-      .then((m) => m.createWorld(mount.current!, token))
+      .then(async (m) => {
+        try {
+          return await m.createWorld(mount.current!, token)
+        } catch (err) {
+          // access token likely expired (15m) — rotate via refresh token and retry once
+          const pair = await refresh()
+          if (!pair) throw err
+          return m.createWorld(mount.current!, pair.accessToken)
+        }
+      })
       .then((h) => {
         if (cancelled) h.destroy()
         else world.current = h
       })
       .catch((err) => {
         console.error("world failed to start", err)
-        // join rejected (expired/invalid token) -> clear and fall back to the form
+        // join + refresh both failed -> clear and fall back to the form
         clearTokens()
         if (!cancelled) setToken(null)
       })
@@ -273,6 +282,9 @@ export default function Page() {
         <div>
           net: {status}
           {sessionId ? ` (${sessionId})` : ""}
+          {status === "disconnected" && (
+            <button onClick={() => location.reload()} style={{ marginLeft: 8 }}>reconnect</button>
+          )}
         </div>
         <div>
           zone: {zoneId || "none"}
