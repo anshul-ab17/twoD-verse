@@ -9,6 +9,7 @@ export type BridgeEvents = {
   "net:connected": { sessionId: string }
   "net:disconnected": void
   "player:zone-changed": { zoneId: string }
+  "chat:message": { from: string; text: string; ts: number }
 }
 
 type Handler<K extends keyof BridgeEvents> = (payload: BridgeEvents[K]) => void

@@ -8,7 +8,9 @@ import {
   MSG,
   WORLD,
   SPIKE_ZONES,
+  CHAT_BROADCAST,
   SnapshotBuffer,
+  type ChatBroadcast,
   type WorldRoomState,
   type PlayerState,
 } from "@verse/net-schema"
@@ -35,8 +37,14 @@ function makeAvatar(id: string, own: boolean): Container {
   return c
 }
 
-/** Mounts the world into `el`; resolves to a destroy function. */
-export async function createWorld(el: HTMLElement): Promise<() => void> {
+export type WorldHandle = {
+  destroy: () => void
+  /** send a chat message to the room (React calls this directly, not via bridge) */
+  sendChat: (text: string) => void
+}
+
+/** Mounts the world into `el`; resolves to a handle with destroy + sendChat. */
+export async function createWorld(el: HTMLElement): Promise<WorldHandle> {
   const app = new Application()
   // ponytail: no camera/viewport — whole 1600x1200 world in one canvas,
   // scaled by CSS. Add a follow-camera when the world outgrows a screen.
@@ -67,6 +75,7 @@ export async function createWorld(el: HTMLElement): Promise<() => void> {
   }
   bridge.emit("net:connected", { sessionId: room.sessionId })
   room.onLeave(() => bridge.emit("net:disconnected", undefined))
+  room.onMessage(CHAT_BROADCAST, (msg: ChatBroadcast) => bridge.emit("chat:message", msg))
 
   const $ = getStateCallbacks(room)
   const remotes = new Map<string, { sprite: Container; buf: SnapshotBuffer }>()
@@ -117,8 +126,22 @@ export async function createWorld(el: HTMLElement): Promise<() => void> {
   const pressed = new Set<string>()
   let last = { dx: 0, dy: 0 }
   const has = (...codes: string[]) => codes.some((c) => pressed.has(c))
+  const isTyping = () => {
+    const el = document.activeElement
+    return el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement
+  }
   const onKey = (e: KeyboardEvent) => {
     if (!DIR_KEYS.has(e.code)) return
+    // root cause fix: WASD must never move the player while a text field is
+    // focused. Also clear held keys so movement stops if focus happened mid-hold.
+    if (isTyping()) {
+      pressed.clear()
+      if (last.dx !== 0 || last.dy !== 0) {
+        last = { dx: 0, dy: 0 }
+        room.send(MSG.MOVE, last)
+      }
+      return
+    }
     if (e.type === "keydown") pressed.add(e.code)
     else pressed.delete(e.code)
     const dx = (has("ArrowRight", "KeyD") ? 1 : 0) - (has("ArrowLeft", "KeyA") ? 1 : 0)
@@ -131,10 +154,16 @@ export async function createWorld(el: HTMLElement): Promise<() => void> {
   window.addEventListener("keydown", onKey)
   window.addEventListener("keyup", onKey)
 
-  return () => {
-    window.removeEventListener("keydown", onKey)
-    window.removeEventListener("keyup", onKey)
-    void room.leave()
-    app.destroy(true, { children: true })
+  return {
+    sendChat: (text: string) => {
+      const t = text.trim()
+      if (t) room.send(MSG.CHAT, { text: t })
+    },
+    destroy: () => {
+      window.removeEventListener("keydown", onKey)
+      window.removeEventListener("keyup", onKey)
+      void room.leave()
+      app.destroy(true, { children: true })
+    },
   }
 }

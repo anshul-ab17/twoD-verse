@@ -9,9 +9,17 @@ export const WORLD = { width: 1600, height: 1200 } as const
 export const MSG = {
   /** payload: { dx: number, dy: number } each in -1..1; applied until replaced */
   MOVE: "move",
+  /** payload: { text: string } — live chat, no persistence (plan §7) */
+  CHAT: "chat",
 } as const
 
 export type MoveInput = { dx: number; dy: number }
+
+// --- chat (server -> clients broadcast) ---
+export const CHAT_BROADCAST = "chat"
+export const CHAT_MAX_LEN = 500
+export type ChatInput = { text: string }
+export type ChatBroadcast = { from: string; text: string; ts: number }
 
 // --- state schema (shared client/server) ---
 export class PlayerState extends Schema {

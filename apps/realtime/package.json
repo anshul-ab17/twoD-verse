@@ -6,7 +6,8 @@
     "dev": "bun run --watch src/index.ts",
     "start": "bun run src/index.ts",
     "check-types": "tsc --noEmit",
-    "test:spike": "bun run test/two-clients.ts"
+    "test:spike": "bun run test/two-clients.ts",
+    "test:chat": "bun run test/chat.spike.ts"
   },
   "dependencies": {
     "@colyseus/core": "^0.16",

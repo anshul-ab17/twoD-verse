@@ -6,8 +6,12 @@ import {
   MOVE_SPEED,
   WORLD,
   MSG,
+  CHAT_BROADCAST,
+  CHAT_MAX_LEN,
   SPIKE_ZONES,
   zoneAt,
+  type ChatBroadcast,
+  type ChatInput,
   type MoveInput,
 } from "@verse/net-schema"
 
@@ -18,6 +22,9 @@ export class WorldRoom extends Room<WorldRoomState> {
 
   /** latest input per session, applied every tick until replaced */
   private inputs = new Map<string, MoveInput>()
+
+  /** per-session last chat timestamp for rate limiting */
+  private lastChat = new Map<string, number>()
 
   // ponytail: JWT skipped for spike — add onAuth() here calling
   // @verse/auth verifyAccessToken(options.token) and reject on failure.
@@ -30,6 +37,19 @@ export class WorldRoom extends Room<WorldRoomState> {
       const dx = clamp(Number(input?.dx) || 0, -1, 1)
       const dy = clamp(Number(input?.dy) || 0, -1, 1)
       this.inputs.set(client.sessionId, { dx, dy })
+    })
+
+    this.onMessage(MSG.CHAT, (client, input: ChatInput) => {
+      // trust boundary: coerce, trim, cap; reject empty
+      const text = String(input?.text ?? "").trim().slice(0, CHAT_MAX_LEN)
+      if (!text) return
+      // ponytail: in-memory 500ms gap per session, drop silently — Redis
+      // sliding window (packages/pubsub rateLimiter.ts) when gateway auth lands.
+      const now = Date.now()
+      if (now - (this.lastChat.get(client.sessionId) ?? 0) < 500) return
+      this.lastChat.set(client.sessionId, now)
+      const msg: ChatBroadcast = { from: client.sessionId, text, ts: now }
+      this.broadcast(CHAT_BROADCAST, msg)
     })
 
     this.setSimulationInterval((dtMs) => this.tick(dtMs), 1000 / TICK_RATE)
@@ -46,6 +66,7 @@ export class WorldRoom extends Room<WorldRoomState> {
   override onLeave(client: Client) {
     this.state.players.delete(client.sessionId)
     this.inputs.delete(client.sessionId)
+    this.lastChat.delete(client.sessionId)
   }
 
   /** Authoritative movement: server integrates position, never trusts client x/y. */
