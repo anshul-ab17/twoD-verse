@@ -161,6 +161,90 @@ function FriendsPanel() {
   )
 }
 
+type Orgs = { orgs: { id: string; name: string; role: string }[] }
+
+function OrgPanel() {
+  const [data, setData] = useState<Orgs | null>(null)
+  const [name, setName] = useState("")
+  const [joinId, setJoinId] = useState("")
+  const [note, setNote] = useState("")
+
+  const authed = (method: string, path: string, body?: unknown) =>
+    fetch(`${GATEWAY}${path}`, {
+      method,
+      headers: {
+        ...(body ? { "content-type": "application/json" } : {}),
+        authorization: `Bearer ${getAccessToken()}`,
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    })
+
+  const load = () =>
+    authed("GET", "/v1/orgs")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d && setData(d as Orgs))
+      .catch(() => {})
+
+  useEffect(() => {
+    void load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const createOrg = async () => {
+    if (!name.trim()) return
+    await authed("POST", "/v1/orgs", { name: name.trim() })
+    setName("")
+    void load()
+  }
+
+  const invite = async (orgId: string) => {
+    const res = await authed("POST", `/v1/orgs/${orgId}/invites`)
+    if (res.ok) {
+      const { inviteId } = (await res.json()) as { inviteId: string }
+      setNote(`invite id (share it): ${inviteId}`)
+    } else setNote("invite failed (need owner/admin)")
+  }
+
+  const join = async () => {
+    if (!joinId.trim()) return
+    const res = await authed("POST", `/v1/invites/${joinId.trim()}/accept`)
+    setNote(res.ok ? "joined!" : `join failed (${res.status})`)
+    setJoinId("")
+    void load()
+  }
+
+  return (
+    <details style={{ ...hudBox, position: "fixed", top: 8, right: 236, width: 240, padding: 8 }}>
+      <summary style={{ cursor: "pointer" }}>orgs ({data?.orgs.length ?? 0})</summary>
+      <div style={{ marginTop: 6 }}>
+        {data?.orgs.map((o) => (
+          <div key={o.id}>
+            {o.name} · {o.role.toLowerCase()}{" "}
+            {(o.role === "OWNER" || o.role === "ADMIN") && (
+              <button onClick={() => invite(o.id)}>invite</button>
+            )}
+          </div>
+        ))}
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && createOrg()}
+          placeholder="new org name…"
+          style={{ width: "100%", marginTop: 6, padding: "2px 4px" }}
+        />
+        <input
+          value={joinId}
+          onChange={(e) => setJoinId(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && join()}
+          placeholder="join with invite id…"
+          style={{ width: "100%", marginTop: 4, padding: "2px 4px" }}
+        />
+        {note && <div style={{ marginTop: 4, wordBreak: "break-all" }}>{note}</div>}
+      </div>
+    </details>
+  )
+}
+
 type Leaderboard = {
   top: { rank: number; userId: string; handle: string | null; xp: number; level: number }[]
   me: { rank: number | null; xp: number }
@@ -356,6 +440,7 @@ export default function Page() {
       </div>
       <FriendsPanel />
       <LeaderboardPanel />
+      <OrgPanel />
       <div style={{ ...hudBox, position: "fixed", bottom: 8, left: 8, width: 320, padding: 8 }}>
         <div style={{ maxHeight: 160, overflowY: "auto" }}>
           {messages.map((m) => (

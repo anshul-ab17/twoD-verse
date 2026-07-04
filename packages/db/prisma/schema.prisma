@@ -96,8 +96,25 @@ model Org {
   plan      String   @default("free")
 
   members   OrgMember[]
+  invites   OrgInvite[]
 
   createdAt DateTime @default(now())
+}
+
+// Single-use invite link; the row id is the invite token.
+model OrgInvite {
+  id          String    @id @default(cuid())
+  orgId       String
+  createdById String
+  expiresAt   DateTime
+  usedById    String?
+  usedAt      DateTime?
+
+  org         Org       @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime  @default(now())
+
+  @@index([orgId])
 }
 
 model OrgMember {

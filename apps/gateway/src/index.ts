@@ -383,6 +383,68 @@ app.get("/v1/friends", requireAuth, async (req, res) => {
   })
 })
 
+// --- orgs + invites (plan §7 RBAC; roles: OWNER > ADMIN > MEMBER > GUEST) ---
+
+const OrgCreateSchema = z.object({ name: z.string().trim().min(1).max(64) })
+const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000
+
+/** 403 unless the caller holds one of `roles` in the org. */
+async function requireOrgRole(userId: string, orgId: string, roles: ("OWNER" | "ADMIN")[]) {
+  const m = await client.orgMember.findUnique({
+    where: { orgId_userId: { orgId, userId } },
+    select: { role: true },
+  })
+  return m != null && (roles as string[]).includes(m.role)
+}
+
+app.post("/v1/orgs", requireAuth, async (req, res) => {
+  const parsed = OrgCreateSchema.safeParse(req.body)
+  if (!parsed.success) return err(res, 400, "name required (1-64 chars)")
+  const org = await client.org.create({
+    data: { name: parsed.data.name, members: { create: { userId: userIdOf(req), role: "OWNER" } } },
+  })
+  res.status(201).json({ id: org.id, name: org.name })
+})
+
+app.get("/v1/orgs", requireAuth, async (req, res) => {
+  const memberships = await client.orgMember.findMany({
+    where: { userId: userIdOf(req) },
+    include: { org: { select: { id: true, name: true } } },
+  })
+  res.json({ orgs: memberships.map((m) => ({ id: m.org.id, name: m.org.name, role: m.role })) })
+})
+
+app.post("/v1/orgs/:orgId/invites", requireAuth, async (req, res) => {
+  const orgId = String(req.params.orgId)
+  if (!(await requireOrgRole(userIdOf(req), orgId, ["OWNER", "ADMIN"])))
+    return err(res, 403, "owner or admin role required")
+  const invite = await client.orgInvite.create({
+    data: { orgId, createdById: userIdOf(req), expiresAt: new Date(Date.now() + INVITE_TTL_MS) },
+  })
+  // ponytail: invite id IS the token (cuid, unguessable enough for 7-day org
+  // invites) — hashed random tokens like magic links if this ever gates money
+  res.status(201).json({ inviteId: invite.id, expiresAt: invite.expiresAt })
+})
+
+app.post("/v1/invites/:inviteId/accept", requireAuth, async (req, res) => {
+  const me = userIdOf(req)
+  const inviteId = String(req.params.inviteId)
+  // atomic single-use claim (mirrors magic-link consume)
+  const claimed = await client.orgInvite.updateMany({
+    where: { id: inviteId, usedById: null, expiresAt: { gt: new Date() } },
+    data: { usedById: me, usedAt: new Date() },
+  })
+  if (claimed.count === 0) return err(res, 410, "invite invalid, used, or expired")
+  const invite = (await client.orgInvite.findUnique({ where: { id: inviteId } }))!
+  try {
+    await client.orgMember.create({ data: { orgId: invite.orgId, userId: me, role: "MEMBER" } })
+  } catch {
+    return err(res, 409, "already a member")
+  }
+  const org = await client.org.findUnique({ where: { id: invite.orgId }, select: { id: true, name: true } })
+  res.json({ org })
+})
+
 app.get("/v1/leaderboard", requireAuth, async (req, res) => {
   const me = userIdOf(req)
   // ponytail: two small queries per request — Redis zset leaderboard when it's hot
