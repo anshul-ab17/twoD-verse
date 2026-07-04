@@ -5,6 +5,7 @@
 const base = `http://localhost:${process.env.GATEWAY_PORT ?? 2569}`
 const email = `spike-${crypto.randomUUID()}@example.com`
 const password = "Sp1ke!pass"
+const handle = `spike-${crypto.randomUUID().slice(0, 8)}`
 
 type Tokens = { accessToken: string; refreshToken: string }
 
@@ -22,7 +23,7 @@ function assert(cond: unknown, msg: string): asserts cond {
 }
 
 // signup
-const signupRes = await post("/v1/auth/signup", { email, password })
+const signupRes = await post("/v1/auth/signup", { email, password, handle })
 assert(signupRes.status === 201, `signup expected 201, got ${signupRes.status}`)
 const signup = (await signupRes.json()) as Tokens
 assert(signup.accessToken && signup.refreshToken, "signup returns dual tokens")
@@ -51,8 +52,19 @@ const meRes = await fetch(`${base}/v1/me`, {
   headers: { Authorization: `Bearer ${rotated.accessToken}` },
 })
 assert(meRes.status === 200, `/v1/me expected 200, got ${meRes.status}`)
-const me = (await meRes.json()) as { email: string }
+const me = (await meRes.json()) as { email: string; handle: string | null }
 assert(me.email === email, `/v1/me email mismatch: ${me.email}`)
+assert(me.handle === handle, `/v1/me handle mismatch: ${me.handle}`)
+
+// duplicate handle → 409
+const dupHandle = await post("/v1/auth/signup", {
+  email: `spike-${crypto.randomUUID()}@example.com`,
+  password,
+  handle,
+})
+assert(dupHandle.status === 409, `duplicate handle expected 409, got ${dupHandle.status}`)
+const dupBody = (await dupHandle.json()) as { error: string }
+assert(dupBody.error === "handle taken", `expected "handle taken", got ${dupBody.error}`)
 
 // refresh token must not pass as access token
 const meWithRefresh = await fetch(`${base}/v1/me`, {

@@ -69,7 +69,6 @@ function oauthEnv(provider: OAuthProvider) {
 
 // ---- schemas ----------------------------------------------------------------
 
-// handle accepted for forward-compat but not stored — User model has no handle column
 const SignupBody = EmailSignupSchema.extend({ handle: z.string().min(1).optional() })
 const RefreshBody = z.object({ refreshToken: z.string().min(1) })
 const MagicLinkBody = z.object({ email: z.email() })
@@ -83,18 +82,26 @@ Bun.serve({
       POST: async (req) => {
         const parsed = SignupBody.safeParse(await readJson(req))
         if (!parsed.success) return err(400, "invalid signup payload")
-        const { email, password } = parsed.data
+        const { email, password, handle } = parsed.data
 
         const existing = await client.user.findUnique({ where: { email } })
         if (existing) return err(409, "email already registered")
 
-        const user = await client.user.create({
-          data: {
-            email,
-            password: await hashPassword(password),
-            accounts: { create: { provider: "EMAIL", providerId: email } },
-          },
-        })
+        let user
+        try {
+          user = await client.user.create({
+            data: {
+              email,
+              handle,
+              password: await hashPassword(password),
+              accounts: { create: { provider: "EMAIL", providerId: email } },
+            },
+          })
+        } catch (e: any) {
+          // P2002 = unique violation; email checked above, so it's the handle
+          if (e?.code === "P2002") return err(409, "handle taken")
+          throw e
+        }
         return Response.json(await issueTokens(user), { status: 201 })
       },
     },
@@ -173,6 +180,7 @@ Bun.serve({
         const result = await verifyMagicLink(token)
         if (!result) return err(401, "invalid or expired link")
 
+        // ponytail: magic-link/oauth users start with handle=null — set later via a profile endpoint
         const user = await client.user.upsert({
           where: { email: result.email },
           update: {},
@@ -263,7 +271,7 @@ Bun.serve({
 
         const user = await client.user.findUnique({
           where: { id: payload.userId },
-          select: { id: true, email: true, role: true, createdAt: true },
+          select: { id: true, email: true, handle: true, role: true, createdAt: true },
         })
         if (!user) return err(401, "unauthorized")
         return Response.json(user)
