@@ -2,7 +2,7 @@
 // ponytail: tokens in memory + localStorage — readable by XSS. Move refresh
 // token to an httpOnly cookie once the gateway sits behind the app origin.
 
-const GATEWAY = process.env.NEXT_PUBLIC_GATEWAY_URL ?? "http://localhost:2569"
+export const GATEWAY = process.env.NEXT_PUBLIC_GATEWAY_URL ?? "http://localhost:2569"
 
 export type TokenPair = { accessToken: string; refreshToken: string }
 

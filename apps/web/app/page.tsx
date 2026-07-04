@@ -6,7 +6,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { bridge } from "../lib/bridge"
-import { login, signup, clearTokens, getAccessToken } from "../lib/auth"
+import { login, signup, clearTokens, getAccessToken, GATEWAY } from "../lib/auth"
 import { startMediaWatcher } from "../lib/media"
 
 type ChatMsg = { from: string; text: string; ts: number }
@@ -62,6 +62,97 @@ function AuthForm({ onToken }: { onToken: (token: string) => void }) {
       </div>
       {error && <div style={{ color: "#f66", marginTop: 8 }}>{error}</div>}
     </div>
+  )
+}
+
+type FriendsData = {
+  friends: { userId: string; handle: string | null; online: boolean }[]
+  pending: {
+    incoming: { id: string; handle: string | null }[]
+    outgoing: { id: string; handle: string | null }[]
+  }
+}
+
+// ponytail: 15s polling while mounted — push updates via room broadcast later
+function FriendsPanel() {
+  const [data, setData] = useState<FriendsData | null>(null)
+  const [handle, setHandle] = useState("")
+  const [error, setError] = useState("")
+
+  const authed = (path: string, init?: RequestInit) =>
+    fetch(`${GATEWAY}${path}`, {
+      ...init,
+      headers: {
+        ...(init?.body ? { "content-type": "application/json" } : {}),
+        authorization: `Bearer ${getAccessToken()}`,
+      },
+    })
+
+  const load = () =>
+    authed("/v1/friends")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d && setData(d as FriendsData))
+      .catch(() => {})
+
+  useEffect(() => {
+    void load()
+    const t = setInterval(load, 15_000)
+    return () => clearInterval(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const addFriend = async () => {
+    const h = handle.trim()
+    if (!h) return
+    setError("")
+    const res = await authed("/v1/friends/request", { method: "POST", body: JSON.stringify({ handle: h }) })
+    if (res.ok) {
+      setHandle("")
+      void load()
+    } else {
+      setError(await res.json().then((j) => (j as { error?: string }).error ?? "failed").catch(() => "failed"))
+    }
+  }
+
+  const respond = async (requestId: string, accept: boolean) => {
+    await authed("/v1/friends/respond", { method: "POST", body: JSON.stringify({ requestId, accept }) })
+    void load()
+  }
+
+  return (
+    <details style={{ ...hudBox, position: "fixed", bottom: 8, right: 8, width: 220, padding: 8 }}>
+      <summary style={{ cursor: "pointer" }}>
+        friends ({data?.friends.length ?? 0})
+        {data?.pending.incoming.length ? ` · ${data.pending.incoming.length} pending` : ""}
+      </summary>
+      <div style={{ maxHeight: 200, overflowY: "auto", marginTop: 6 }}>
+        {data?.friends.map((f) => (
+          <div key={f.userId}>
+            <span style={{ color: f.online ? "#4f4" : "#888" }}>●</span> {f.handle ?? f.userId}
+          </div>
+        ))}
+        {data?.pending.incoming.map((r) => (
+          <div key={r.id}>
+            {r.handle ?? "?"} wants to be friends{" "}
+            <button onClick={() => respond(r.id, true)}>✓</button>{" "}
+            <button onClick={() => respond(r.id, false)}>✕</button>
+          </div>
+        ))}
+        {data?.pending.outgoing.map((r) => (
+          <div key={r.id} style={{ opacity: 0.6 }}>
+            → {r.handle ?? "?"} (sent)
+          </div>
+        ))}
+      </div>
+      <input
+        value={handle}
+        onChange={(e) => setHandle(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && addFriend()}
+        placeholder="add by handle…"
+        style={{ width: "100%", marginTop: 6, padding: "2px 4px" }}
+      />
+      {error && <div style={{ color: "#f66", marginTop: 4 }}>{error}</div>}
+    </details>
   )
 }
 
@@ -154,6 +245,7 @@ export default function Page() {
         </div>
         <div>voice: {mediaZone || "off"}</div>
       </div>
+      <FriendsPanel />
       <div style={{ ...hudBox, position: "fixed", bottom: 8, left: 8, width: 320, padding: 8 }}>
         <div style={{ maxHeight: 160, overflowY: "auto" }}>
           {messages.map((m) => (

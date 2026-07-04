@@ -2,6 +2,7 @@ import express, { type Request, type Response, type NextFunction } from "express
 import cors from "cors"
 import { z } from "zod"
 import { client, type AuthProvider } from "@verse/db"
+import { redis, connectRedis } from "@verse/pubsub"
 import { EmailSignupSchema, EmailSigninSchema } from "@verse/types"
 import {
   hashPassword,
@@ -45,6 +46,17 @@ function tryVerify(token: string): any | null {
     return null
   }
 }
+
+/** Access-JWT bearer gate; sets req.userId. Refresh tokens (jti) rejected. */
+function requireAuth(req: Request, res: Response, next: NextFunction) {
+  const auth = req.headers.authorization
+  const payload = auth?.startsWith("Bearer ") ? tryVerify(auth.slice(7)) : null
+  if (!payload?.userId || payload.jti) return err(res, 401, "unauthorized")
+  ;(req as Request & { userId: string }).userId = payload.userId
+  next()
+}
+
+const userIdOf = (req: Request) => (req as Request & { userId: string }).userId
 
 // ---- oauth state ------------------------------------------------------------
 // ponytail: in-memory state map — single instance only; move to Redis (SET EX)
@@ -259,20 +271,116 @@ app.get("/v1/auth/oauth/:provider/callback", async (req, res) => {
   res.json(await issueTokens(user))
 })
 
-app.get("/v1/me", async (req, res) => {
-  const auth = req.headers.authorization
-  if (!auth?.startsWith("Bearer ")) return err(res, 401, "unauthorized")
-
-  const payload = tryVerify(auth.slice(7))
-  // refresh tokens carry a jti — reject them here, only access tokens allowed
-  if (!payload?.userId || payload.jti) return err(res, 401, "unauthorized")
-
+app.get("/v1/me", requireAuth, async (req, res) => {
   const user = await client.user.findUnique({
-    where: { id: payload.userId },
+    where: { id: userIdOf(req) },
     select: { id: true, email: true, handle: true, role: true, createdAt: true },
   })
   if (!user) return err(res, 401, "unauthorized")
   res.json(user)
+})
+
+// ---- friends (plan §7) --------------------------------------------------------
+// Persisted in the v1 tables: FriendRequest = pending edge, Friendship = accepted
+// (canonical sorted pair). Presence read from Redis presence:world sorted set.
+
+const FriendRequestBody = z.object({ handle: z.string().min(1) })
+const FriendRespondBody = z.object({ requestId: z.string().min(1), accept: z.boolean() })
+
+const PRESENCE_KEY = "presence:world"
+const ONLINE_WINDOW_MS = 90_000
+
+app.post("/v1/friends/request", requireAuth, async (req, res) => {
+  const parsed = FriendRequestBody.safeParse(req.body)
+  if (!parsed.success) return err(res, 400, "handle required")
+  const me = userIdOf(req)
+
+  const target = await client.user.findUnique({ where: { handle: parsed.data.handle } })
+  if (!target) return err(res, 404, "unknown handle")
+  if (target.id === me) return err(res, 400, "cannot friend yourself")
+
+  const [a, b] = [me, target.id].sort()
+  const existing = await Promise.all([
+    client.friendRequest.findFirst({
+      where: {
+        OR: [
+          { senderId: me, receiverId: target.id },
+          { senderId: target.id, receiverId: me },
+        ],
+      },
+    }),
+    client.friendship.findUnique({ where: { userAId_userBId: { userAId: a!, userBId: b! } } }),
+  ])
+  if (existing[0] || existing[1]) return err(res, 409, "already requested or friends")
+
+  const request = await client.friendRequest.create({
+    data: { senderId: me, receiverId: target.id },
+  })
+  res.status(201).json({ id: request.id })
+})
+
+app.post("/v1/friends/respond", requireAuth, async (req, res) => {
+  const parsed = FriendRespondBody.safeParse(req.body)
+  if (!parsed.success) return err(res, 400, "requestId and accept required")
+  const me = userIdOf(req)
+
+  const request = await client.friendRequest.findUnique({ where: { id: parsed.data.requestId } })
+  // 404 for both missing and not-mine: don't leak other users' request ids
+  if (!request || request.receiverId !== me || request.status !== "PENDING") {
+    return err(res, 404, "request not found")
+  }
+
+  if (parsed.data.accept) {
+    const [a, b] = [request.senderId, request.receiverId].sort()
+    await client.$transaction([
+      client.friendRequest.delete({ where: { id: request.id } }),
+      client.friendship.create({ data: { userAId: a!, userBId: b! } }),
+    ])
+  } else {
+    // ponytail: reject = delete the row — sender may re-request; add REJECTED
+    // status if request-spam becomes a problem
+    await client.friendRequest.delete({ where: { id: request.id } })
+  }
+  res.json({ accepted: parsed.data.accept })
+})
+
+app.get("/v1/friends", requireAuth, async (req, res) => {
+  const me = userIdOf(req)
+  const handleSel = { select: { id: true, handle: true } }
+
+  const [friendships, requests] = await Promise.all([
+    client.friendship.findMany({
+      where: { OR: [{ userAId: me }, { userBId: me }] },
+      include: { userA: handleSel, userB: handleSel },
+    }),
+    client.friendRequest.findMany({
+      where: { status: "PENDING", OR: [{ senderId: me }, { receiverId: me }] },
+      include: { sender: handleSel, receiver: handleSel },
+    }),
+  ])
+
+  const others = friendships.map((f) => (f.userAId === me ? f.userB : f.userA))
+  let scores: (number | null)[] = []
+  if (others.length) {
+    await connectRedis()
+    scores = await redis.zmScore(PRESENCE_KEY, others.map((u) => u.id))
+  }
+  const now = Date.now()
+
+  res.json({
+    friends: others.map((u, i) => {
+      const seen = scores[i]
+      return { userId: u.id, handle: u.handle, online: seen != null && now - seen < ONLINE_WINDOW_MS }
+    }),
+    pending: {
+      incoming: requests
+        .filter((r) => r.receiverId === me)
+        .map((r) => ({ id: r.id, handle: r.sender.handle })),
+      outgoing: requests
+        .filter((r) => r.senderId === me)
+        .map((r) => ({ id: r.id, handle: r.receiver.handle })),
+    },
+  })
 })
 
 app.use((_req, res) => err(res, 404, "not found"))

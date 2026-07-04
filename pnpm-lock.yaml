@@ -26,6 +26,9 @@ importers:
       '@verse/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@verse/pubsub':
+        specifier: workspace:*
+        version: link:../../packages/pubsub
       '@verse/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -51,6 +54,9 @@ importers:
       '@verse/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
+      colyseus.js:
+        specifier: ^0.16
+        version: 0.16.22
       typescript:
         specifier: ^5.9.2
         version: 5.9.2
@@ -94,6 +100,9 @@ importers:
       '@verse/net-schema':
         specifier: workspace:*
         version: link:../../packages/net-schema
+      '@verse/pubsub':
+        specifier: workspace:*
+        version: link:../../packages/pubsub
     devDependencies:
       '@types/bun':
         specifier: latest

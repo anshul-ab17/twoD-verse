@@ -15,7 +15,8 @@
     "@colyseus/ws-transport": "^0.16",
     "@verse/auth": "workspace:*",
     "@verse/db": "workspace:*",
-    "@verse/net-schema": "workspace:*"
+    "@verse/net-schema": "workspace:*",
+    "@verse/pubsub": "workspace:*"
   },
   "devDependencies": {
     "@verse/typescript-config": "workspace:*",

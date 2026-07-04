@@ -22,6 +22,15 @@ import {
 // subpath import: token.service only — index.ts drags in prisma/argon2 the realtime server doesn't need
 import { verifyToken } from "@verse/auth/token.service"
 import { client as db } from "@verse/db"
+import { redis, connectRedis } from "@verse/pubsub"
+
+// Presence (plan §7/§15): sorted set presence:{worldId}, score = last-seen ms.
+// ponytail: worldId hardcoded "world" — single room type for now.
+// ponytail: no TTL sweep — a crashed node leaves stale members; readers filter
+// by score age (90s window), add a periodic ZREMRANGEBYSCORE sweep when the
+// set's size matters.
+const PRESENCE_KEY = "presence:world"
+const PRESENCE_REFRESH_MS = 60_000
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v))
 
@@ -90,6 +99,19 @@ export class WorldRoom extends Room<WorldRoomState> {
     })
 
     this.setSimulationInterval((dtMs) => this.tick(dtMs), 1000 / TICK_RATE)
+
+    // refresh presence scores so entries survive the 90s liveness window
+    // (this.clock interval is auto-cleared on room dispose)
+    this.clock.setInterval(() => {
+      const ids = [...this.state.players.values()]
+        .map((p) => p.id)
+        .filter((id) => !id.startsWith("guest-"))
+      if (!ids.length) return
+      const now = Date.now()
+      redis
+        .zAdd(PRESENCE_KEY, ids.map((id) => ({ score: now, value: id })))
+        .catch(console.error)
+    }, PRESENCE_REFRESH_MS)
   }
 
   override async onJoin(client: Client) {
@@ -101,7 +123,12 @@ export class WorldRoom extends Room<WorldRoomState> {
     player.y = WORLD.height / 2
     this.state.players.set(client.sessionId, player)
 
-    if (auth.guest) return // guests have no DB row, no xp
+    if (auth.guest) return // guests have no DB row, no xp, no presence
+
+    // presence: mark online (fire-and-forget, redis down must not block joins)
+    connectRedis()
+      .then(() => redis.zAdd(PRESENCE_KEY, { score: Date.now(), value: auth.userId }))
+      .catch(console.error)
 
     // load persisted xp/level; daily login reward if lastDailyAt isn't today (UTC)
     const user = await db.user.findUnique({
@@ -121,6 +148,10 @@ export class WorldRoom extends Room<WorldRoomState> {
   }
 
   override onLeave(client: Client) {
+    const player = this.state.players.get(client.sessionId)
+    if (player && !player.id.startsWith("guest-")) {
+      redis.zRem(PRESENCE_KEY, player.id).catch(console.error)
+    }
     this.state.players.delete(client.sessionId)
     this.inputs.delete(client.sessionId)
     this.lastChat.delete(client.sessionId)
