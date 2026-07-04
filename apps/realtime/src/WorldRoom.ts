@@ -10,12 +10,18 @@ import {
   CHAT_MAX_LEN,
   SPIKE_ZONES,
   zoneAt,
+  XP_AWARDS,
+  CHAT_XP_DAILY_CAP,
+  LEVEL_UP,
+  levelForXp,
   type ChatBroadcast,
   type ChatInput,
   type MoveInput,
+  type LevelUpBroadcast,
 } from "@verse/net-schema"
 // subpath import: token.service only — index.ts drags in prisma/argon2 the realtime server doesn't need
 import { verifyToken } from "@verse/auth/token.service"
+import { client as db } from "@verse/db"
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v))
 
@@ -28,11 +34,18 @@ export class WorldRoom extends Room<WorldRoomState> {
   /** per-session last chat timestamp for rate limiting */
   private lastChat = new Map<string, number>()
 
+  /** per-session xp earned from chat (plan §3 daily cap). ponytail: in-memory,
+   * resets on rejoin — Redis counter for a true cross-shard daily cap. */
+  private chatXp = new Map<string, number>()
+
+  /** per-session zones already awarded ZONE_ENTER */
+  private zonesEntered = new Map<string, Set<string>>()
+
   /** Plan §6: every join carries an access JWT; result lands on client.auth. */
   override onAuth(client: Client, options?: { token?: string }) {
     if (!options?.token) {
       // ponytail: AUTH_OPTIONAL=1 for tokenless dev/spike joins — never set in prod
-      if (process.env.AUTH_OPTIONAL === "1") return { userId: `guest-${client.sessionId}` }
+      if (process.env.AUTH_OPTIONAL === "1") return { userId: `guest-${client.sessionId}`, guest: true }
       throw new Error("unauthorized: token required")
     }
     let payload: { userId?: string; jti?: string }
@@ -67,24 +80,70 @@ export class WorldRoom extends Room<WorldRoomState> {
       this.lastChat.set(client.sessionId, now)
       const msg: ChatBroadcast = { from: client.sessionId, text, ts: now }
       this.broadcast(CHAT_BROADCAST, msg)
+
+      // xp for accepted chat, capped per session (plan §3, §16)
+      const earned = this.chatXp.get(client.sessionId) ?? 0
+      if (earned < CHAT_XP_DAILY_CAP) {
+        this.chatXp.set(client.sessionId, earned + XP_AWARDS.CHAT_MESSAGE)
+        this.awardXp(client.sessionId, XP_AWARDS.CHAT_MESSAGE)
+      }
     })
 
     this.setSimulationInterval((dtMs) => this.tick(dtMs), 1000 / TICK_RATE)
   }
 
-  override onJoin(client: Client) {
+  override async onJoin(client: Client) {
+    const auth = client.auth as { userId: string; guest?: boolean }
     const player = new PlayerState()
     // label = JWT identity from onAuth; sessionId stays the map key
-    player.id = (client.auth as { userId: string }).userId
+    player.id = auth.userId
     player.x = WORLD.width / 2
     player.y = WORLD.height / 2
     this.state.players.set(client.sessionId, player)
+
+    if (auth.guest) return // guests have no DB row, no xp
+
+    // load persisted xp/level; daily login reward if lastDailyAt isn't today (UTC)
+    const user = await db.user.findUnique({
+      where: { id: auth.userId },
+      select: { xp: true, level: true, lastDailyAt: true },
+    })
+    if (!user) return
+    player.xp = user.xp
+    player.level = user.level
+    const today = new Date().toISOString().slice(0, 10)
+    if (user.lastDailyAt?.toISOString().slice(0, 10) !== today) {
+      db.user
+        .update({ where: { id: auth.userId }, data: { lastDailyAt: new Date() } })
+        .catch(console.error)
+      this.awardXp(client.sessionId, XP_AWARDS.DAILY_LOGIN)
+    }
   }
 
   override onLeave(client: Client) {
     this.state.players.delete(client.sessionId)
     this.inputs.delete(client.sessionId)
     this.lastChat.delete(client.sessionId)
+    this.chatXp.delete(client.sessionId)
+    this.zonesEntered.delete(client.sessionId)
+  }
+
+  /** Server-authoritative xp (plan §16): only this room ever grants xp.
+   * Persists on every award — ponytail: batch/debounce writes when award volume matters. */
+  private awardXp(sessionId: string, amount: number) {
+    const player = this.state.players.get(sessionId)
+    if (!player || player.id.startsWith("guest-")) return
+    player.xp += amount
+    const level = levelForXp(player.xp)
+    if (level > player.level) {
+      player.level = level
+      const msg: LevelUpBroadcast = { sessionId, level }
+      this.broadcast(LEVEL_UP, msg)
+    }
+    // fire-and-forget flush; absolute values, server state is the source of truth
+    db.user
+      .update({ where: { id: player.id }, data: { xp: player.xp, level: player.level } })
+      .catch(console.error)
   }
 
   /** Authoritative movement: server integrates position, never trusts client x/y. */
@@ -110,7 +169,18 @@ export class WorldRoom extends Room<WorldRoomState> {
       // ponytail: client watches its own zoneId, POSTs apps/media /token and
       // joins/leaves the LiveKit room — client side not built in this spike.
       const zoneId = zoneAt(SPIKE_ZONES, player.x, player.y)?.id ?? ""
-      if (player.zoneId !== zoneId) player.zoneId = zoneId
+      if (player.zoneId !== zoneId) {
+        player.zoneId = zoneId
+        if (zoneId) {
+          // ZONE_ENTER once per zone per session (plan §3)
+          let seen = this.zonesEntered.get(sessionId)
+          if (!seen) this.zonesEntered.set(sessionId, (seen = new Set()))
+          if (!seen.has(zoneId)) {
+            seen.add(zoneId)
+            this.awardXp(sessionId, XP_AWARDS.ZONE_ENTER)
+          }
+        }
+      }
     }
   }
 

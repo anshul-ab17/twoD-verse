@@ -9,6 +9,8 @@ export type BridgeEvents = {
   "net:connected": { sessionId: string }
   "net:disconnected": void
   "player:zone-changed": { zoneId: string }
+  "player:xp-changed": { xp: number; level: number }
+  "player:level-up": { level: number }
   "chat:message": { from: string; text: string; ts: number }
   "media:connected": { zoneId: string }
   "media:disconnected": void

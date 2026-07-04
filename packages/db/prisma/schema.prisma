@@ -34,8 +34,12 @@ model User {
   id        String   @id @default(cuid())
   email     String   @unique
   handle    String?  @unique
-  password  String?  
+  password  String?
   role      Role     @default(USER)
+
+  xp          Int       @default(0)
+  level       Int       @default(1)
+  lastDailyAt DateTime?
 
   accounts  Account[]
   sessions  Session[]

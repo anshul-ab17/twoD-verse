@@ -28,7 +28,13 @@ export class PlayerState extends Schema {
   @type("number") y = 0
   @type("string") dir = "down"
   @type("string") zoneId = "" // current media zone ("" = none); LiveKit room name
+  @type("number") xp = 0 // server-authoritative (plan §16) — client can never grant itself xp
+  @type("number") level = 1
 }
+
+/** server -> clients broadcast when a player's level increases */
+export const LEVEL_UP = "level-up"
+export type LevelUpBroadcast = { sessionId: string; level: number }
 
 export class WorldRoomState extends Schema {
   @type({ map: PlayerState }) players = new MapSchema<PlayerState>()
@@ -36,3 +42,4 @@ export class WorldRoomState extends Schema {
 
 export * from "./interpolate"
 export * from "./zones"
+export * from "./xp"

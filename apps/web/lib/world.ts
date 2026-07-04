@@ -9,8 +9,10 @@ import {
   WORLD,
   SPIKE_ZONES,
   CHAT_BROADCAST,
+  LEVEL_UP,
   SnapshotBuffer,
   type ChatBroadcast,
+  type LevelUpBroadcast,
   type WorldRoomState,
   type PlayerState,
 } from "@verse/net-schema"
@@ -77,6 +79,9 @@ export async function createWorld(el: HTMLElement, token: string): Promise<World
   bridge.emit("net:connected", { sessionId: room.sessionId })
   room.onLeave(() => bridge.emit("net:disconnected", undefined))
   room.onMessage(CHAT_BROADCAST, (msg: ChatBroadcast) => bridge.emit("chat:message", msg))
+  room.onMessage(LEVEL_UP, (msg: LevelUpBroadcast) => {
+    if (msg.sessionId === room.sessionId) bridge.emit("player:level-up", { level: msg.level })
+  })
 
   const $ = getStateCallbacks(room)
   const remotes = new Map<string, { sprite: Container; buf: SnapshotBuffer }>()
@@ -94,6 +99,9 @@ export async function createWorld(el: HTMLElement, token: string): Promise<World
       // if movement feels mushy.
       own = { sprite, state: p }
       $(p).listen("zoneId", (zoneId) => bridge.emit("player:zone-changed", { zoneId }))
+      // xp changes are discrete server awards, not per-frame — safe for the bridge
+      $(p).listen("xp", (xp) => bridge.emit("player:xp-changed", { xp, level: p.level }))
+      $(p).listen("level", (level) => bridge.emit("player:xp-changed", { xp: p.xp, level }))
     } else {
       // render remotes 100ms in the past, lerped between server snapshots
       const buf = new SnapshotBuffer()

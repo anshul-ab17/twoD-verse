@@ -88,6 +88,9 @@ importers:
       '@verse/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@verse/db':
+        specifier: workspace:*
+        version: link:../../packages/db
       '@verse/net-schema':
         specifier: workspace:*
         version: link:../../packages/net-schema

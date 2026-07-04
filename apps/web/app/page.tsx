@@ -73,6 +73,7 @@ export default function Page() {
   const [status, setStatus] = useState<"connecting" | "connected" | "disconnected">("connecting")
   const [sessionId, setSessionId] = useState("")
   const [zoneId, setZoneId] = useState("")
+  const [xp, setXp] = useState({ xp: 0, level: 1 })
   const [mediaZone, setMediaZone] = useState("")
   const [messages, setMessages] = useState<ChatMsg[]>([])
   const [draft, setDraft] = useState("")
@@ -90,6 +91,13 @@ export default function Page() {
       }),
       bridge.on("net:disconnected", () => setStatus("disconnected")),
       bridge.on("player:zone-changed", ({ zoneId }) => setZoneId(zoneId)),
+      bridge.on("player:xp-changed", setXp),
+      // ponytail: level-up shown as a chat panel line — dedicated toast later
+      bridge.on("player:level-up", ({ level }) =>
+        setMessages((m) =>
+          [...m, { from: "system", text: `you reached level ${level}`, ts: Date.now() }].slice(-50),
+        ),
+      ),
       bridge.on("media:connected", ({ zoneId }) => setMediaZone(zoneId)),
       bridge.on("media:disconnected", () => setMediaZone("")),
       bridge.on("chat:message", (msg) => setMessages((m) => [...m, msg].slice(-50))),
@@ -141,6 +149,9 @@ export default function Page() {
           {sessionId ? ` (${sessionId})` : ""}
         </div>
         <div>zone: {zoneId || "none"}</div>
+        <div>
+          lv {xp.level} · xp {xp.xp}
+        </div>
         <div>voice: {mediaZone || "off"}</div>
       </div>
       <div style={{ ...hudBox, position: "fixed", bottom: 8, left: 8, width: 320, padding: 8 }}>

@@ -7,12 +7,14 @@
     "start": "bun run src/index.ts",
     "check-types": "tsc --noEmit",
     "test:spike": "bun run test/two-clients.ts",
-    "test:chat": "bun run test/chat.spike.ts"
+    "test:chat": "bun run test/chat.spike.ts",
+    "test:xp": "bun run test/xp.spike.ts"
   },
   "dependencies": {
     "@colyseus/core": "^0.16",
     "@colyseus/ws-transport": "^0.16",
     "@verse/auth": "workspace:*",
+    "@verse/db": "workspace:*",
     "@verse/net-schema": "workspace:*"
   },
   "devDependencies": {
