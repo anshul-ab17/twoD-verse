@@ -89,7 +89,7 @@ const app = express()
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: process.env.WEB_ORIGIN ?? "http://localhost:3000",
     credentials: true,
     methods: ["GET", "POST", "OPTIONS"],
     allowedHeaders: ["content-type", "authorization"],

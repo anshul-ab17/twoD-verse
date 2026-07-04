@@ -11,32 +11,44 @@ const TokenBody = z.object({
 
 const port = Number(process.env.MEDIA_PORT) || 2568
 
+const cors = {
+  "Access-Control-Allow-Origin": process.env.WEB_ORIGIN ?? "http://localhost:3000",
+  "Access-Control-Allow-Headers": "content-type, authorization",
+} satisfies Record<string, string>
+const json = (body: unknown, status: number) => Response.json(body, { status, headers: cors })
+
 Bun.serve({
   port,
   async fetch(req) {
     const url = new URL(req.url)
+    if (req.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: { ...cors, "Access-Control-Allow-Methods": "POST, OPTIONS" },
+      })
+    }
     if (req.method !== "POST" || url.pathname !== "/token") {
       return new Response("not found", { status: 404 })
     }
 
     const auth = req.headers.get("authorization")
-    if (!auth?.startsWith("Bearer ")) return Response.json({ error: "unauthorized" }, { status: 401 })
+    if (!auth?.startsWith("Bearer ")) return json({ error: "unauthorized" }, 401)
     let payload: { userId?: string; jti?: string }
     try {
       payload = verifyToken(auth.slice(7))
     } catch {
-      return Response.json({ error: "unauthorized" }, { status: 401 })
+      return json({ error: "unauthorized" }, 401)
     }
     // refresh tokens carry a jti — only access tokens accepted (mirrors gateway /v1/me)
-    if (!payload?.userId || payload.jti) return Response.json({ error: "unauthorized" }, { status: 401 })
+    if (!payload?.userId || payload.jti) return json({ error: "unauthorized" }, 401)
 
     const parsed = TokenBody.safeParse(await req.json().catch(() => null))
     if (!parsed.success) {
-      return Response.json({ error: parsed.error.issues }, { status: 400 })
+      return json({ error: parsed.error.issues }, 400)
     }
 
     const token = await mintZoneToken({ identity: payload.userId, ...parsed.data })
-    return Response.json({ token, url: process.env.LIVEKIT_URL ?? "" })
+    return json({ token, url: process.env.LIVEKIT_URL ?? "" }, 200)
   },
 })
 

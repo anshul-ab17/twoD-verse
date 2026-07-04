@@ -90,7 +90,7 @@ Bun.serve({
 
 const json = (body: unknown, status: number) => Response.json(body, { status, headers: cors })
 const cors = {
-  "Access-Control-Allow-Origin": "http://localhost:3000",
+  "Access-Control-Allow-Origin": process.env.WEB_ORIGIN ?? "http://localhost:3000",
   "Access-Control-Allow-Headers": "content-type, authorization",
 } satisfies Record<string, string>
 
