@@ -40,6 +40,9 @@ model User {
   xp          Int       @default(0)
   level       Int       @default(1)
   lastDailyAt DateTime?
+  questStep   Int       @default(0)
+  focusStreak Int       @default(0)
+  lastFocusAt DateTime?
 
   accounts  Account[]
   sessions  Session[]

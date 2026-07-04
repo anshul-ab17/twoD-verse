@@ -30,6 +30,8 @@ export class PlayerState extends Schema {
   @type("string") zoneId = "" // current media zone ("" = none); LiveKit room name
   @type("number") xp = 0 // server-authoritative (plan §16) — client can never grant itself xp
   @type("number") level = 1
+  @type("number") questStep = 0 // index of next quest in QUESTS; >= length = done
+  @type("number") streak = 0 // focus streak, consecutive days
 }
 
 /** server -> clients broadcast when a player's level increases */

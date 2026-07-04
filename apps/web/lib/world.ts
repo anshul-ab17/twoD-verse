@@ -218,6 +218,8 @@ export async function createWorld(el: HTMLElement, token: string): Promise<World
       // xp changes are discrete server awards, not per-frame — safe for the bridge
       $(p).listen("xp", (xp) => bridge.emit("player:xp-changed", { xp, level: p.level }))
       $(p).listen("level", (level) => bridge.emit("player:xp-changed", { xp: p.xp, level }))
+      $(p).listen("questStep", (questStep) => bridge.emit("player:quest-changed", { questStep }))
+      $(p).listen("streak", (streak) => bridge.emit("player:streak-changed", { streak }))
     } else {
       // render remotes 100ms in the past, lerped between server snapshots
       const buf = new SnapshotBuffer()

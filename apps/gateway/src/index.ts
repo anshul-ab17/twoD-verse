@@ -383,6 +383,24 @@ app.get("/v1/friends", requireAuth, async (req, res) => {
   })
 })
 
+app.get("/v1/leaderboard", requireAuth, async (req, res) => {
+  const me = userIdOf(req)
+  // ponytail: two small queries per request — Redis zset leaderboard when it's hot
+  const [top, mine] = await Promise.all([
+    client.user.findMany({
+      orderBy: { xp: "desc" },
+      take: 10,
+      select: { id: true, handle: true, xp: true, level: true },
+    }),
+    client.user.findUnique({ where: { id: me }, select: { xp: true } }),
+  ])
+  const rank = mine ? (await client.user.count({ where: { xp: { gt: mine.xp } } })) + 1 : null
+  res.json({
+    top: top.map((u, i) => ({ rank: i + 1, userId: u.id, handle: u.handle, xp: u.xp, level: u.level })),
+    me: { rank, xp: mine?.xp ?? 0 },
+  })
+})
+
 app.use((_req, res) => err(res, 404, "not found"))
 
 app.use((e: unknown, _req: Request, res: Response, _next: NextFunction) => {

@@ -6,6 +6,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { SPIKE_ZONES } from "@repo/net-schema/zones"
+import { QUESTS } from "@repo/net-schema/xp"
 import { bridge } from "../lib/bridge"
 import { login, signup, refresh, clearTokens, getAccessToken, GATEWAY } from "../lib/auth"
 import { startMediaWatcher } from "../lib/media"
@@ -159,6 +160,44 @@ function FriendsPanel() {
   )
 }
 
+type Leaderboard = {
+  top: { rank: number; userId: string; handle: string | null; xp: number; level: number }[]
+  me: { rank: number | null; xp: number }
+}
+
+// ponytail: fetch on open + 30s poll — push later
+function LeaderboardPanel() {
+  const [data, setData] = useState<Leaderboard | null>(null)
+
+  useEffect(() => {
+    const load = () =>
+      fetch(`${GATEWAY}/v1/leaderboard`, {
+        headers: { authorization: `Bearer ${getAccessToken()}` },
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => d && setData(d as Leaderboard))
+        .catch(() => {})
+    void load()
+    const t = setInterval(load, 30_000)
+    return () => clearInterval(t)
+  }, [])
+
+  return (
+    <details style={{ ...hudBox, position: "fixed", top: 8, right: 8, width: 220, padding: 8 }}>
+      <summary style={{ cursor: "pointer" }}>
+        leaderboard{data?.me.rank ? ` · you #${data.me.rank}` : ""}
+      </summary>
+      <div style={{ marginTop: 6 }}>
+        {data?.top.map((u) => (
+          <div key={u.userId}>
+            #{u.rank} {u.handle ?? u.userId.slice(0, 8)} — lv {u.level} · {u.xp} xp
+          </div>
+        ))}
+      </div>
+    </details>
+  )
+}
+
 export default function Page() {
   const mount = useRef<HTMLDivElement>(null)
   const world = useRef<import("../lib/world").WorldHandle | null>(null)
@@ -168,6 +207,8 @@ export default function Page() {
   const [sessionId, setSessionId] = useState("")
   const [zoneId, setZoneId] = useState("")
   const [xp, setXp] = useState({ xp: 0, level: 1 })
+  const [questStep, setQuestStep] = useState(0)
+  const [streak, setStreak] = useState(0)
   const [mediaZone, setMediaZone] = useState("")
   const [messages, setMessages] = useState<ChatMsg[]>([])
   const [draft, setDraft] = useState("")
@@ -186,6 +227,8 @@ export default function Page() {
       bridge.on("net:disconnected", () => setStatus("disconnected")),
       bridge.on("player:zone-changed", ({ zoneId }) => setZoneId(zoneId)),
       bridge.on("player:xp-changed", setXp),
+      bridge.on("player:quest-changed", ({ questStep }) => setQuestStep(questStep)),
+      bridge.on("player:streak-changed", ({ streak }) => setStreak(streak)),
       // ponytail: level-up shown as a chat panel line — dedicated toast later
       bridge.on("player:level-up", ({ level }) =>
         setMessages((m) =>
@@ -296,10 +339,13 @@ export default function Page() {
         </div>
         <div>
           lv {xp.level} · xp {xp.xp}
+          {streak > 0 && <span> · 🔥{streak}</span>}
         </div>
+        <div>quest: {QUESTS[questStep]?.text ?? "all done ✓"}</div>
         <div>voice: {mediaZone || "off"}</div>
       </div>
       <FriendsPanel />
+      <LeaderboardPanel />
       <div style={{ ...hudBox, position: "fixed", bottom: 8, left: 8, width: 320, padding: 8 }}>
         <div style={{ maxHeight: 160, overflowY: "auto" }}>
           {messages.map((m) => (

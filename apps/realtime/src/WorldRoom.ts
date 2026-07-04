@@ -12,6 +12,9 @@ import {
   zoneAt,
   XP_AWARDS,
   CHAT_XP_DAILY_CAP,
+  QUESTS,
+  FOCUS_MINUTES,
+  FOCUS_XP,
   LEVEL_UP,
   levelForXp,
   type ChatBroadcast,
@@ -49,6 +52,9 @@ export class WorldRoom extends Room<WorldRoomState> {
 
   /** per-session zones already awarded ZONE_ENTER */
   private zonesEntered = new Map<string, Set<string>>()
+
+  /** per-session last persisted focus date (yyyy-mm-dd or null), for the streak */
+  private lastFocus = new Map<string, string | null>()
 
   /** Plan §6: every join carries an access JWT; result lands on client.auth. */
   override onAuth(client: Client, options?: { token?: string }) {
@@ -96,6 +102,7 @@ export class WorldRoom extends Room<WorldRoomState> {
         this.chatXp.set(client.sessionId, earned + XP_AWARDS.CHAT_MESSAGE)
         this.awardXp(client.sessionId, XP_AWARDS.CHAT_MESSAGE)
       }
+      this.advanceQuest(client.sessionId, "say-hello")
     })
 
     this.setSimulationInterval((dtMs) => this.tick(dtMs), 1000 / TICK_RATE)
@@ -133,11 +140,14 @@ export class WorldRoom extends Room<WorldRoomState> {
     // load persisted xp/level; daily login reward if lastDailyAt isn't today (UTC)
     const user = await db.user.findUnique({
       where: { id: auth.userId },
-      select: { xp: true, level: true, lastDailyAt: true },
+      select: { xp: true, level: true, lastDailyAt: true, questStep: true, focusStreak: true, lastFocusAt: true },
     })
     if (!user) return
     player.xp = user.xp
     player.level = user.level
+    player.questStep = user.questStep
+    player.streak = user.focusStreak
+    this.lastFocus.set(client.sessionId, user.lastFocusAt?.toISOString().slice(0, 10) ?? null)
     const today = new Date().toISOString().slice(0, 10)
     if (user.lastDailyAt?.toISOString().slice(0, 10) !== today) {
       db.user
@@ -145,6 +155,45 @@ export class WorldRoom extends Room<WorldRoomState> {
         .catch(console.error)
       this.awardXp(client.sessionId, XP_AWARDS.DAILY_LOGIN)
     }
+
+    // focus streak (plan §3): FOCUS_MINUTES continuously in the world -> today's
+    // focus counts; consecutive days build the streak. Timer dies with the
+    // session — leaving early forfeits today's progress (that's the mechanic).
+    // FOCUS_TEST_MS shortens the window for spikes/dev only.
+    const focusMs = Number(process.env.FOCUS_TEST_MS) || FOCUS_MINUTES * 60_000
+    this.clock.setTimeout(() => this.grantFocus(client.sessionId), focusMs)
+  }
+
+  /** Called once per session after the focus window elapses. */
+  private grantFocus(sessionId: string) {
+    const player = this.state.players.get(sessionId)
+    if (!player || player.id.startsWith("guest-")) return
+    const today = new Date().toISOString().slice(0, 10)
+    const last = this.lastFocus.get(sessionId)
+    if (last === today) return // already counted today
+    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10)
+    player.streak = last === yesterday ? player.streak + 1 : 1
+    this.lastFocus.set(sessionId, today)
+    db.user
+      .update({
+        where: { id: player.id },
+        data: { focusStreak: player.streak, lastFocusAt: new Date() },
+      })
+      .catch(console.error)
+    this.awardXp(sessionId, FOCUS_XP)
+  }
+
+  /** Advance the linear quest chain iff `questId` is the player's next quest. */
+  private advanceQuest(sessionId: string, questId: (typeof QUESTS)[number]["id"]) {
+    const player = this.state.players.get(sessionId)
+    if (!player || player.id.startsWith("guest-")) return
+    const next = QUESTS[player.questStep]
+    if (!next || next.id !== questId) return
+    player.questStep += 1
+    db.user
+      .update({ where: { id: player.id }, data: { questStep: player.questStep } })
+      .catch(console.error)
+    this.awardXp(sessionId, next.xp)
   }
 
   override onLeave(client: Client) {
@@ -157,6 +206,7 @@ export class WorldRoom extends Room<WorldRoomState> {
     this.lastChat.delete(client.sessionId)
     this.chatXp.delete(client.sessionId)
     this.zonesEntered.delete(client.sessionId)
+    this.lastFocus.delete(client.sessionId)
   }
 
   /** Server-authoritative xp (plan §16): only this room ever grants xp.
@@ -210,6 +260,8 @@ export class WorldRoom extends Room<WorldRoomState> {
             seen.add(zoneId)
             this.awardXp(sessionId, XP_AWARDS.ZONE_ENTER)
           }
+          if (zoneId === "voice-lounge") this.advanceQuest(sessionId, "visit-lounge")
+          if (zoneId === "meeting-room") this.advanceQuest(sessionId, "hold-meeting")
         }
       }
     }

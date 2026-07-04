@@ -11,6 +11,8 @@ export type BridgeEvents = {
   "player:zone-changed": { zoneId: string }
   "player:xp-changed": { xp: number; level: number }
   "player:level-up": { level: number }
+  "player:quest-changed": { questStep: number }
+  "player:streak-changed": { streak: number }
   "chat:message": { from: string; text: string; ts: number }
   "media:connected": { zoneId: string }
   "media:disconnected": void
