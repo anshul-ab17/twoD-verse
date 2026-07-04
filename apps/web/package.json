@@ -10,6 +10,7 @@
   "dependencies": {
     "@verse/net-schema": "workspace:*",
     "colyseus.js": "^0.16",
+    "livekit-client": "^2",
     "next": "^15",
     "pixi.js": "^8",
     "react": "^19",

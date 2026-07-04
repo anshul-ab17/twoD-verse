@@ -6,12 +6,14 @@
 import assert from "node:assert"
 import { Client } from "colyseus.js"
 import { MSG, CHAT_BROADCAST, CHAT_MAX_LEN, type ChatBroadcast } from "@verse/net-schema"
+import { freshToken } from "./token.helper"
 
 const url = process.env.REALTIME_URL ?? "ws://localhost:2567"
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
-const roomA = await new Client(url).joinOrCreate("world")
-const roomB = await new Client(url).joinOrCreate("world")
+const [tokenA, tokenB] = await Promise.all([freshToken(), freshToken()])
+const roomA = await new Client(url).joinOrCreate("world", { token: tokenA })
+const roomB = await new Client(url).joinOrCreate("world", { token: tokenB })
 assert.equal(roomA.roomId, roomB.roomId, "clients joined different rooms")
 
 const received: ChatBroadcast[] = []

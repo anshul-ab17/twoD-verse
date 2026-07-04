@@ -6,9 +6,11 @@
     "dev": "bun run --watch src/index.ts",
     "start": "bun run src/index.ts",
     "check-types": "tsc --noEmit",
-    "test:spike": "bun run test/token.spike.ts"
+    "test:spike": "bun run test/token.spike.ts",
+    "test:auth": "bun run test/auth.spike.ts"
   },
   "dependencies": {
+    "@verse/auth": "workspace:*",
     "livekit-server-sdk": "^2",
     "zod": "^4.3.6"
   },

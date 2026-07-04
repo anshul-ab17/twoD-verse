@@ -20,10 +20,42 @@ const isProd = process.env.NODE_ENV === "production"
 
 const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000 // must match signRefreshToken's 7d
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "http://localhost:3000",
+  "Access-Control-Allow-Credentials": "true",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "content-type, authorization",
+  Vary: "Origin",
+} satisfies Record<string, string>
+
 // ---- helpers ----------------------------------------------------------------
 
+function withCors(res: Response): Response {
+  const headers = new Headers(res.headers)
+  for (const [key, value] of Object.entries(corsHeaders)) {
+    headers.set(key, value)
+  }
+  return new Response(res.body, {
+    status: res.status,
+    statusText: res.statusText,
+    headers,
+  })
+}
+
+function json(body: unknown, status = 200) {
+  return withCors(Response.json(body, { status }))
+}
+
+function empty(status = 204) {
+  return withCors(new Response(null, { status }))
+}
+
+function redirect(url: string, status = 302) {
+  return withCors(Response.redirect(url, status))
+}
+
 function err(status: number, error: string) {
-  return Response.json({ error }, { status })
+  return json({ error }, status)
 }
 
 async function readJson(req: Request): Promise<unknown> {
@@ -102,7 +134,7 @@ Bun.serve({
           if (e?.code === "P2002") return err(409, "handle taken")
           throw e
         }
-        return Response.json(await issueTokens(user), { status: 201 })
+        return json(await issueTokens(user), 201)
       },
     },
 
@@ -120,7 +152,7 @@ Bun.serve({
         if (!(await verifyPassword(user.password, password))) {
           return err(401, "invalid credentials")
         }
-        return Response.json(await issueTokens(user))
+        return json(await issueTokens(user))
       },
     },
 
@@ -141,7 +173,7 @@ Bun.serve({
         const user = await client.user.findUnique({ where: { id: payload.userId } })
         if (!user) return err(401, "invalid refresh token")
 
-        return Response.json(await issueTokens(user))
+        return json(await issueTokens(user))
       },
     },
 
@@ -154,7 +186,7 @@ Bun.serve({
         if (payload?.jti) {
           await client.session.deleteMany({ where: { jti: payload.jti } })
         }
-        return new Response(null, { status: 204 })
+        return empty(204)
       },
     },
 
@@ -168,7 +200,7 @@ Bun.serve({
         if (!isProd) {
           console.log(`[magic-link] ${publicUrl}/v1/auth/magic-link/verify?token=${token}`)
         }
-        return new Response(null, { status: 204 }) // always 204: no user enumeration
+        return empty(204) // always 204: no user enumeration
       },
     },
 
@@ -186,7 +218,7 @@ Bun.serve({
           update: {},
           create: { email: result.email },
         })
-        return Response.json(await issueTokens(user))
+        return json(await issueTokens(user))
       },
     },
 
@@ -202,7 +234,7 @@ Bun.serve({
         for (const [k, v] of pendingStates) if (v.expiresAt < now) pendingStates.delete(k)
         pendingStates.set(state, { provider, expiresAt: now + OAUTH_STATE_TTL_MS })
 
-        return Response.redirect(getAuthorizationUrl(provider, { ...env, state }), 302)
+        return redirect(getAuthorizationUrl(provider, { ...env, state }), 302)
       },
     },
 
@@ -274,12 +306,13 @@ Bun.serve({
           select: { id: true, email: true, handle: true, role: true, createdAt: true },
         })
         if (!user) return err(401, "unauthorized")
-        return Response.json(user)
+        return json(user)
       },
     },
   },
 
-  fetch() {
+  fetch(req) {
+    if (req.method === "OPTIONS") return empty(204)
     return err(404, "not found")
   },
 

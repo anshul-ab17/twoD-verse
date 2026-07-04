@@ -14,6 +14,8 @@ import {
   type ChatInput,
   type MoveInput,
 } from "@verse/net-schema"
+// subpath import: token.service only — index.ts drags in prisma/argon2 the realtime server doesn't need
+import { verifyToken } from "@verse/auth/token.service"
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v))
 
@@ -26,8 +28,23 @@ export class WorldRoom extends Room<WorldRoomState> {
   /** per-session last chat timestamp for rate limiting */
   private lastChat = new Map<string, number>()
 
-  // ponytail: JWT skipped for spike — add onAuth() here calling
-  // @verse/auth verifyAccessToken(options.token) and reject on failure.
+  /** Plan §6: every join carries an access JWT; result lands on client.auth. */
+  override onAuth(client: Client, options?: { token?: string }) {
+    if (!options?.token) {
+      // ponytail: AUTH_OPTIONAL=1 for tokenless dev/spike joins — never set in prod
+      if (process.env.AUTH_OPTIONAL === "1") return { userId: `guest-${client.sessionId}` }
+      throw new Error("unauthorized: token required")
+    }
+    let payload: { userId?: string; jti?: string }
+    try {
+      payload = verifyToken(options.token)
+    } catch {
+      throw new Error("unauthorized: invalid token")
+    }
+    // refresh tokens carry a jti — only access tokens may join (mirrors gateway /v1/me)
+    if (!payload?.userId || payload.jti) throw new Error("unauthorized: invalid token")
+    return { userId: payload.userId }
+  }
 
   override onCreate() {
     this.setState(new WorldRoomState())
@@ -57,7 +74,8 @@ export class WorldRoom extends Room<WorldRoomState> {
 
   override onJoin(client: Client) {
     const player = new PlayerState()
-    player.id = client.sessionId
+    // label = JWT identity from onAuth; sessionId stays the map key
+    player.id = (client.auth as { userId: string }).userId
     player.x = WORLD.width / 2
     player.y = WORLD.height / 2
     this.state.players.set(client.sessionId, player)

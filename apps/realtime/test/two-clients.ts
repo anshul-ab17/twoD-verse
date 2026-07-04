@@ -11,12 +11,19 @@
 import assert from "node:assert"
 import { Client } from "colyseus.js"
 import { MSG, MOVE_SPEED, WORLD } from "@verse/net-schema"
+import { freshToken } from "./token.helper"
 
 const url = process.env.REALTIME_URL ?? "ws://localhost:2567"
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
-const roomA = await new Client(url).joinOrCreate("world")
-const roomB = await new Client(url).joinOrCreate("world")
+// auth gate: bad or missing token must be rejected before anything else works
+await assert.rejects(new Client(url).joinOrCreate("world", { token: "not-a-jwt" }), "bad token accepted")
+await assert.rejects(new Client(url).joinOrCreate("world"), "missing token accepted")
+console.log("auth ok: bad + missing token rejected")
+
+const [tokenA, tokenB] = await Promise.all([freshToken(), freshToken()])
+const roomA = await new Client(url).joinOrCreate("world", { token: tokenA })
+const roomB = await new Client(url).joinOrCreate("world", { token: tokenB })
 assert.equal(roomA.roomId, roomB.roomId, "clients joined different rooms")
 
 // let initial state sync

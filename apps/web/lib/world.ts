@@ -43,8 +43,9 @@ export type WorldHandle = {
   sendChat: (text: string) => void
 }
 
-/** Mounts the world into `el`; resolves to a handle with destroy + sendChat. */
-export async function createWorld(el: HTMLElement): Promise<WorldHandle> {
+/** Mounts the world into `el`; resolves to a handle with destroy + sendChat.
+ *  `token` is the gateway access JWT — the room's onAuth rejects joins without it. */
+export async function createWorld(el: HTMLElement, token: string): Promise<WorldHandle> {
   const app = new Application()
   // ponytail: no camera/viewport — whole 1600x1200 world in one canvas,
   // scaled by CSS. Add a follow-camera when the world outgrows a screen.
@@ -67,7 +68,7 @@ export async function createWorld(el: HTMLElement): Promise<WorldHandle> {
 
   let room
   try {
-    room = await new Client(REALTIME_URL).joinOrCreate<WorldRoomState>("world")
+    room = await new Client(REALTIME_URL).joinOrCreate<WorldRoomState>("world", { token })
   } catch (err) {
     bridge.emit("net:disconnected", undefined)
     app.destroy(true, { children: true })
@@ -82,7 +83,8 @@ export async function createWorld(el: HTMLElement): Promise<WorldHandle> {
   let own: { sprite: Container; state: PlayerState } | null = null
 
   $(room.state).players.onAdd((p, id) => {
-    const sprite = makeAvatar(id, id === room.sessionId)
+    // p.id = JWT identity (label); map key `id` stays the sessionId
+    const sprite = makeAvatar(p.id, id === room.sessionId)
     sprite.position.set(p.x, p.y)
     playerLayer.addChild(sprite)
 

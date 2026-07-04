@@ -12,6 +12,7 @@
   "dependencies": {
     "@colyseus/core": "^0.16",
     "@colyseus/ws-transport": "^0.16",
+    "@verse/auth": "workspace:*",
     "@verse/net-schema": "workspace:*"
   },
   "devDependencies": {
