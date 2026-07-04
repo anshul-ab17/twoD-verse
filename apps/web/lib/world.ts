@@ -11,6 +11,8 @@ import {
   CHAT_BROADCAST,
   LEVEL_UP,
   SnapshotBuffer,
+  dayPhase,
+  darknessAt,
   type ChatBroadcast,
   type LevelUpBroadcast,
   type WorldRoomState,
@@ -165,6 +167,10 @@ export async function createWorld(el: HTMLElement, token: string): Promise<World
   const playerLayer = new Container()
   worldLayer.addChild(playerLayer)
 
+  // day/night: deep-blue overlay whose alpha follows the shared clock cycle
+  const nightOverlay = new Graphics().rect(0, 0, WORLD.width, WORLD.height).fill(0x0a1030)
+  worldLayer.addChild(nightOverlay)
+
   const ZOOM = 1
   const camera = { x: WORLD.width / 2, y: WORLD.height / 2 }
   const updateCamera = (targetX: number, targetY: number, lerp: number) => {
@@ -248,6 +254,7 @@ export async function createWorld(el: HTMLElement, token: string): Promise<World
   }
 
   app.ticker.add(() => {
+    nightOverlay.alpha = darknessAt(dayPhase())
     const now = performance.now()
     if (own) {
       animate(own.avatar, own.state.x, own.state.y, own.state.dir, now)

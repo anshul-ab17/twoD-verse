@@ -10,6 +10,7 @@ import { QUESTS } from "@repo/net-schema/xp"
 import { bridge } from "../lib/bridge"
 import { login, signup, refresh, clearTokens, getAccessToken, GATEWAY } from "../lib/auth"
 import { startMediaWatcher } from "../lib/media"
+import { toggleAmbient } from "../lib/ambient"
 
 const AI = process.env.NEXT_PUBLIC_AI_URL ?? "http://localhost:2570"
 
@@ -209,6 +210,7 @@ export default function Page() {
   const [xp, setXp] = useState({ xp: 0, level: 1 })
   const [questStep, setQuestStep] = useState(0)
   const [streak, setStreak] = useState(0)
+  const [ambient, setAmbient] = useState(false)
   const [mediaZone, setMediaZone] = useState("")
   const [messages, setMessages] = useState<ChatMsg[]>([])
   const [draft, setDraft] = useState("")
@@ -342,7 +344,15 @@ export default function Page() {
           {streak > 0 && <span> · 🔥{streak}</span>}
         </div>
         <div>quest: {QUESTS[questStep]?.text ?? "all done ✓"}</div>
-        <div>voice: {mediaZone || "off"}</div>
+        <div>
+          voice: {mediaZone || "off"}
+          <button
+            onClick={() => void toggleAmbient().then(setAmbient)}
+            style={{ marginLeft: 8 }}
+          >
+            {ambient ? "🔊" : "🔈"} ambient
+          </button>
+        </div>
       </div>
       <FriendsPanel />
       <LeaderboardPanel />

@@ -45,3 +45,4 @@ export class WorldRoomState extends Schema {
 export * from "./interpolate"
 export * from "./zones"
 export * from "./xp"
+export * from "./daynight"
