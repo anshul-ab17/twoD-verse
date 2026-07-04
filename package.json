@@ -1,5 +1,5 @@
 {
-  "name": "verse",
+  "name": "twoDverse",
   "private": true,
   "scripts": {
     "build": "turbo run build",

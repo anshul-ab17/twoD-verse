@@ -37,4 +37,4 @@ MVP implements the registry + CI gate; storage/CDN/loader stages land with the f
 
 1. Drop the file under `assets/` (or reference programmatic art as `programmatic:<ref>`).
 2. Add an entry to `packages/assets/manifest.json` — id (kebab-case), kind, path, origin, license, tags.
-3. `pnpm --filter @verse/assets run validate` must pass. CI blocks the merge otherwise.
+3. `pnpm --filter @repo/assets run validate` must pass. CI blocks the merge otherwise.

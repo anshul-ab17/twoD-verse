@@ -1,7 +1,7 @@
 {
-  "extends": "@verse/typescript-config/nextjs.json",
+  "extends": "@repo/typescript-config/nextjs.json",
   "compilerOptions": {
-    // @verse/net-schema ships raw TS using @colyseus/schema decorators
+    // @repo/net-schema ships raw TS using @colyseus/schema decorators
     "experimentalDecorators": true,
     "useDefineForClassFields": false
   },

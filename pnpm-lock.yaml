@@ -23,7 +23,7 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.90
         version: 0.90.0(zod@4.4.3)
-      '@verse/auth':
+      '@repo/auth':
         specifier: workspace:*
         version: link:../../packages/auth
       zod:
@@ -33,7 +33,7 @@ importers:
       '@types/bun':
         specifier: latest
         version: 1.3.14
-      '@verse/typescript-config':
+      '@repo/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
       typescript:
@@ -42,16 +42,16 @@ importers:
 
   apps/gateway:
     dependencies:
-      '@verse/auth':
+      '@repo/auth':
         specifier: workspace:*
         version: link:../../packages/auth
-      '@verse/db':
+      '@repo/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@verse/pubsub':
+      '@repo/pubsub':
         specifier: workspace:*
         version: link:../../packages/pubsub
-      '@verse/types':
+      '@repo/types':
         specifier: workspace:*
         version: link:../../packages/types
       cors:
@@ -73,7 +73,7 @@ importers:
       '@types/express':
         specifier: ^5.0.3
         version: 5.0.6
-      '@verse/typescript-config':
+      '@repo/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
       colyseus.js:
@@ -85,7 +85,7 @@ importers:
 
   apps/media:
     dependencies:
-      '@verse/auth':
+      '@repo/auth':
         specifier: workspace:*
         version: link:../../packages/auth
       livekit-server-sdk:
@@ -98,7 +98,7 @@ importers:
       '@types/bun':
         specifier: latest
         version: 1.3.14
-      '@verse/typescript-config':
+      '@repo/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
       typescript:
@@ -113,23 +113,23 @@ importers:
       '@colyseus/ws-transport':
         specifier: ^0.16
         version: 0.16.5(@colyseus/core@0.16.24(@colyseus/schema@3.0.76)(@pm2/io@6.1.0))
-      '@verse/auth':
+      '@repo/auth':
         specifier: workspace:*
         version: link:../../packages/auth
-      '@verse/db':
+      '@repo/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@verse/net-schema':
+      '@repo/net-schema':
         specifier: workspace:*
         version: link:../../packages/net-schema
-      '@verse/pubsub':
+      '@repo/pubsub':
         specifier: workspace:*
         version: link:../../packages/pubsub
     devDependencies:
       '@types/bun':
         specifier: latest
         version: 1.3.14
-      '@verse/typescript-config':
+      '@repo/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
       colyseus.js:
@@ -141,7 +141,7 @@ importers:
 
   apps/web:
     dependencies:
-      '@verse/net-schema':
+      '@repo/net-schema':
         specifier: workspace:*
         version: link:../../packages/net-schema
       colyseus.js:
@@ -172,7 +172,7 @@ importers:
       '@types/react-dom':
         specifier: ^19
         version: 19.2.3(@types/react@19.2.17)
-      '@verse/typescript-config':
+      '@repo/typescript-config':
         specifier: workspace:*
         version: link:../../packages/typescript-config
       typescript:
@@ -188,7 +188,7 @@ importers:
       '@types/bun':
         specifier: latest
         version: 1.3.14
-      '@verse/typescript-config':
+      '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       typescript:
@@ -203,7 +203,7 @@ importers:
       '@types/jsonwebtoken':
         specifier: ^9.0.10
         version: 9.0.10
-      '@verse/db':
+      '@repo/db':
         specifier: workspace:*
         version: link:../db
       argon2:
@@ -222,7 +222,7 @@ importers:
       '@types/bun':
         specifier: latest
         version: 1.3.14
-      '@verse/typescript-config':
+      '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
 
@@ -250,7 +250,7 @@ importers:
       '@types/pg':
         specifier: ^8.16.0
         version: 8.20.0
-      '@verse/typescript-config':
+      '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       prisma:
@@ -302,7 +302,7 @@ importers:
       '@types/bun':
         specifier: latest
         version: 1.3.14
-      '@verse/typescript-config':
+      '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
       typescript:
@@ -324,7 +324,7 @@ importers:
       '@types/bun':
         specifier: latest
         version: 1.3.14
-      '@verse/typescript-config':
+      '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
 
@@ -340,7 +340,7 @@ importers:
       '@types/bun':
         specifier: latest
         version: 1.3.14
-      '@verse/typescript-config':
+      '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
 

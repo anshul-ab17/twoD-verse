@@ -2,7 +2,7 @@
 //   GATEWAY_PORT=2573 bun run src/index.ts            (this app)
 //   PORT=2574 bun run src/index.ts                    (apps/realtime)
 // then:
-//   GATEWAY_PORT=2573 REALTIME_URL=ws://localhost:2574 pnpm --filter @verse/gateway test:friends
+//   GATEWAY_PORT=2573 REALTIME_URL=ws://localhost:2574 pnpm --filter @repo/gateway test:friends
 
 import assert from "node:assert"
 import { Client } from "colyseus.js"

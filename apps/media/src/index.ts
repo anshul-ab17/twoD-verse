@@ -1,6 +1,6 @@
 import { z } from "zod"
 // subpath import: token.service only — index.ts drags in prisma/argon2 this service doesn't need
-import { verifyToken } from "@verse/auth/token.service"
+import { verifyToken } from "@repo/auth/token.service"
 import { mintZoneToken } from "./token"
 
 // identity comes from the access JWT (plan §6) — client-supplied identity is ignored
@@ -40,4 +40,4 @@ Bun.serve({
   },
 })
 
-console.log(`@verse/media token service on :${port}`)
+console.log(`@repo/media token service on :${port}`)

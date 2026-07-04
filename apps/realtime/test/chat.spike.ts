@@ -1,11 +1,11 @@
 // Chat round-trip harness (no test framework). Server must be running:
 //   PORT=2571 bun run src/index.ts
 // then:
-//   REALTIME_URL=ws://localhost:2571 pnpm --filter @verse/realtime test:chat
+//   REALTIME_URL=ws://localhost:2571 pnpm --filter @repo/realtime test:chat
 
 import assert from "node:assert"
 import { Client } from "colyseus.js"
-import { MSG, CHAT_BROADCAST, CHAT_MAX_LEN, type ChatBroadcast } from "@verse/net-schema"
+import { MSG, CHAT_BROADCAST, CHAT_MAX_LEN, type ChatBroadcast } from "@repo/net-schema"
 import { freshToken } from "./token.helper"
 
 const url = process.env.REALTIME_URL ?? "ws://localhost:2567"

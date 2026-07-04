@@ -1,10 +1,10 @@
 {
-  "name": "@verse/net-schema",
+  "name": "@repo/net-schema",
   "module": "index.ts",
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@verse/typescript-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
     "@types/bun": "latest",
     "typescript": "^5.9.2",
     "vitest": "^4"

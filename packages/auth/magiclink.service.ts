@@ -1,5 +1,5 @@
 import { randomBytes, createHash } from "crypto"
-import { client } from "@verse/db"
+import { client } from "@repo/db"
 
 const MAGIC_LINK_TTL_MS = 15 * 60 * 1000
 

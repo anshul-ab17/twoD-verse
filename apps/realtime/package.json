@@ -1,5 +1,5 @@
 {
-  "name": "@verse/realtime",
+  "name": "@repo/realtime",
   "type": "module",
   "private": true,
   "scripts": {
@@ -13,13 +13,13 @@
   "dependencies": {
     "@colyseus/core": "^0.16",
     "@colyseus/ws-transport": "^0.16",
-    "@verse/auth": "workspace:*",
-    "@verse/db": "workspace:*",
-    "@verse/net-schema": "workspace:*",
-    "@verse/pubsub": "workspace:*"
+    "@repo/auth": "workspace:*",
+    "@repo/db": "workspace:*",
+    "@repo/net-schema": "workspace:*",
+    "@repo/pubsub": "workspace:*"
   },
   "devDependencies": {
-    "@verse/typescript-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
     "@types/bun": "latest",
     "colyseus.js": "^0.16",
     "typescript": "^5.9.2"

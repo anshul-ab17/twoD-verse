@@ -15,7 +15,7 @@ import {
   type LevelUpBroadcast,
   type WorldRoomState,
   type PlayerState,
-} from "@verse/net-schema"
+} from "@repo/net-schema"
 import { bridge } from "./bridge"
 
 const REALTIME_URL = process.env.NEXT_PUBLIC_REALTIME_URL ?? "ws://localhost:2567"

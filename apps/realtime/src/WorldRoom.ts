@@ -18,11 +18,11 @@ import {
   type ChatInput,
   type MoveInput,
   type LevelUpBroadcast,
-} from "@verse/net-schema"
+} from "@repo/net-schema"
 // subpath import: token.service only — index.ts drags in prisma/argon2 the realtime server doesn't need
-import { verifyToken } from "@verse/auth/token.service"
-import { client as db } from "@verse/db"
-import { redis, connectRedis } from "@verse/pubsub"
+import { verifyToken } from "@repo/auth/token.service"
+import { client as db } from "@repo/db"
+import { redis, connectRedis } from "@repo/pubsub"
 
 // Presence (plan §7/§15): sorted set presence:{worldId}, score = last-seen ms.
 // ponytail: worldId hardcoded "world" — single room type for now.

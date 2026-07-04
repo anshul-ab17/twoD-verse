@@ -1,4 +1,4 @@
-# Verse (twoD-verse v2)
+# twoDverse (v2)
 
 A living, multiplayer 2.5D world that runs your work. Evolution of v1 — see
 `../docs/v2-master-plan.md` for the full plan.
@@ -24,8 +24,8 @@ docker compose up -d                          # postgres :5432, redis :6379, liv
 
 # db
 cp packages/db/.example.env packages/db/.env  # set DATABASE_URL=postgresql://postgres:postgres@localhost:5432/verse
-pnpm --filter @verse/db exec prisma migrate dev
-pnpm --filter @verse/db exec prisma generate
+pnpm --filter @repo/db exec prisma migrate dev
+pnpm --filter @repo/db exec prisma generate
 
 # media (LiveKit dev-mode credentials: devkey / secret)
 cp apps/media/.example.env apps/media/.env    # LIVEKIT_URL=ws://localhost:7880
@@ -34,9 +34,9 @@ cp apps/media/.example.env apps/media/.env    # LIVEKIT_URL=ws://localhost:7880
 ## Run
 
 ```sh
-pnpm --filter @verse/realtime dev   # Colyseus ws://localhost:2567
-pnpm --filter @verse/media dev      # token service http://localhost:2568
-pnpm --filter @verse/web dev        # web http://localhost:3000
+pnpm --filter @repo/realtime dev   # Colyseus ws://localhost:2567
+pnpm --filter @repo/media dev      # token service http://localhost:2568
+pnpm --filter @repo/web dev        # web http://localhost:3000
 ```
 
 Open two browser tabs on `localhost:3000`, move with WASD/arrows — each tab
@@ -47,8 +47,8 @@ sees the other move (server-authoritative, interpolated).
 ```sh
 pnpm run check-types                          # tsc across all packages
 pnpm run test                                 # vitest unit tests
-pnpm --filter @verse/assets run validate      # asset provenance gate (plan §27)
-pnpm --filter @verse/realtime test:spike      # two-client movement harness (server must be running)
+pnpm --filter @repo/assets run validate      # asset provenance gate (plan §27)
+pnpm --filter @repo/realtime test:spike      # two-client movement harness (server must be running)
 bun run packages/net-schema/interpolate.ts    # assert self-checks
 bun run packages/net-schema/zones.ts
 ```

@@ -2,7 +2,7 @@ import { z } from "zod"
 import Anthropic from "@anthropic-ai/sdk"
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod"
 // subpath import: token.service only — index.ts drags in prisma/argon2 this service doesn't need
-import { verifyToken } from "@verse/auth/token.service"
+import { verifyToken } from "@repo/auth/token.service"
 
 // Meeting notes from a chat transcript (plan §13, MVP wedge).
 // ponytail: transcript comes from the client's chat log; server-side capture
@@ -94,4 +94,4 @@ const cors = {
   "Access-Control-Allow-Headers": "content-type, authorization",
 } satisfies Record<string, string>
 
-console.log(`@verse/ai notes service on :${port}`)
+console.log(`@repo/ai notes service on :${port}`)

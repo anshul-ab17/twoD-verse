@@ -1,5 +1,5 @@
 {
-  "name": "@verse/gateway",
+  "name": "@repo/gateway",
   "type": "module",
   "private": true,
   "scripts": {
@@ -10,16 +10,16 @@
     "test:friends": "bun run test/friends.spike.ts"
   },
   "dependencies": {
-    "@verse/auth": "workspace:*",
-    "@verse/db": "workspace:*",
-    "@verse/pubsub": "workspace:*",
-    "@verse/types": "workspace:*",
+    "@repo/auth": "workspace:*",
+    "@repo/db": "workspace:*",
+    "@repo/pubsub": "workspace:*",
+    "@repo/types": "workspace:*",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@verse/typescript-config": "workspace:*",
+    "@repo/typescript-config": "workspace:*",
     "@types/bun": "latest",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",

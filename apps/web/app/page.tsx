@@ -5,7 +5,7 @@
 // Auth gate: no access token -> login/signup form; token -> mount world.
 
 import { useEffect, useRef, useState } from "react"
-import { SPIKE_ZONES } from "@verse/net-schema/zones"
+import { SPIKE_ZONES } from "@repo/net-schema/zones"
 import { bridge } from "../lib/bridge"
 import { login, signup, clearTokens, getAccessToken, GATEWAY } from "../lib/auth"
 import { startMediaWatcher } from "../lib/media"

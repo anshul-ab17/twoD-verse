@@ -1,9 +1,9 @@
 import express, { type Request, type Response, type NextFunction } from "express"
 import cors from "cors"
 import { z } from "zod"
-import { client, type AuthProvider } from "@verse/db"
-import { redis, connectRedis } from "@verse/pubsub"
-import { EmailSignupSchema, EmailSigninSchema } from "@verse/types"
+import { client, type AuthProvider } from "@repo/db"
+import { redis, connectRedis } from "@repo/pubsub"
+import { EmailSignupSchema, EmailSigninSchema } from "@repo/types"
 import {
   hashPassword,
   verifyPassword,
@@ -15,7 +15,7 @@ import {
   getAuthorizationUrl,
   exchangeCode,
   type OAuthProvider,
-} from "@verse/auth"
+} from "@repo/auth"
 
 const port = Number(process.env.GATEWAY_PORT) || 2569
 const publicUrl = process.env.PUBLIC_URL ?? `http://localhost:${port}`
@@ -390,4 +390,4 @@ app.use((e: unknown, _req: Request, res: Response, _next: NextFunction) => {
   err(res, 500, "internal error")
 })
 
-app.listen(port, () => console.log(`@verse/gateway on :${port}`))
+app.listen(port, () => console.log(`@repo/gateway on :${port}`))

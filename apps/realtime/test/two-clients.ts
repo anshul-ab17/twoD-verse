@@ -1,16 +1,16 @@
 // Two-client authoritative-movement harness (no test framework).
 //
 // Requires the server running first:
-//   pnpm --filter @verse/realtime dev     (or: bun run src/index.ts)
+//   pnpm --filter @repo/realtime dev     (or: bun run src/index.ts)
 // then:
-//   pnpm --filter @verse/realtime test:spike
+//   pnpm --filter @repo/realtime test:spike
 //
 // Client A sends "move" inputs for ~2s; asserts client B observes A's
 // position changing, staying in bounds, and never exceeding MOVE_SPEED.
 
 import assert from "node:assert"
 import { Client } from "colyseus.js"
-import { MSG, MOVE_SPEED, WORLD } from "@verse/net-schema"
+import { MSG, MOVE_SPEED, WORLD } from "@repo/net-schema"
 import { freshToken } from "./token.helper"
 
 const url = process.env.REALTIME_URL ?? "ws://localhost:2567"
