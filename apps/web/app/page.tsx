@@ -371,6 +371,15 @@ export default function Page() {
 
   const inMeeting = SPIKE_ZONES.find((z) => z.id === zoneId)?.kind === "meeting"
   const [notesBusy, setNotesBusy] = useState(false)
+  // BYOK: user's own Anthropic key, kept in their browser (localStorage) and
+  // sent per-request; the ai service never stores it. ponytail: localStorage
+  // is XSS-readable — per-user encrypted server storage if this goes multi-tenant.
+  const [aiKey, setAiKey] = useState("")
+  useEffect(() => setAiKey(localStorage.getItem("anthropicKey") ?? ""), [])
+  const saveAiKey = (k: string) => {
+    setAiKey(k)
+    localStorage.setItem("anthropicKey", k)
+  }
   const requestNotes = async () => {
     // ponytail: transcript = this client's chat log (last 50); server-side
     // capture + audio/STT is the upgrade path (plan §13)
@@ -380,7 +389,11 @@ export default function Page() {
     try {
       const res = await fetch(`${AI}/v1/ai/notes`, {
         method: "POST",
-        headers: { "content-type": "application/json", authorization: `Bearer ${getAccessToken()}` },
+        headers: {
+          "content-type": "application/json",
+          authorization: `Bearer ${getAccessToken()}`,
+          ...(aiKey ? { "x-anthropic-key": aiKey } : {}),
+        },
         body: JSON.stringify({ zoneId, messages: chat }),
       })
       const now = Date.now()
@@ -418,9 +431,18 @@ export default function Page() {
         <div>
           zone: {zoneId || "none"}
           {inMeeting && (
-            <button onClick={requestNotes} disabled={notesBusy} style={{ marginLeft: 8 }}>
-              {notesBusy ? "…" : "📝 notes"}
-            </button>
+            <>
+              <button onClick={requestNotes} disabled={notesBusy} style={{ marginLeft: 8 }}>
+                {notesBusy ? "…" : "📝 notes"}
+              </button>
+              <input
+                value={aiKey}
+                onChange={(e) => saveAiKey(e.target.value)}
+                placeholder="apni Anthropic API key…"
+                type="password"
+                style={{ width: 160, marginLeft: 6, padding: "1px 4px" }}
+              />
+            </>
           )}
         </div>
         <div>

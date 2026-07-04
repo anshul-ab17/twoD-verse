@@ -24,8 +24,8 @@ export type MeetingNotes = z.infer<typeof NotesSchema>
 
 const port = Number(process.env.AI_PORT) || 2570
 
-async function generateNotes(body: z.infer<typeof NotesBody>): Promise<MeetingNotes> {
-  const client = new Anthropic()
+async function generateNotes(body: z.infer<typeof NotesBody>, apiKey: string): Promise<MeetingNotes> {
+  const client = new Anthropic({ apiKey })
   const transcript = body.messages
     .map((m) => `[${new Date(m.ts).toISOString()}] ${m.from}: ${m.text}`)
     .join("\n")
@@ -75,12 +75,15 @@ Bun.serve({
     const parsed = NotesBody.safeParse(await req.json().catch(() => null))
     if (!parsed.success) return json({ error: parsed.error.issues }, 400)
 
-    if (!process.env.ANTHROPIC_API_KEY) {
-      return json({ error: "notes unavailable: ANTHROPIC_API_KEY not configured" }, 503)
+    // BYOK: user-supplied key wins, server env is the fallback. The key is
+    // used for this one request and never stored or logged.
+    const apiKey = req.headers.get("x-anthropic-key")?.trim() || process.env.ANTHROPIC_API_KEY
+    if (!apiKey) {
+      return json({ error: "notes unavailable: add your Anthropic API key in the app" }, 503)
     }
 
     try {
-      return json(await generateNotes(parsed.data), 200)
+      return json(await generateNotes(parsed.data, apiKey), 200)
     } catch (e) {
       console.error("notes generation failed:", e instanceof Error ? e.message : e)
       return json({ error: "notes generation failed" }, 502)
@@ -91,7 +94,7 @@ Bun.serve({
 const json = (body: unknown, status: number) => Response.json(body, { status, headers: cors })
 const cors = {
   "Access-Control-Allow-Origin": process.env.WEB_ORIGIN ?? "http://localhost:3000",
-  "Access-Control-Allow-Headers": "content-type, authorization",
+  "Access-Control-Allow-Headers": "content-type, authorization, x-anthropic-key",
 } satisfies Record<string, string>
 
 console.log(`@repo/ai notes service on :${port}`)
