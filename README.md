@@ -1,7 +1,6 @@
 # twoDverse (v2)
 
-A living, multiplayer 2.5D world that runs your work. Evolution of v1 — see
-`../docs/v2-master-plan.md` for the full plan.
+A living, multiplayer 2.5D world that runs your work.
 
 ## Stack
 

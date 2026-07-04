@@ -236,6 +236,17 @@ model Message {
   @@index([spaceId])
 }
 
+// Live world chat persistence (plan §7 messages). ponytail: world scope only —
+// zone/dm/thread scopes when those ship; no relation to User to keep it append-cheap.
+model WorldMessage {
+  id        String   @id @default(cuid())
+  userId    String
+  text      String
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 model FriendRequest {
   id         String              @id @default(cuid())
   senderId   String

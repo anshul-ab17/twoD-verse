@@ -6,7 +6,7 @@
 
 import assert from "node:assert"
 import { Client } from "colyseus.js"
-import { MSG, XP_AWARDS, type WorldRoomState } from "@repo/net-schema"
+import { MSG, XP_AWARDS, QUESTS, type WorldRoomState } from "@repo/net-schema"
 import { freshToken } from "./token.helper"
 
 const url = process.env.REALTIME_URL ?? "ws://localhost:2567"
@@ -23,10 +23,15 @@ assert.ok(me().xp >= XP_AWARDS.DAILY_LOGIN, `daily not granted: xp=${me().xp}`)
 assert.equal(me().level, 1)
 const afterDaily = me().xp
 
-// 2. accepted chat message -> CHAT_MESSAGE xp
+// 2. accepted chat message -> CHAT_MESSAGE xp + "say-hello" quest completion (P9)
 roomA.send(MSG.CHAT, { text: "xp please" })
 await sleep(400)
-assert.equal(me().xp, afterDaily + XP_AWARDS.CHAT_MESSAGE, "chat xp not granted")
+assert.equal(
+  me().xp,
+  afterDaily + XP_AWARDS.CHAT_MESSAGE + QUESTS[0].xp,
+  `chat xp+quest not granted: ${me().xp}`,
+)
+assert.equal(me().questStep, 1, "say-hello quest not advanced")
 
 const total = me().xp
 await roomA.leave()

@@ -25,7 +25,14 @@ import {
 // subpath import: token.service only — index.ts drags in prisma/argon2 the realtime server doesn't need
 import { verifyToken } from "@repo/auth/token.service"
 import { client as db } from "@repo/db"
-import { redis, connectRedis } from "@repo/pubsub"
+import { redis, connectRedis, allow } from "@repo/pubsub"
+
+// Soft moderation filter (plan §16): matched words masked, message still sent.
+// ponytail: static list + masking — AI auto-mod (Haiku classifier) is the plan
+// §13 upgrade; list deliberately short until then.
+const BLOCKLIST = ["slur1", "slur2", "badword"]
+const BLOCK_RE = new RegExp(`\\b(${BLOCKLIST.join("|")})\\b`, "gi")
+const moderate = (text: string) => text.replace(BLOCK_RE, (m) => "*".repeat(m.length))
 
 // Presence (plan §7/§15): sorted set presence:{worldId}, score = last-seen ms.
 // ponytail: worldId hardcoded "world" — single room type for now.
@@ -84,17 +91,29 @@ export class WorldRoom extends Room<WorldRoomState> {
       this.inputs.set(client.sessionId, { dx, dy })
     })
 
-    this.onMessage(MSG.CHAT, (client, input: ChatInput) => {
+    this.onMessage(MSG.CHAT, async (client, input: ChatInput) => {
       // trust boundary: coerce, trim, cap; reject empty
-      const text = String(input?.text ?? "").trim().slice(0, CHAT_MAX_LEN)
-      if (!text) return
-      // ponytail: in-memory 500ms gap per session, drop silently — Redis
-      // sliding window (packages/pubsub rateLimiter.ts) when gateway auth lands.
+      const raw = String(input?.text ?? "").trim().slice(0, CHAT_MAX_LEN)
+      if (!raw) return
+      const player = this.state.players.get(client.sessionId)
+      if (!player) return
+      // Redis sliding window (3 msg/s per user, cross-shard); in-memory 500ms
+      // gap kept as the fallback when redis is down (degrade-open in dev, §16)
       const now = Date.now()
-      if (now - (this.lastChat.get(client.sessionId) ?? 0) < 500) return
+      try {
+        if (!(await allow(player.id, "chat"))) return
+      } catch {
+        if (now - (this.lastChat.get(client.sessionId) ?? 0) < 500) return
+      }
       this.lastChat.set(client.sessionId, now)
+      const text = moderate(raw)
       const msg: ChatBroadcast = { from: client.sessionId, text, ts: now }
       this.broadcast(CHAT_BROADCAST, msg)
+
+      // persist (plan §7) — fire-and-forget, guests skipped
+      if (!player.id.startsWith("guest-")) {
+        db.worldMessage.create({ data: { userId: player.id, text } }).catch(console.error)
+      }
 
       // xp for accepted chat, capped per session (plan §3, §16)
       const earned = this.chatXp.get(client.sessionId) ?? 0

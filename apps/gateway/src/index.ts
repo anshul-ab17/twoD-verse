@@ -2,7 +2,7 @@ import express, { type Request, type Response, type NextFunction } from "express
 import cors from "cors"
 import { z } from "zod"
 import { client, type AuthProvider } from "@repo/db"
-import { redis, connectRedis } from "@repo/pubsub"
+import { redis, connectRedis, allow } from "@repo/pubsub"
 import { EmailSignupSchema, EmailSigninSchema } from "@repo/types"
 import {
   hashPassword,
@@ -106,7 +106,18 @@ app.use((req, res, next) => {
   })
 })
 
-app.post("/v1/auth/signup", async (req, res) => {
+
+// Per-IP rate limit on credential-guessing surfaces (plan §16).
+// degrade-open: redis down must not lock out auth in dev.
+async function authLimiter(req: Request, res: Response, next: NextFunction) {
+  try {
+    await connectRedis()
+    if (!(await allow(req.ip ?? "unknown", "auth"))) return err(res, 429, "too many attempts")
+  } catch {}
+  next()
+}
+
+app.post("/v1/auth/signup", authLimiter, async (req, res) => {
   const parsed = SignupBody.safeParse(req.body)
   if (!parsed.success) return err(res, 400, "invalid signup payload")
   const { email, password, handle } = parsed.data
@@ -132,7 +143,7 @@ app.post("/v1/auth/signup", async (req, res) => {
   res.status(201).json(await issueTokens(user))
 })
 
-app.post("/v1/auth/login", async (req, res) => {
+app.post("/v1/auth/login", authLimiter, async (req, res) => {
   const parsed = EmailSigninSchema.safeParse(req.body)
   if (!parsed.success) return err(res, 400, "invalid login payload")
   const { email, password } = parsed.data
@@ -178,7 +189,7 @@ app.post("/v1/auth/logout", async (req, res) => {
   res.status(204).end()
 })
 
-app.post("/v1/auth/magic-link", async (req, res) => {
+app.post("/v1/auth/magic-link", authLimiter, async (req, res) => {
   const parsed = MagicLinkBody.safeParse(req.body)
   if (!parsed.success) return err(res, 400, "invalid email")
 
