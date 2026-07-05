@@ -47,9 +47,9 @@ services:
       - "7881:7881"
       - "50000-50100:50000-50100/udp"
 
-  realtime:
+  game-engine:
     <<: *service
-    image: ${IMAGE_PREFIX}/twodverse-realtime:${TAG:-latest}
+    image: ${IMAGE_PREFIX}/twodverse-game-engine:${TAG:-latest}
     ports: ["2567:2567"]
 
   server:
@@ -57,14 +57,14 @@ services:
     image: ${IMAGE_PREFIX}/twodverse-server:${TAG:-latest}
     ports: ["2569:2569"]
 
-  media:
+  rtc:
     <<: *service
-    image: ${IMAGE_PREFIX}/twodverse-media:${TAG:-latest}
+    image: ${IMAGE_PREFIX}/twodverse-rtc:${TAG:-latest}
     ports: ["2568:2568"]
 
-  ai:
+  assist:
     <<: *service
-    image: ${IMAGE_PREFIX}/twodverse-ai:${TAG:-latest}
+    image: ${IMAGE_PREFIX}/twodverse-assist:${TAG:-latest}
     ports: ["2570:2570"]
 
 volumes:

@@ -8,7 +8,7 @@
     "jsx": "react-jsx",
     "allowJs": true,
 
-    // @colyseus/schema decorators (imported net-schema sources)
+    // @colyseus/schema decorators (imported game-core sources)
     "experimentalDecorators": true,
     "useDefineForClassFields": false,
 

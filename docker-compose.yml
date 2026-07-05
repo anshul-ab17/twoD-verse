@@ -31,7 +31,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # LiveKit SFU in dev mode (key: devkey / secret: secret) — matches apps/media .example.env
+  # LiveKit SFU in dev mode (key: devkey / secret: secret) — matches apps/rtc .example.env
   livekit:
     image: livekit/livekit-server:latest
     container_name: verse-livekit

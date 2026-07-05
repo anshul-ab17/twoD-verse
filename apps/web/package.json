@@ -8,7 +8,7 @@
     "check-types": "tsc --noEmit"
   },
   "dependencies": {
-    "@repo/net-schema": "workspace:*",
+    "@repo/game-core": "workspace:*",
     "colyseus.js": "^0.16",
     "livekit-client": "^2",
     "next": "^15",

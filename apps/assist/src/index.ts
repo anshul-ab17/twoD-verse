@@ -61,7 +61,7 @@ Bun.serve({
       return new Response("not found", { status: 404 })
     }
 
-    // trust boundary: gateway access JWT required (mirrors apps/media)
+    // trust boundary: gateway access JWT required (mirrors apps/rtc)
     const auth = req.headers.get("authorization")
     if (!auth?.startsWith("Bearer ")) return json({ error: "unauthorized" }, 401)
     let payload: { userId?: string; jti?: string }
@@ -97,4 +97,4 @@ const cors = {
   "Access-Control-Allow-Headers": "content-type, authorization, x-anthropic-key",
 } satisfies Record<string, string>
 
-console.log(`@repo/ai notes service on :${port}`)
+console.log(`@repo/assist notes service on :${port}`)

@@ -1,12 +1,12 @@
 // XP award harness (no test framework). Server must be running with DATABASE_URL:
 //   PORT=2574 bun run src/index.ts
 // then:
-//   REALTIME_URL=ws://localhost:2574 pnpm --filter @repo/realtime test:xp
+//   REALTIME_URL=ws://localhost:2574 pnpm --filter @repo/game-engine test:xp
 // Gateway on :2569 mints the real access token (token.helper).
 
 import assert from "node:assert"
 import { Client } from "colyseus.js"
-import { MSG, XP_AWARDS, QUESTS, type WorldRoomState } from "@repo/net-schema"
+import { MSG, XP_AWARDS, QUESTS, type WorldRoomState } from "@repo/game-core"
 import { freshToken } from "./token.helper"
 
 const url = process.env.REALTIME_URL ?? "ws://localhost:2567"

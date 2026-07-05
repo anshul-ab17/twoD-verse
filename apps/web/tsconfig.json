@@ -1,7 +1,7 @@
 {
   "extends": "@repo/typescript-config/nextjs.json",
   "compilerOptions": {
-    // @repo/net-schema ships raw TS using @colyseus/schema decorators
+    // @repo/game-core ships raw TS using @colyseus/schema decorators
     "experimentalDecorators": true,
     "useDefineForClassFields": false
   },

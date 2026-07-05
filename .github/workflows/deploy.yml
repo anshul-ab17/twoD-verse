@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        app: [realtime, server, media, ai]
+        app: [game-engine, server, rtc, assist]
     steps:
       - uses: actions/checkout@v4
       - uses: docker/login-action@v3

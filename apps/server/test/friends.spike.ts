@@ -1,6 +1,6 @@
 // Friends + presence spike (no test framework). Servers must be running:
 //   GATEWAY_PORT=2573 bun run src/index.ts            (this app)
-//   PORT=2574 bun run src/index.ts                    (apps/realtime)
+//   PORT=2574 bun run src/index.ts                    (apps/game-engine)
 // then:
 //   GATEWAY_PORT=2573 REALTIME_URL=ws://localhost:2574 pnpm --filter @repo/gateway test:friends
 

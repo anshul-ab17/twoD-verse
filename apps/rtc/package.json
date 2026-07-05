@@ -1,5 +1,5 @@
 {
-  "name": "@repo/media",
+  "name": "@repo/rtc",
   "type": "module",
   "private": true,
   "scripts": {

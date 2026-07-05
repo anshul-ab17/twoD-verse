@@ -17,7 +17,7 @@ import {
   type LevelUpBroadcast,
   type WorldRoomState,
   type PlayerState,
-} from "@repo/net-schema"
+} from "@repo/game-core"
 import { bridge } from "./bridge"
 import { avatarTexture, furnitureTexture } from "./art"
 

@@ -1,5 +1,5 @@
 {
-  "name": "@repo/realtime",
+  "name": "@repo/game-engine",
   "type": "module",
   "private": true,
   "scripts": {
@@ -15,7 +15,7 @@
     "@colyseus/ws-transport": "^0.16",
     "@repo/auth": "workspace:*",
     "@repo/db": "workspace:*",
-    "@repo/net-schema": "workspace:*",
+    "@repo/game-core": "workspace:*",
     "@repo/pubsub": "workspace:*"
   },
   "devDependencies": {

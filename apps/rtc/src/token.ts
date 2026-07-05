@@ -16,7 +16,7 @@ export async function mintZoneToken({
   const secret = process.env.LIVEKIT_API_SECRET
   if (!key || !secret) {
     throw new Error(
-      "LIVEKIT_API_KEY and LIVEKIT_API_SECRET must be set (see apps/media/.example.env)",
+      "LIVEKIT_API_KEY and LIVEKIT_API_SECRET must be set (see apps/rtc/.example.env)",
     )
   }
 

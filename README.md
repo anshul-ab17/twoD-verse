@@ -5,8 +5,8 @@ A living, multiplayer 2.5D world that runs your work.
 ## Stack
 
 - **Monorepo:** pnpm workspaces + Turborepo; Bun runtime in server apps
-- **Realtime:** Colyseus (authoritative movement, `apps/realtime`)
-- **Media:** LiveKit SFU (token service in `apps/media`)
+- **Realtime:** Colyseus (authoritative movement, `apps/game-engine`)
+- **Media:** LiveKit SFU (token service in `apps/rtc`)
 - **Web:** Next.js 15 + React 19 + PixiJS 8 (`apps/web`)
 - **Data:** Postgres (Prisma), Redis
 
@@ -27,14 +27,14 @@ pnpm --filter @repo/db exec prisma migrate dev
 pnpm --filter @repo/db exec prisma generate
 
 # media (LiveKit dev-mode credentials: devkey / secret)
-cp apps/media/.example.env apps/media/.env    # LIVEKIT_URL=ws://localhost:7880
+cp apps/rtc/.example.env apps/rtc/.env    # LIVEKIT_URL=ws://localhost:7880
 ```
 
 ## Run
 
 ```sh
-pnpm --filter @repo/realtime dev   # Colyseus ws://localhost:2567
-pnpm --filter @repo/media dev      # token service http://localhost:2568
+pnpm --filter @repo/game-engine dev   # Colyseus ws://localhost:2567
+pnpm --filter @repo/rtc dev      # token service http://localhost:2568
 pnpm --filter @repo/web dev        # web http://localhost:3000
 ```
 
@@ -47,9 +47,9 @@ sees the other move (server-authoritative, interpolated).
 pnpm run check-types                          # tsc across all packages
 pnpm run test                                 # vitest unit tests
 pnpm --filter @repo/assets run validate      # asset provenance gate (plan §27)
-pnpm --filter @repo/realtime test:spike      # two-client movement harness (server must be running)
-bun run packages/net-schema/interpolate.ts    # assert self-checks
-bun run packages/net-schema/zones.ts
+pnpm --filter @repo/game-engine test:spike      # two-client movement harness (server must be running)
+bun run packages/game-core/interpolate.ts    # assert self-checks
+bun run packages/game-core/zones.ts
 ```
 
 ## Layout
@@ -57,7 +57,7 @@ bun run packages/net-schema/zones.ts
 ```
 apps/      web (Next+Pixi) · realtime (Colyseus) · media (LiveKit tokens)
 packages/  types · db (Prisma) · auth (JWT/Argon2/magic-link/OAuth) ·
-           pubsub (Redis) · net-schema (Colyseus schemas + interpolation) ·
+           pubsub (Redis) · game-core (Colyseus schemas + interpolation) ·
            assets (provenance-gated registry) · typescript-config · eslint-config
 docs/      art-bible.md
 ```

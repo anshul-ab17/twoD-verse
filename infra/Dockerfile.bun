@@ -1,5 +1,5 @@
-# Shared image for the bun services (realtime/server/media/ai).
-# Build from repo root:  docker build -f infra/Dockerfile.bun --build-arg APP=realtime .
+# Shared image for the bun services (game-engine/server/rtc/assist).
+# Build from repo root:  docker build -f infra/Dockerfile.bun --build-arg APP=game-engine .
 # ponytail: whole-workspace copy + bun install — per-app pruned images when size matters.
 FROM oven/bun:1-slim
 WORKDIR /repo

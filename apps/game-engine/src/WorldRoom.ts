@@ -21,7 +21,7 @@ import {
   type ChatInput,
   type MoveInput,
   type LevelUpBroadcast,
-} from "@repo/net-schema"
+} from "@repo/game-core"
 // subpath import: token.service only — index.ts drags in prisma/argon2 the realtime server doesn't need
 import { verifyToken } from "@repo/auth/token.service"
 import { client as db } from "@repo/db"
@@ -266,7 +266,7 @@ export class WorldRoom extends Room<WorldRoomState> {
         Math.abs(nx) > Math.abs(ny) ? (nx > 0 ? "right" : "left") : ny > 0 ? "down" : "up"
 
       // zone -> media mapping (plan §6): LiveKit room = zoneId.
-      // ponytail: client watches its own zoneId, POSTs apps/media /token and
+      // ponytail: client watches its own zoneId, POSTs apps/rtc /token and
       // joins/leaves the LiveKit room — client side not built in this spike.
       const zoneId = zoneAt(SPIKE_ZONES, player.x, player.y)?.id ?? ""
       if (player.zoneId !== zoneId) {

@@ -1,5 +1,5 @@
 {
-  "name": "@repo/net-schema",
+  "name": "@repo/game-core",
   "module": "index.ts",
   "type": "module",
   "private": true,

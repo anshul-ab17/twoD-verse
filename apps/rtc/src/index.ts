@@ -52,4 +52,4 @@ Bun.serve({
   },
 })
 
-console.log(`@repo/media token service on :${port}`)
+console.log(`@repo/rtc token service on :${port}`)
