@@ -1,8 +1,8 @@
 // Pixi world client (plain TS, no React). Renders the authoritative Colyseus
 // "world" room state; talks to React only via the bridge (plan §12).
-// Art is owned: hand-authored SVG kit (lib/art.ts) + Graphics — no third-party atlases.
+// Art is owned: procedural pixel kit (lib/pixel-art.ts) + Graphics — no third-party atlases.
 
-import { Application, Container, Graphics, Sprite, Text } from "pixi.js"
+import { AnimatedSprite, Application, Container, Graphics, Sprite, Text, TilingSprite } from "pixi.js"
 import { Client, getStateCallbacks } from "colyseus.js"
 import {
   MSG,
@@ -21,109 +21,105 @@ import {
 } from "@repo/game-core"
 import { bridge } from "./bridge"
 import { applyProximityGains } from "./media"
-import { avatarTexture, furnitureTexture } from "./art"
+import { PX, avatarFrames, floorTexture, furnitureTexture, type Dir, type FurnitureKind } from "./pixel-art"
 
 const REALTIME_URL = process.env.NEXT_PUBLIC_REALTIME_URL ?? "ws://localhost:2567"
 
-const PALETTE = [0xe4572e, 0x29c7ac, 0xf3a712, 0x5b8dee, 0xc74fd1, 0x8bc34a, 0xff7eb6, 0x00bcd4]
-
-function colorFor(id: string): number {
-  let h = 0
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0
-  return PALETTE[h % PALETTE.length]!
-}
-
 type Avatar = {
   root: Container
-  body: Container // bobbed while walking
-  eyes: Graphics // repositioned by facing direction
+  sprite: AnimatedSprite // walk-cycle frames, swapped per facing direction
+  frames: ReturnType<typeof avatarFrames>
+  dir: Dir
   lastX: number
   lastY: number
 }
 
-/** Owned SVG character (lib/art.ts kit) + direction eyes + name label. */
+/** Owned pixel character (lib/pixel-art.ts kit): AnimatedSprite walk cycle +
+ *  soft shadow + name label. Textures are generated sync — no pop-in. */
 function makeAvatar(id: string, own: boolean): Avatar {
   const root = new Container()
-  const body = new Container()
 
   if (own) {
-    const ring = new Graphics().circle(0, -12, 26).stroke({ width: 2, color: 0xffffff, alpha: 0.7 })
-    body.addChild(ring)
+    const ring = new Graphics().circle(0, -16, 28).stroke({ width: 2, color: 0xffffff, alpha: 0.7 })
+    root.addChild(ring)
   }
 
-  // texture loads async; container is placed immediately, sprite pops in
-  const sprite = new Sprite()
-  sprite.anchor.set(0.5, 1)
-  sprite.y = 20 // feet at old shadow line
-  body.addChild(sprite)
-  avatarTexture(id)
-    .then((tex) => {
-      sprite.texture = tex
-    })
-    .catch(console.error)
+  // soft ellipse shadow under the feet (doesn't animate with the walk cycle)
+  const shadow = new Graphics().ellipse(0, 20, 13, 3.5).fill({ color: 0x000000, alpha: 0.25 })
+  root.addChild(shadow)
 
-  // eyes sit on the SVG head (center ≈ -31 with feet at +20)
-  const eyes = new Graphics().circle(-3.5, -30, 1.7).circle(3.5, -30, 1.7).fill(0x222222)
+  const frames = avatarFrames(id)
+  const sprite = new AnimatedSprite(frames.down)
+  sprite.anchor.set(0.5, 1)
+  sprite.y = 20 // feet at the shadow line
+  sprite.scale.set(3) // 16x24 art -> 48x72 on screen
+  sprite.animationSpeed = 0.12
+  root.addChild(sprite)
 
   const label = new Text({
     text: id,
-    style: { fontSize: 11, fill: 0xffffff, stroke: { color: 0x000000, width: 3 } },
+    // ponytail: monospace Text passes as "pixel-styled"; swap for a real
+    // BitmapFont pixel face if labels ever need to be crisper/cheaper
+    style: { fontSize: 11, fontFamily: "monospace", fill: 0xffffff, stroke: { color: 0x000000, width: 3 } },
   })
   label.anchor.set(0.5)
-  label.y = -52
+  label.y = -62
 
-  body.addChild(eyes)
-  root.addChild(body, label)
-  return { root, body, eyes, lastX: 0, lastY: 0 }
+  root.addChild(label)
+  return { root, sprite, frames, dir: "down", lastX: 0, lastY: 0 }
 }
 
-/** Face eyes toward a direction ("up" hides them — back of head). */
-function face(a: Avatar, dir: string) {
-  a.eyes.visible = dir !== "up"
-  a.eyes.x = dir === "left" ? -4 : dir === "right" ? 4 : 0
-}
-
-/** Code-drawn office floorplan — owned art by construction (plan §27). */
+/** Code-drawn pixel office floorplan — owned art by construction (plan §27). */
 function drawOffice(): Container {
   const c = new Container()
+
+  // wood plank floor across the whole world (16px tile x PX = 64px on screen)
+  // ponytail: TilingSprites over the lazy path (one GPU quad each); prebake to
+  // a RenderTexture if tile variety ever grows past a handful
+  const floor = new TilingSprite({
+    texture: floorTexture("wood"),
+    width: WORLD.width,
+    height: WORLD.height,
+  })
+  floor.tileScale.set(PX)
+  c.addChild(floor)
+
+  // zone rooms: carpet tiles per zone kind
+  for (const z of SPIKE_ZONES) {
+    const { x, y, w, h } = z.bounds
+    const kind = z.kind === "voice" ? "voice" : z.kind === "meeting" ? "meeting" : "focus"
+    const carpet = new TilingSprite({ texture: floorTexture(kind), width: w, height: h })
+    carpet.tileScale.set(PX)
+    carpet.position.set(x, y)
+    c.addChild(carpet)
+  }
+
+  // walls: flat pixel-toned Graphics (top face + darker bottom lip)
   const g = new Graphics()
-
-  // floor + subtle tile grid
-  g.rect(0, 0, WORLD.width, WORLD.height).fill(0x23273a)
-  for (let x = 0; x <= WORLD.width; x += 64) g.moveTo(x, 0).lineTo(x, WORLD.height)
-  for (let y = 0; y <= WORLD.height; y += 64) g.moveTo(0, y).lineTo(WORLD.width, y)
-  g.stroke({ width: 1, color: 0x2b3049, alpha: 0.8 })
-
-  // outer walls
   g.rect(0, 0, WORLD.width, 12).rect(0, WORLD.height - 12, WORLD.width, 12)
     .rect(0, 0, 12, WORLD.height).rect(WORLD.width - 12, 0, 12, WORLD.height)
     .fill(0x454b6b)
+  g.rect(0, 12, WORLD.width, 4).fill(0x353a55) // lip under the top wall
 
-  // zone rooms: floor tint + wall outline + door gap (drawn from zone data)
   for (const z of SPIKE_ZONES) {
     const { x, y, w, h } = z.bounds
-    const tint = z.kind === "voice" ? 0x2e5347 : z.kind === "meeting" ? 0x37405f : 0x3a3f58
-    g.rect(x, y, w, h).fill(tint)
     // walls with a centered door gap on the bottom edge
     const door = 72
     g.rect(x, y, w, 6).fill(0x454b6b) // top
+    g.rect(x, y + 6, w, 3).fill(0x353a55) // lip
     g.rect(x, y, 6, h).rect(x + w - 6, y, 6, h).fill(0x454b6b) // sides
     g.rect(x, y + h - 6, (w - door) / 2, 6).rect(x + (w + door) / 2, y + h - 6, (w - door) / 2, 6).fill(0x454b6b)
   }
-
   c.addChild(g)
 
-  // furniture: owned SVG sprites (lib/art.ts), loaded async and popped in
-  const place = (kind: Parameters<typeof furnitureTexture>[0], x: number, y: number, rotation = 0) => {
-    furnitureTexture(kind)
-      .then((tex) => {
-        const sp = new Sprite(tex)
-        sp.anchor.set(0.5)
-        sp.position.set(x, y)
-        sp.rotation = rotation
-        c.addChild(sp)
-      })
-      .catch(console.error)
+  // furniture: owned pixel sprites (lib/pixel-art.ts), generated sync
+  const place = (kind: FurnitureKind, x: number, y: number, rotation = 0) => {
+    const sp = new Sprite(furnitureTexture(kind))
+    sp.anchor.set(0.5)
+    sp.position.set(x, y)
+    sp.rotation = rotation
+    sp.scale.set(PX)
+    c.addChild(sp)
   }
 
   // desk pods in the open area (desk + chair below)
@@ -158,7 +154,7 @@ function drawOffice(): Container {
   for (const z of SPIKE_ZONES) {
     const t = new Text({
       text: z.id,
-      style: { fontSize: 13, fill: 0xaab3d0, stroke: { color: 0x000000, width: 2 } },
+      style: { fontSize: 13, fontFamily: "monospace", fill: 0xaab3d0, stroke: { color: 0x000000, width: 2 } },
     })
     t.anchor.set(0.5)
     t.position.set(z.bounds.x + z.bounds.w / 2, z.bounds.y + 20)
@@ -266,12 +262,19 @@ export async function createWorld(el: HTMLElement, token: string): Promise<World
     }
   })
 
-  // walk bob + facing, shared by own and remote avatars
-  const animate = (a: Avatar, x: number, y: number, dir: string, now: number) => {
+  // walk-cycle playback + facing, shared by own and remote avatars
+  const animate = (a: Avatar, x: number, y: number, dir: string) => {
     const moving = Math.abs(x - a.lastX) > 0.1 || Math.abs(y - a.lastY) > 0.1
     a.root.position.set(x, y)
-    a.body.y = moving ? Math.sin(now / 80) * 2.5 : 0
-    face(a, dir)
+    const d: Dir = dir === "up" || dir === "left" || dir === "right" ? dir : "down"
+    if (d !== a.dir) {
+      a.dir = d
+      const playing = a.sprite.playing
+      a.sprite.textures = a.frames[d] // resets to frame 0, stops playback
+      if (playing) a.sprite.play()
+    }
+    if (moving && !a.sprite.playing) a.sprite.play()
+    if (!moving && a.sprite.playing) a.sprite.gotoAndStop(0) // idle frame
     a.lastX = x
     a.lastY = y
   }
@@ -281,12 +284,12 @@ export async function createWorld(el: HTMLElement, token: string): Promise<World
     nightOverlay.alpha = darknessAt(dayPhase())
     const now = performance.now()
     if (own) {
-      animate(own.avatar, own.state.x, own.state.y, own.state.dir, now)
+      animate(own.avatar, own.state.x, own.state.y, own.state.dir)
       updateCamera(own.state.x, own.state.y, 0.12)
     }
     for (const { avatar, buf, state } of remotes.values()) {
       const pos = buf.sample(now)
-      if (pos) animate(avatar, pos.x, pos.y, state.dir, now)
+      if (pos) animate(avatar, pos.x, pos.y, state.dir)
     }
     // proximity voice: feed distance gains to media every 250ms (never per frame)
     if (own && now - lastProx > 250) {
