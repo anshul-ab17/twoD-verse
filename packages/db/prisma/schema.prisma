@@ -243,6 +243,8 @@ model WorldMessage {
   userId    String
   text      String
   createdAt DateTime @default(now())
+  // voyage-3.5 embedding (dim 1024), written lazily — null until embedded
+  embedding Unsupported("vector(1024)")?
 
   @@index([createdAt])
 }

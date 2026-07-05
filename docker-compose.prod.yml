@@ -16,7 +16,8 @@ x-service: &service
 
 services:
   postgres:
-    image: postgres:16
+    # pgvector/pgvector = official postgres 16 + vector extension (semantic search)
+    image: pgvector/pgvector:pg16
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}

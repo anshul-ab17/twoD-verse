@@ -16,6 +16,7 @@ import {
   exchangeCode,
   type OAuthProvider,
 } from "@repo/auth"
+import { searchRouter } from "./search"
 
 const port = Number(process.env.GATEWAY_PORT) || 2569
 const publicUrl = process.env.PUBLIC_URL ?? `http://localhost:${port}`
@@ -473,6 +474,8 @@ app.get("/v1/leaderboard", requireAuth, async (req, res) => {
     me: { rank, xp: mine?.xp ?? 0 },
   })
 })
+
+app.use(searchRouter(requireAuth))
 
 app.use((_req, res) => err(res, 404, "not found"))
 

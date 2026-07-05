@@ -11,6 +11,7 @@ import { bridge } from "../lib/bridge"
 import { login, signup, refresh, clearTokens, getAccessToken, GATEWAY } from "../lib/auth"
 import { startMediaWatcher, setMic, setCam } from "../lib/media"
 import { toggleAmbient } from "../lib/ambient"
+import { SearchPanel } from "./search-panel"
 
 const AI = process.env.NEXT_PUBLIC_AI_URL ?? "http://localhost:2570"
 
@@ -458,6 +459,7 @@ export function WorldApp() {
   return (
     <main>
       <div ref={mount} />
+      <SearchPanel />
       <div style={{ ...hudBox, position: "fixed", top: 8, left: 8 }}>
         <div>
           net: {status}

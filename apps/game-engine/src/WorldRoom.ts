@@ -24,7 +24,7 @@ import {
 } from "@repo/game-core"
 // subpath import: token.service only — index.ts drags in prisma/argon2 the realtime server doesn't need
 import { verifyToken } from "@repo/auth/token.service"
-import { client as db } from "@repo/db"
+import { client as db, embedWorldMessage } from "@repo/db"
 import { redis, connectRedis, allow } from "@repo/pubsub"
 
 // Soft moderation filter (plan §16): matched words masked, message still sent.
@@ -110,9 +110,13 @@ export class WorldRoom extends Room<WorldRoomState> {
       const msg: ChatBroadcast = { from: client.sessionId, text, ts: now }
       this.broadcast(CHAT_BROADCAST, msg)
 
-      // persist (plan §7) — fire-and-forget, guests skipped
+      // persist (plan §7) — fire-and-forget, guests skipped; embed for semantic
+      // search (plan §13) — silent no-op without VOYAGE_API_KEY, backfill catches up
       if (!player.id.startsWith("guest-")) {
-        db.worldMessage.create({ data: { userId: player.id, text } }).catch(console.error)
+        db.worldMessage
+          .create({ data: { userId: player.id, text } })
+          .then((m) => embedWorldMessage(m.id, m.text))
+          .catch(console.error)
       }
 
       // xp for accepted chat, capped per session (plan §3, §16)
