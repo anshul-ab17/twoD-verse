@@ -43,9 +43,11 @@ function hashOf(id: string): number {
 export function avatarTexture(userId: string): Promise<Texture> {
   const h = hashOf(userId)
   const skin = SKINS[h % SKINS.length]!
-  const hair = HAIR_STYLES[(h >> 2) % HAIR_STYLES.length]!
-  const hairColor = HAIR_COLORS[(h >> 4) % HAIR_COLORS.length]!
-  const shirt = SHIRTS[(h >> 7) % SHIRTS.length]!
+  // >>> not >>: h is uint32, a signed shift goes negative for h >= 2^31 and
+  // a negative index reads undefined (crashed avatar creation for ~half of ids)
+  const hair = HAIR_STYLES[(h >>> 2) % HAIR_STYLES.length]!
+  const hairColor = HAIR_COLORS[(h >>> 4) % HAIR_COLORS.length]!
+  const shirt = SHIRTS[(h >>> 7) % SHIRTS.length]!
   const pants = "#3a3f58"
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="64" viewBox="0 0 44 64">
@@ -60,7 +62,7 @@ export function avatarTexture(userId: string): Promise<Texture> {
   <circle cx="22" cy="13" r="10" fill="${skin}"/>
   ${hair(hairColor)}
 </svg>`
-  return svgTexture(`avatar:${skin}:${hairColor}:${shirt}:${(h >> 2) % HAIR_STYLES.length}`, svg)
+  return svgTexture(`avatar:${skin}:${hairColor}:${shirt}:${(h >>> 2) % HAIR_STYLES.length}`, svg)
 }
 
 // --- office furniture --------------------------------------------------------
