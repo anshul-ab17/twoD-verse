@@ -13,12 +13,14 @@ import {
   SnapshotBuffer,
   dayPhase,
   darknessAt,
+  proximityGain,
   type ChatBroadcast,
   type LevelUpBroadcast,
   type WorldRoomState,
   type PlayerState,
 } from "@repo/game-core"
 import { bridge } from "./bridge"
+import { applyProximityGains } from "./media"
 import { avatarTexture, furnitureTexture } from "./art"
 
 const REALTIME_URL = process.env.NEXT_PUBLIC_REALTIME_URL ?? "ws://localhost:2567"
@@ -274,6 +276,7 @@ export async function createWorld(el: HTMLElement, token: string): Promise<World
     a.lastY = y
   }
 
+  let lastProx = 0
   app.ticker.add(() => {
     nightOverlay.alpha = darknessAt(dayPhase())
     const now = performance.now()
@@ -284,6 +287,17 @@ export async function createWorld(el: HTMLElement, token: string): Promise<World
     for (const { avatar, buf, state } of remotes.values()) {
       const pos = buf.sample(now)
       if (pos) animate(avatar, pos.x, pos.y, state.dir, now)
+    }
+    // proximity voice: feed distance gains to media every 250ms (never per frame)
+    if (own && now - lastProx > 250) {
+      lastProx = now
+      const gains = new Map<string, number>()
+      for (const { state } of remotes.values()) {
+        const d = Math.hypot(state.x - own.state.x, state.y - own.state.y)
+        // state.id = JWT identity — matches the LiveKit participant identity
+        gains.set(state.id, proximityGain(d))
+      }
+      applyProximityGains(gains)
     }
   })
 

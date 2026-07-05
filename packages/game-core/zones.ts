@@ -16,6 +16,21 @@ export function zoneAt(zones: readonly Zone[], x: number, y: number): Zone | nul
   return null
 }
 
+/** Publish policy: talk allowed everywhere except quiet zones; null = open floor (proximity). */
+export function canPublishIn(zone: Zone | null): boolean {
+  return zone?.kind !== "quiet"
+}
+
+// Proximity voice (media-calls plan §3, Approach A): outside zones everyone
+// shares one LiveKit room; the client attenuates volume by avatar distance.
+export const PROXIMITY_ROOM = "floor-1"
+export const PROXIMITY_RADIUS = 260 // world px; beyond this a peer is silent
+
+/** Linear volume falloff 1 → 0 over PROXIMITY_RADIUS. ponytail: linear, swap in smoothstep if it sounds abrupt. */
+export function proximityGain(dist: number): number {
+  return dist >= PROXIMITY_RADIUS ? 0 : 1 - dist / PROXIMITY_RADIUS
+}
+
 /** Spike zones inside WORLD (1600x1200): voice lounge + meeting room (voice + AI notes). */
 export const SPIKE_ZONES: readonly Zone[] = [
   { id: "voice-lounge", kind: "voice", bounds: { x: 200, y: 200, w: 400, h: 300 } },

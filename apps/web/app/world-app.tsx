@@ -9,7 +9,7 @@ import { SPIKE_ZONES } from "@repo/game-core/zones"
 import { QUESTS } from "@repo/game-core/xp"
 import { bridge } from "../lib/bridge"
 import { login, signup, refresh, clearTokens, getAccessToken, GATEWAY } from "../lib/auth"
-import { startMediaWatcher } from "../lib/media"
+import { startMediaWatcher, setMic, setCam } from "../lib/media"
 import { toggleAmbient } from "../lib/ambient"
 
 const AI = process.env.NEXT_PUBLIC_AI_URL ?? "http://localhost:2570"
@@ -23,6 +23,30 @@ const hudBox: React.CSSProperties = {
   color: "#fff",
   fontFamily: "monospace",
   fontSize: 13,
+}
+
+/** One remote (or local "you") camera feed; the media layer owns the <video> element. */
+function VideoTile({ identity, el }: { identity: string; el: HTMLVideoElement }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const node = ref.current
+    if (!node) return
+    el.style.width = "100%"
+    el.style.height = "100%"
+    el.style.objectFit = "cover"
+    node.appendChild(el)
+    return () => el.remove()
+  }, [el])
+  return (
+    <div
+      ref={ref}
+      style={{ position: "relative", width: 160, height: 90, background: "#000", borderRadius: 4, overflow: "hidden" }}
+    >
+      <span style={{ position: "absolute", bottom: 2, left: 4, fontSize: 10, zIndex: 1, textShadow: "0 0 3px #000" }}>
+        {identity}
+      </span>
+    </div>
+  )
 }
 
 function AuthForm({ onToken }: { onToken: (token: string) => void }) {
@@ -296,6 +320,9 @@ export function WorldApp() {
   const [streak, setStreak] = useState(0)
   const [ambient, setAmbient] = useState(false)
   const [mediaZone, setMediaZone] = useState("")
+  const [micOn, setMicOn] = useState(false)
+  const [camOn, setCamOn] = useState(false)
+  const [tiles, setTiles] = useState<{ identity: string; el: HTMLVideoElement }[]>([])
   const [messages, setMessages] = useState<ChatMsg[]>([])
   const [draft, setDraft] = useState("")
 
@@ -322,7 +349,18 @@ export function WorldApp() {
         ),
       ),
       bridge.on("media:connected", ({ zoneId }) => setMediaZone(zoneId)),
-      bridge.on("media:disconnected", () => setMediaZone("")),
+      bridge.on("media:disconnected", () => {
+        setMediaZone("")
+        setTiles([]) // room torn down — unsubscribe events won't fire for it
+      }),
+      bridge.on("media:mic-changed", ({ on }) => setMicOn(on)),
+      bridge.on("media:cam-changed", ({ on }) => setCamOn(on)),
+      bridge.on("media:video-added", ({ identity, el }) =>
+        setTiles((t) => [...t.filter((x) => x.identity !== identity), { identity, el }]),
+      ),
+      bridge.on("media:video-removed", ({ identity }) =>
+        setTiles((t) => t.filter((x) => x.identity !== identity)),
+      ),
       bridge.on("chat:message", (msg) => setMessages((m) => [...m, msg].slice(-50))),
     ]
     return () => offs.forEach((off) => off())
@@ -452,14 +490,27 @@ export function WorldApp() {
         <div>quest: {QUESTS[questStep]?.text ?? "all done ✓"}</div>
         <div>
           voice: {mediaZone || "off"}
+          <button onClick={() => void setMic(!micOn)} style={{ marginLeft: 8 }}>
+            {micOn ? "🎙 on" : "🎙 off"}
+          </button>
+          <button onClick={() => void setCam(!camOn)} style={{ marginLeft: 4 }}>
+            {camOn ? "📷 on" : "📷 off"}
+          </button>
           <button
             onClick={() => void toggleAmbient().then(setAmbient)}
-            style={{ marginLeft: 8 }}
+            style={{ marginLeft: 4 }}
           >
             {ambient ? "🔊" : "🔈"} ambient
           </button>
         </div>
       </div>
+      {tiles.length > 0 && (
+        <div style={{ position: "fixed", top: 8, left: "50%", transform: "translateX(-50%)", display: "flex", flexWrap: "wrap", gap: 6, maxWidth: 520, justifyContent: "center" }}>
+          {tiles.map((t) => (
+            <VideoTile key={t.identity} identity={t.identity} el={t.el} />
+          ))}
+        </div>
+      )}
       <FriendsPanel />
       <LeaderboardPanel />
       <OrgPanel />

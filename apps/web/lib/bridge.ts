@@ -16,6 +16,10 @@ export type BridgeEvents = {
   "chat:message": { from: string; text: string; ts: number }
   "media:connected": { zoneId: string }
   "media:disconnected": void
+  "media:mic-changed": { on: boolean }
+  "media:cam-changed": { on: boolean }
+  "media:video-added": { identity: string; el: HTMLVideoElement }
+  "media:video-removed": { identity: string }
 }
 
 type Handler<K extends keyof BridgeEvents> = (payload: BridgeEvents[K]) => void
