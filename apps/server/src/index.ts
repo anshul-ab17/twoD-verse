@@ -481,4 +481,4 @@ app.use((e: unknown, _req: Request, res: Response, _next: NextFunction) => {
   err(res, 500, "internal error")
 })
 
-app.listen(port, () => console.log(`@repo/gateway on :${port}`))
+app.listen(port, () => console.log(`@repo/server on :${port}`))
