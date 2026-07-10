@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useAuthGuard } from "../../lib/use-auth-guard"
 import {
   type Verse, listVerses, createVerse, renameVerse, deleteVerse, createInvite, acceptInvite,
 } from "../../lib/verses"
@@ -10,7 +9,6 @@ import { SpaceCard } from "../_components/dashboard/space-card"
 import { CreateSpaceModal } from "../_components/dashboard/create-space-modal"
 
 export default function VerseDashboard() {
-  const token = useAuthGuard()
   const router = useRouter()
   const [verses, setVerses] = useState<Verse[] | null>(null)
   const [query, setQuery] = useState("")
@@ -20,21 +18,17 @@ export default function VerseDashboard() {
     listVerses().then(setVerses).catch(() => setVerses([]))
   }, [])
 
-  useEffect(() => {
-    if (token) load()
-  }, [token, load])
+  useEffect(() => { load() }, [load])
 
   // accept ?invite= from a shared link
   useEffect(() => {
     const invite = new URLSearchParams(location.search).get("invite")
-    if (token && invite) {
+    if (invite) {
       acceptInvite(invite)
         .then(({ hash }) => router.replace(`/verse/${hash}`))
         .catch(() => router.replace("/verse"))
     }
-  }, [token, router])
-
-  if (!token) return null
+  }, [router])
 
   const shown = verses?.filter((v) => v.name.toLowerCase().includes(query.toLowerCase()))
 
@@ -88,7 +82,7 @@ export default function VerseDashboard() {
           <SpaceCard key={v.id} verse={v} onRename={onRename} onDelete={onDelete} onInvite={onInvite} />
         ))}
         {verses !== null && (
-          <div className="flex min-h-[220px] items-center justify-center rounded-2xl border border-dashed border-[var(--border-default)] transition-all duration-200 hover:border-violet-600/60">
+          <div className="flex min-h-[220px] items-center justify-center rounded-[12px] border border-dashed border-[var(--border-default)] transition-all duration-200 hover:border-[var(--accent)]/50">
             <CreateSpaceModal onCreate={onCreate} />
           </div>
         )}

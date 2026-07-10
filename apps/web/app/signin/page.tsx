@@ -45,11 +45,11 @@ function SigninForm() {
           </div>
           <div className="flex gap-3 mt-6">
             <button disabled={busy} onClick={() => submit(login)}
-              className="flex-1 rounded-lg bg-[var(--accent)] hover:bg-[var(--accent-bright)] disabled:opacity-50 text-white text-sm font-medium py-2.5 transition-colors duration-200">
+              className="flex-1 rounded-[999px] bg-[var(--accent)] hover:bg-[var(--accent-bright)] disabled:opacity-50 text-white text-sm font-semibold py-2.5 transition-colors duration-200">
               {busy ? "…" : "Log in"}
             </button>
             <button disabled={busy} onClick={() => submit(signup)}
-              className="flex-1 rounded-lg border border-[var(--border-default)] hover:border-[var(--accent)] disabled:opacity-50 text-sm font-medium py-2.5 transition-colors duration-200">
+              className="flex-1 rounded-[999px] border border-[var(--border-default)] hover:border-[var(--accent)] disabled:opacity-50 text-sm font-medium py-2.5 transition-colors duration-200">
               Sign up
             </button>
           </div>

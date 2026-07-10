@@ -20,14 +20,18 @@ export function SidebarIcon({
 }) {
   return (
     <button onClick={onClick} title={label} aria-label={label}
-      className={`relative flex h-9 w-9 items-center justify-center rounded-xl text-lg transition-colors duration-200 ${
+      className={`relative flex h-10 w-10 items-center justify-center rounded-lg text-lg transition-all duration-200 ${
         active
-          ? "bg-[var(--accent-dim)] text-[var(--accent-bright)]"
-          : "text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-white"
+          ? "bg-white/5 border border-[var(--accent)] text-[var(--accent-bright)] shadow-[0_0_12px_rgba(198,254,30,0.2)]"
+          : "text-[var(--text-secondary)] border border-transparent hover:bg-white/5 hover:text-white"
       }`}>
-      {icon}
+      {/* vertical neon left bar indicator when active */}
+      {active && (
+        <span className="absolute left-0 top-2 bottom-2 w-0.5 rounded-full bg-[var(--accent)]" />
+      )}
+      <span>{icon}</span>
       {badge ? (
-        <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
+        <span className="absolute -right-1 -top-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-[var(--danger)] text-[9px] font-bold text-black border border-black animate-pulse">
           {badge > 9 ? "9+" : badge}
         </span>
       ) : null}
@@ -49,8 +53,8 @@ export function VideoTile({ identity, el }: { identity: string; el: HTMLVideoEle
   }, [el])
   return (
     <div ref={ref}
-      className="relative h-[90px] w-[160px] overflow-hidden rounded-xl border border-zinc-700 bg-black transition-all duration-200">
-      <span className="absolute bottom-1 left-2 z-10 text-[10px] font-medium text-white/80 [text-shadow:0_0_3px_#000]">
+      className="relative h-[95px] w-[170px] overflow-hidden rounded-xl border border-white/10 bg-black/80 shadow-lg transition-all duration-300 hover:border-[var(--accent)] hover:shadow-[0_0_15px_rgba(198,254,30,0.15)]">
+      <span className="absolute bottom-1.5 left-2 z-10 rounded bg-black/60 border border-white/5 px-1.5 py-0.5 text-[9px] font-mono text-white/90">
         {identity}
       </span>
     </div>
@@ -77,17 +81,17 @@ export function GameShell({
 }) {
   return (
     <div
-      className="grid h-dvh overflow-hidden bg-[var(--bg-base)] text-[var(--text-primary)]"
+      className="grid h-dvh overflow-hidden bg-[#060608] text-[var(--text-primary)]"
       style={{
-        gridTemplateColumns: `52px ${tab ? 320 : 0}px 1fr`,
-        gridTemplateRows: "1fr 60px",
-        transition: "grid-template-columns 250ms ease-out",
+        gridTemplateColumns: `56px ${tab ? 320 : 0}px 1fr`,
+        gridTemplateRows: "1fr 64px",
+        transition: "grid-template-columns 250ms cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
       {/* rail */}
-      <aside className="row-span-2 flex flex-col items-center gap-1 border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] py-3">
-        <span className="text-xl text-[var(--accent-bright)]">◈</span>
-        <div className="my-2 h-px w-8 bg-[var(--border-subtle)]" />
+      <aside className="row-span-2 flex flex-col items-center gap-2 border-r border-white/5 bg-[#0e0e12] py-4">
+        <span className="text-xl text-[var(--accent-bright)] select-none">◈</span>
+        <div className="my-2 h-px w-8 bg-white/5" />
         {TABS.map((t) => (
           <SidebarIcon key={t.id} icon={t.icon} label={t.label} badge={badge?.[t.id]}
             active={tab === t.id} onClick={() => onTab(tab === t.id ? null : t.id)} />
@@ -97,20 +101,21 @@ export function GameShell({
       </aside>
 
       {/* slide panel — width driven by the grid column above */}
-      <section className="row-span-2 overflow-hidden border-r border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+      <section className="row-span-2 overflow-hidden border-r border-white/5 bg-[#0e0e12] glass-panel">
         <div className="flex h-full w-[320px] flex-col">{panel}</div>
       </section>
 
       {/* canvas + overlays */}
-      <main className="relative overflow-hidden">
+      <main className="relative overflow-hidden bg-black">
         {children}
         {overlay}
       </main>
 
       {/* bottom bar */}
-      <footer className="col-start-3 flex items-center justify-center gap-2 border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4">
+      <footer className="col-start-3 flex items-center justify-center gap-4 border-t border-white/5 bg-[#0e0e12]/90 backdrop-blur-md px-6">
         {bottom}
       </footer>
     </div>
   )
 }
+

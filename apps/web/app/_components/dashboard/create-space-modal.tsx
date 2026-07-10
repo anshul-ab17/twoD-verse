@@ -34,7 +34,7 @@ export function CreateSpaceModal({ onCreate }: { onCreate: (name: string, templa
   return (
     <>
       <button onClick={() => ref.current?.showModal()}
-        className="rounded-lg bg-[var(--accent)] px-4 py-1.5 text-sm font-medium text-white transition-colors duration-200 hover:bg-[var(--accent-bright)]">
+        className="rounded-[999px] bg-[var(--accent)] px-4 py-1.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--accent-bright)]">
         + New Space
       </button>
       <dialog ref={ref}
@@ -60,11 +60,11 @@ export function CreateSpaceModal({ onCreate }: { onCreate: (name: string, templa
           {error && <div className="mt-3 text-sm text-[var(--danger)]">{error}</div>}
           <div className="mt-6 flex justify-end gap-3">
             <button onClick={() => ref.current?.close()}
-              className="rounded-lg px-4 py-2 text-sm text-[var(--text-secondary)] transition-colors duration-200 hover:text-white">
+              className="rounded-[999px] px-4 py-2 text-sm text-[var(--text-secondary)] transition-colors duration-200 hover:text-[var(--text-primary)]">
               Cancel
             </button>
             <button disabled={busy || !name.trim()} onClick={submit}
-              className="rounded-lg bg-[var(--accent)] px-5 py-2 text-sm font-medium text-white transition-colors duration-200 hover:bg-[var(--accent-bright)] disabled:opacity-50">
+              className="rounded-[999px] bg-[var(--accent)] px-5 py-2 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--accent-bright)] disabled:opacity-50">
               {busy ? "…" : "Create Space →"}
             </button>
           </div>

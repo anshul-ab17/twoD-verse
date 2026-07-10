@@ -15,19 +15,6 @@ type Hit = {
   score: number
 }
 
-const box: React.CSSProperties = {
-  position: "fixed",
-  bottom: 8,
-  right: 8,
-  width: 280,
-  padding: "6px 10px",
-  borderRadius: 4,
-  background: "rgba(0,0,0,.6)",
-  color: "#fff",
-  fontFamily: "monospace",
-  fontSize: 13,
-}
-
 export function SearchPanel() {
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState("")
@@ -36,6 +23,7 @@ export function SearchPanel() {
   const [busy, setBusy] = useState(false)
   // BYOK: user's own Voyage key, browser-only, sent per-request (never stored server-side)
   const [voyageKey, setVoyageKey] = useState("")
+  
   useEffect(() => setVoyageKey(localStorage.getItem("voyageKey") ?? ""), [])
   const saveKey = (k: string) => {
     setVoyageKey(k)
@@ -70,44 +58,77 @@ export function SearchPanel() {
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)} style={{ ...box, width: "auto", cursor: "pointer" }}>
-        🔎 search
+      <button 
+        onClick={() => setOpen(true)} 
+        className="fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-lg border border-white/10 bg-black/75 hover:bg-black px-4 py-2 text-xs font-mono text-zinc-300 hover:text-white backdrop-blur shadow-lg transition-all duration-300 hover:border-[var(--accent)] hover:shadow-[0_0_15px_rgba(198,254,30,0.2)] cursor-pointer"
+      >
+        <span>🔎</span>
+        <span>Search Chat</span>
       </button>
     )
   }
 
   return (
-    <div style={box}>
-      <div style={{ display: "flex", gap: 4 }}>
+    <div className="fixed bottom-4 right-4 z-40 w-80 rounded-xl border border-white/10 bg-black/90 p-4 text-xs font-mono backdrop-blur-md shadow-2xl transition-all duration-300 hover:border-white/15">
+      <div className="flex gap-2">
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && void search()}
-          placeholder="search chat…"
-          style={{ flex: 1, minWidth: 0, padding: "1px 4px" }}
+          placeholder="Search logs…"
+          className="flex-1 min-w-0 rounded border border-white/10 bg-white/5 px-2.5 py-1.5 text-xs text-white placeholder-zinc-500 outline-none transition-colors duration-200 focus:border-[var(--accent)]"
         />
-        <button onClick={() => void search()} disabled={busy}>{busy ? "…" : "go"}</button>
-        <button onClick={() => setOpen(false)}>×</button>
+        <button 
+          onClick={() => void search()} 
+          disabled={busy}
+          className="rounded border border-white/10 bg-white/5 hover:bg-white/10 px-3 py-1.5 text-xs text-white transition-colors duration-200 cursor-pointer disabled:opacity-50"
+        >
+          {busy ? "…" : "Go"}
+        </button>
+        <button 
+          onClick={() => setOpen(false)}
+          className="rounded border border-white/10 bg-white/5 hover:bg-red-500/20 hover:text-red-400 hover:border-red-500/30 px-3 py-1.5 text-xs text-zinc-400 transition-colors duration-200 cursor-pointer"
+        >
+          ✕
+        </button>
       </div>
+      
       <input
         value={voyageKey}
         onChange={(e) => saveKey(e.target.value)}
-        placeholder="apni Voyage API key…"
+        placeholder="Voyage API Key (stored locally)…"
         type="password"
-        style={{ width: "100%", marginTop: 4, padding: "1px 4px" }}
+        className="w-full mt-2 rounded border border-white/5 bg-white/5 px-2 py-1 text-[10px] text-zinc-300 placeholder-zinc-600 outline-none transition-colors duration-200 focus:border-[var(--accent)]"
       />
-      {error && <div style={{ color: "#f88", marginTop: 4 }}>{error}</div>}
-      <div style={{ maxHeight: 200, overflowY: "auto", marginTop: 4 }}>
+      
+      {error && (
+        <div className="mt-2 text-[10px] text-[var(--danger)] bg-[var(--danger)]/5 border border-[var(--danger)]/20 px-2 py-1 rounded">
+          {error}
+        </div>
+      )}
+      
+      <div className="mt-3 max-h-48 overflow-y-auto divide-y divide-white/5 pr-1 scrollbar-thin scrollbar-thumb-zinc-800">
+        {hits.length === 0 && !error && !busy && q && (
+          <p className="text-center text-[10px] text-zinc-500 py-4">No results found</p>
+        )}
         {hits.map((h) => (
-          <div key={h.id} style={{ marginTop: 4, borderTop: "1px solid rgba(255,255,255,.2)", paddingTop: 4 }}>
-            <div style={{ opacity: 0.7, fontSize: 11 }}>
-              {h.handle ?? h.userId.slice(0, 8)} · {new Date(h.createdAt).toLocaleString()} ·{" "}
-              {(h.score * 100).toFixed(0)}%
+          <div key={h.id} className="py-2.5 first:pt-0 last:pb-0">
+            <div className="text-[9px] text-zinc-500 flex items-center justify-between gap-1 flex-wrap mb-1">
+              <span className="text-[var(--accent-bright)] font-semibold">
+                @{h.handle ?? h.userId.slice(0, 8)}
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span>{new Date(h.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                <span className="bg-[var(--accent-dim)] text-[var(--accent)] px-1 rounded font-bold">
+                  {(h.score * 100).toFixed(0)}%
+                </span>
+              </span>
             </div>
-            <div>{h.text}</div>
+            <div className="text-zinc-200 leading-relaxed break-words">{h.text}</div>
           </div>
         ))}
       </div>
     </div>
   )
 }
+

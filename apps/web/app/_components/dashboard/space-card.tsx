@@ -9,7 +9,7 @@ function hashGradient(hash: string): string {
   for (const c of hash) a = (a * 31 + c.charCodeAt(0)) >>> 0
   const h1 = a % 360
   const h2 = (h1 + 60) % 360
-  return `linear-gradient(135deg, hsl(${h1} 45% 22%), hsl(${h2} 45% 14%))`
+  return `linear-gradient(135deg, hsl(${h1} 40% 88%), hsl(${h2} 40% 80%))`
 }
 
 export function SpaceCard({
@@ -25,7 +25,7 @@ export function SpaceCard({
 }) {
   const admin = verse.role === "OWNER" || verse.role === "ADMIN"
   return (
-    <div className="group overflow-hidden rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-surface)] transition-all duration-200 hover:-translate-y-0.5 hover:border-violet-600/60 hover:shadow-[0_0_24px_rgba(124,58,237,0.12)]">
+    <div className="group overflow-hidden rounded-[12px] border border-[var(--border-subtle)] bg-[var(--bg-surface)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[var(--accent)]/40 hover:shadow-[0_4px_20px_rgba(79,70,229,0.10)]">
       <Link href={`/verse/${verse.hash}`}>
         <div className="aspect-video w-full" style={{ background: hashGradient(verse.hash) }} />
       </Link>
@@ -39,12 +39,12 @@ export function SpaceCard({
         </p>
         <div className="mt-4 flex items-center justify-between">
           <Link href={`/verse/${verse.hash}`}
-            className="rounded-lg border border-[var(--accent)]/50 px-4 py-1.5 text-sm text-[var(--accent-bright)] transition-colors duration-200 hover:bg-[var(--accent-dim)]">
+            className="rounded-[999px] border border-[var(--accent)]/50 px-4 py-1.5 text-sm text-[var(--accent)] font-semibold transition-colors duration-200 hover:bg-[var(--accent-dim)]">
             Enter →
           </Link>
           {/* ponytail: native <details> dropdown — no radix */}
           <details className="relative">
-            <summary className="cursor-pointer list-none rounded-lg px-2 py-1 text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-white transition-colors duration-200">···</summary>
+            <summary className="cursor-pointer list-none rounded-lg px-2 py-1 text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] transition-colors duration-200">···</summary>
             <div className="absolute right-0 z-20 mt-1 w-44 rounded-xl border border-[var(--border-default)] bg-[var(--bg-elevated)] p-1 text-sm shadow-xl">
               {admin && (
                 <button onClick={() => onRename(verse)}
