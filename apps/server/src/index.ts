@@ -16,6 +16,7 @@ import {
   exchangeCode,
   type OAuthProvider,
 } from "@repo/auth"
+import { randomBytes } from "node:crypto"
 import { searchRouter } from "./search"
 
 const port = Number(process.env.GATEWAY_PORT) || 2569
@@ -455,6 +456,120 @@ app.post("/v1/invites/:inviteId/accept", requireAuth, async (req, res) => {
   }
   const org = await client.org.findUnique({ where: { id: invite.orgId }, select: { id: true, name: true } })
   res.json({ org })
+})
+
+// --- verses (spec §4.5): user-created spaces behind /verse/[hash] ---
+
+const VerseCreateSchema = z.object({
+  name: z.string().trim().min(1).max(64),
+  template: z.enum(["office", "campus", "hackathon", "lounge"]).default("office"),
+})
+
+/** 403 unless the caller holds one of `roles` in the verse. */
+async function requireVerseRole(userId: string, verseId: string, roles: ("OWNER" | "ADMIN")[]) {
+  const m = await client.verseMember.findUnique({
+    where: { verseId_userId: { verseId, userId } },
+    select: { role: true },
+  })
+  return m != null && (roles as string[]).includes(m.role)
+}
+
+app.post("/v1/verses", requireAuth, async (req, res) => {
+  const parsed = VerseCreateSchema.safeParse(req.body)
+  if (!parsed.success) return err(res, 400, "name required (1-64 chars)")
+  const hash = randomBytes(8).toString("base64url") // 11 chars, url-safe
+  const verse = await client.verse.create({
+    data: {
+      hash,
+      name: parsed.data.name,
+      template: parsed.data.template,
+      members: { create: { userId: userIdOf(req), role: "OWNER" } },
+    },
+  })
+  res.status(201).json({ id: verse.id, hash: verse.hash, name: verse.name, template: verse.template })
+})
+
+app.get("/v1/verses", requireAuth, async (req, res) => {
+  const memberships = await client.verseMember.findMany({
+    where: { userId: userIdOf(req) },
+    include: {
+      verse: { include: { members: { select: { userId: true } } } },
+    },
+  })
+  // onlineCount: members with a fresh score in the global presence zset
+  // (same pattern as /v1/friends). ponytail: global room today — per-verse
+  // presence keys when per-verse rooms ship.
+  const now = Date.now()
+  const verses = await Promise.all(
+    memberships.map(async (m) => {
+      const ids = m.verse.members.map((x) => x.userId)
+      let online = 0
+      try {
+        await connectRedis()
+        const scores = await Promise.all(ids.map((id) => redis.zScore(PRESENCE_KEY, id)))
+        online = scores.filter((s) => s != null && now - s < ONLINE_WINDOW_MS).length
+      } catch {} // redis down -> 0
+      return {
+        id: m.verse.id,
+        hash: m.verse.hash,
+        name: m.verse.name,
+        template: m.verse.template,
+        memberCount: ids.length,
+        onlineCount: online,
+        role: m.role,
+      }
+    }),
+  )
+  res.json({ verses })
+})
+
+app.patch("/v1/verses/:id", requireAuth, async (req, res) => {
+  const verseId = String(req.params.id)
+  const parsed = z.object({ name: z.string().trim().min(1).max(64) }).safeParse(req.body)
+  if (!parsed.success) return err(res, 400, "name required (1-64 chars)")
+  if (!(await requireVerseRole(userIdOf(req), verseId, ["OWNER", "ADMIN"])))
+    return err(res, 403, "owner or admin role required")
+  const verse = await client.verse.update({ where: { id: verseId }, data: { name: parsed.data.name } })
+  res.json({ id: verse.id, name: verse.name })
+})
+
+app.delete("/v1/verses/:id", requireAuth, async (req, res) => {
+  const verseId = String(req.params.id)
+  if (!(await requireVerseRole(userIdOf(req), verseId, ["OWNER"])))
+    return err(res, 403, "owner role required")
+  await client.verse.delete({ where: { id: verseId } })
+  res.status(204).end()
+})
+
+app.post("/v1/verses/:id/invite", requireAuth, async (req, res) => {
+  const verseId = String(req.params.id)
+  if (!(await requireVerseRole(userIdOf(req), verseId, ["OWNER", "ADMIN"])))
+    return err(res, 403, "owner or admin role required")
+  const invite = await client.verseInvite.create({
+    data: { verseId, createdById: userIdOf(req), expiresAt: new Date(Date.now() + INVITE_TTL_MS) },
+  })
+  res.status(201).json({ inviteId: invite.id, expiresAt: invite.expiresAt })
+})
+
+app.post("/v1/verses/invites/:inviteId/accept", requireAuth, async (req, res) => {
+  const me = userIdOf(req)
+  const inviteId = String(req.params.inviteId)
+  const claimed = await client.verseInvite.updateMany({
+    where: { id: inviteId, usedById: null, expiresAt: { gt: new Date() } },
+    data: { usedById: me, usedAt: new Date() },
+  })
+  if (claimed.count === 0) return err(res, 410, "invite invalid, used, or expired")
+  const invite = (await client.verseInvite.findUnique({ where: { id: inviteId } }))!
+  try {
+    await client.verseMember.create({ data: { verseId: invite.verseId, userId: me, role: "MEMBER" } })
+  } catch {
+    return err(res, 409, "already a member")
+  }
+  const verse = await client.verse.findUnique({
+    where: { id: invite.verseId },
+    select: { id: true, hash: true, name: true },
+  })
+  res.json({ verse })
 })
 
 app.get("/v1/leaderboard", requireAuth, async (req, res) => {
