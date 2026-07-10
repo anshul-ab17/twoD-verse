@@ -47,6 +47,7 @@ model User {
   accounts  Account[]
   sessions  Session[]
   orgMemberships  OrgMember[]
+  verseMemberships VerseMember[]
   magicLinkTokens MagicLinkToken[]
 
   avatarId  String?
@@ -132,7 +133,6 @@ model OrgMember {
   @@index([userId])
 }
 
-// ponytail: stores sha256(token) only — plaintext never persisted
 model MagicLinkToken {
   id         String    @id @default(cuid())
   email      String
@@ -236,14 +236,14 @@ model Message {
   @@index([spaceId])
 }
 
-// Live world chat persistence (plan §7 messages). ponytail: world scope only —
+// Live world chat persistence (plan Â§7 messages). ponytail: world scope only â€”
 // zone/dm/thread scopes when those ship; no relation to User to keep it append-cheap.
 model WorldMessage {
   id        String   @id @default(cuid())
   userId    String
   text      String
   createdAt DateTime @default(now())
-  // voyage-3.5 embedding (dim 1024), written lazily — null until embedded
+  // voyage-3.5 embedding (dim 1024), written lazily â€” null until embedded
   embedding Unsupported("vector(1024)")?
 
   @@index([createdAt])
@@ -277,4 +277,46 @@ model Friendship {
   @@unique([userAId, userBId])
   @@index([userAId])
   @@index([userBId])
+}
+model Verse {
+  id        String   @id @default(cuid())
+  hash      String   @unique
+  name      String
+  template  String   @default("office")
+
+  members   VerseMember[]
+  invites   VerseInvite[]
+
+  createdAt DateTime @default(now())
+}
+
+model VerseMember {
+  id        String   @id @default(cuid())
+  verseId   String
+  userId    String
+  role      OrgRole  @default(MEMBER)
+
+  verse     Verse    @relation(fields: [verseId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([verseId, userId])
+  @@index([userId])
+}
+
+// Single-use invite; row id is the token (same ponytail as OrgInvite).
+model VerseInvite {
+  id          String    @id @default(cuid())
+  verseId     String
+  createdById String
+  expiresAt   DateTime
+  usedById    String?
+  usedAt      DateTime?
+
+  verse       Verse     @relation(fields: [verseId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime  @default(now())
+
+  @@index([verseId])
 }
