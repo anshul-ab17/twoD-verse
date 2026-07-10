@@ -1,28 +1,127 @@
 @import "tailwindcss";
 
-:root {
-  --bg-base: #08080e;
-  --bg-surface: #101018;
-  --bg-elevated: #18181f;
-  --bg-glass: rgba(16, 16, 24, 0.7);
-  --border-subtle: #1f1f2e;
-  --border-default: #2a2a3d;
-  --border-glow: rgba(124, 58, 237, 0.6);
-  --accent: #7c3aed;
-  --accent-bright: #8b5cf6;
-  --accent-dim: rgba(124, 58, 237, 0.15);
-  --text-primary: #f1f0f5;
-  --text-secondary: #a1a1b5;
-  --text-muted: #52526a;
-  --online: #22c55e;
-  --danger: #ef4444;
-  --warn: #f59e0b;
+@theme {
+  /* Colors */
+  --color-black: #000000;
+  --color-white: #ffffff;
+  --color-gray-100: #f0f0ef;
+  --color-gray-500: #77786d;
+  --color-gray-200: #dadbd7;
+  --color-orange: #fd8a65;
+  --color-malva: #e7d8ee;
+  --color-deep-blue: #276284;
+  --color-light-blue: #aadcff;
+  --color-yellow: #ffff8c;
+  --color-primary-cta: #000000;
+
+  /* Spacing */
+  --spacing-x-tiny: 0.25rem;
+  --spacing-tiny: 0.5rem;
+  --spacing-3-x-small: 0.75rem;
+  --spacing-2-x-small: clamp(0.875rem, 0.81rem + 0.217vw, 1rem);
+  --spacing-x-small: clamp(1rem, 0.739rem + 0.87vw, 1.5rem);
+  --spacing-small: clamp(1.5rem, 1.239rem + 0.87vw, 2rem);
+  --spacing-medium: clamp(2rem, 1.739rem + 0.87vw, 2.5rem);
+  --spacing-medium-large: clamp(2.625rem, 1.908rem + 2.391vw, 4rem);
+  --spacing-large: clamp(3.375rem, 2.005rem + 4.565vw, 6rem);
+  --spacing-x-large: clamp(4rem, 1.913rem + 6.957vw, 8rem);
+  --spacing-2-x-large: clamp(6.25rem, 4.293rem + 6.522vw, 10rem);
+  --spacing-3-x-large: clamp(7.75rem, 5.533rem + 7.391vw, 12rem);
+  --spacing-huge: clamp(9rem, 5.348rem + 12.174vw, 16rem);
+  --spacing-gigantic: clamp(11.25rem, 6.685rem + 15.217vw, 20rem);
+
+  /* Border Radius */
+  --radius-pill-large: 24px;
+  --radius-pill-medium: 12px;
+  --radius-full-pill: 100px;
+  --radius-input-radius: 0.375rem;
+  --radius-card-small: 8px;
+
+  /* Fonts */
+  --font-messina-sans: var(--font-inter, ui-sans-serif), system-ui, sans-serif;
+  --font-messina-sans-mono: var(--font-mono, ui-monospace), monospace;
 }
 
-html, body { height: 100%; }
+:root {
+  /* Strict Monochrome Foundation Semantic Aliases */
+  --bg-base: #ffffff;
+  --bg-surface: #f0f0ef;
+  --bg-elevated: #ffffff;
+  --bg-glass: rgba(255, 255, 255, 0.85);
+  
+  --border-subtle: #dadbd7;
+  --border-default: #000000;
+  --border-glow: rgba(0, 0, 0, 0.15);
+  
+  --accent: #000000;
+  --accent-bright: #333333;
+  --accent-dim: #f0f0ef;
+  
+  --text-primary: #000000;
+  --text-secondary: #77786d;
+  --text-muted: #77786d;
+  
+  --online: #276284; /* Deep Blue for status */
+  --danger: #fd8a65; /* Orange for alerts */
+  --warn: #ffff8c; /* Yellow for warnings */
+}
+
+html, body {
+  height: 100%;
+  color-scheme: light;
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   background: var(--bg-base);
   color: var(--text-primary);
-  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--font-messina-sans);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
+
+/* Coordinates/Blueprint Grid matching Afternow style layout grid */
+.tech-grid {
+  background-size: 80px 80px;
+  background-image: 
+    linear-gradient(to right, rgba(0, 0, 0, 0.015) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.015) 1px, transparent 1px);
+}
+
+/* Zero shadows - hierarchy is achieved purely via contrast & spatial rhythm */
+* {
+  box-shadow: none !important;
+}
+
+/* Font styles matching Messina Sans specifications */
+.h-display {
+  font-family: var(--font-messina-sans);
+  font-weight: 400;
+  line-height: 1.09;
+  letter-spacing: -0.05em;
+}
+
+.h-1-tight {
+  font-family: var(--font-messina-sans);
+  font-weight: 500;
+  line-height: 1.09;
+  letter-spacing: -0.05em;
+}
+
+.h-2-tight {
+  font-family: var(--font-messina-sans);
+  font-weight: 500;
+  line-height: 1.11;
+  letter-spacing: -0.04em;
+}
+
+.mono-label-tight {
+  font-family: var(--font-messina-sans-mono);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 12px;
+  letter-spacing: -0.354752px;
+}
+
+
