@@ -236,14 +236,14 @@ model Message {
   @@index([spaceId])
 }
 
-// Live world chat persistence (plan Â§7 messages). ponytail: world scope only â€”
+// Live world chat persistence (plan §7 messages). ponytail: world scope only —
 // zone/dm/thread scopes when those ship; no relation to User to keep it append-cheap.
 model WorldMessage {
   id        String   @id @default(cuid())
   userId    String
   text      String
   createdAt DateTime @default(now())
-  // voyage-3.5 embedding (dim 1024), written lazily â€” null until embedded
+  // voyage-3.5 embedding (dim 1024), written lazily — null until embedded
   embedding Unsupported("vector(1024)")?
 
   @@index([createdAt])
