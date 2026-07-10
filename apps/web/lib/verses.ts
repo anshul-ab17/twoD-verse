@@ -1,5 +1,5 @@
 // Typed client for /v1/verses (spec §4.5).
-import { GATEWAY, getAccessToken } from "./auth"
+import { GATEWAY, getAccessToken, refresh } from "./auth"
 
 export type Verse = {
   id: string
@@ -12,14 +12,24 @@ export type Verse = {
 }
 
 async function api<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`${GATEWAY}${path}`, {
-    method,
-    headers: {
-      ...(body ? { "content-type": "application/json" } : {}),
-      authorization: `Bearer ${getAccessToken()}`,
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  })
+  const attempt = (token: string | null) =>
+    fetch(`${GATEWAY}${path}`, {
+      method,
+      headers: {
+        ...(body ? { "content-type": "application/json" } : {}),
+        authorization: `Bearer ${token}`,
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    })
+
+  let res = await attempt(getAccessToken())
+
+  if (res.status === 401) {
+    const refreshed = await refresh()
+    if (!refreshed) throw new Error("session expired — please sign in again")
+    res = await attempt(refreshed.accessToken)
+  }
+
   if (!res.ok) {
     const msg = await res.json().then((j) => (j as { error?: string }).error).catch(() => null)
     throw new Error(msg ?? `request failed (${res.status})`)
