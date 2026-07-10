@@ -2,9 +2,9 @@
 
 // Semantic search over world chat (plan §13). Self-contained: own BYOK Voyage
 // key (localStorage, mirrors the anthropicKey pattern), own fetch to the
-// gateway. world-app.tsx only imports + renders <SearchPanel />.
+// gateway. The game page only imports + renders <SearchPanel />.
 import { useEffect, useState } from "react"
-import { GATEWAY, getAccessToken } from "../lib/auth"
+import { GATEWAY, getAccessToken } from "../../../lib/auth"
 
 type Hit = {
   id: string
