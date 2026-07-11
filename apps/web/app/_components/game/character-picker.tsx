@@ -23,7 +23,7 @@ export function CharacterPicker({ onPick }: { onPick: (name: CharacterName) => v
               className="flex flex-col items-center gap-2 rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-4 py-4 transition-colors duration-150 hover:border-[var(--accent)] hover:bg-[var(--bg-elevated)]"
             >
               <img
-                src={`/_godot/assets/characters/${name}_sit.png`}
+                src={`/assets/characters/${name}_sit.png`}
                 alt={name}
                 style={{ imageRendering: "pixelated", height: 80, width: "auto" }}
               />

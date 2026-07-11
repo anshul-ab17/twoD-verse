@@ -32,7 +32,7 @@ const loader = new THREE.TextureLoader()
 export async function loadCharacterSprite(name: string): Promise<CharacterSprite> {
   // ponytail: non-null asserted — fallback to luffy guarantees defined
   const meta = (CHAR_META[name] ?? CHAR_META["luffy"])!
-  const base = `/_godot/assets/characters/${name}`
+  const base = `/assets/characters/${name}`
 
   const [walkTex, helloTex, sitTex] = await Promise.all([
     loader.loadAsync(`${base}.png`),

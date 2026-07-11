@@ -36,7 +36,7 @@ async function buildScene(scene: THREE.Scene): Promise<void> {
   }
 
   // --- Floor ---
-  const floorTex = await loadTex("/_godot/assets/tiles/office/floor_wood.png")
+  const floorTex = await loadTex("/assets/tiles/office/floor_wood.png")
   floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping
   floorTex.repeat.set(WORLD.width / 32, WORLD.height / 32)
   const floor = new THREE.Mesh(
@@ -49,7 +49,7 @@ async function buildScene(scene: THREE.Scene): Promise<void> {
   // --- Zone carpet overlays ---
   for (const zone of SPIKE_ZONES) {
     const theme = zone.kind === "voice" ? "lounge" : "office"
-    const carpetTex = await loadTex(`/_godot/assets/tiles/${theme}/floor_soft.png`)
+    const carpetTex = await loadTex(`/assets/tiles/${theme}/floor_soft.png`)
     carpetTex.wrapS = carpetTex.wrapT = THREE.RepeatWrapping
     carpetTex.repeat.set(zone.bounds.w / 32, zone.bounds.h / 32)
     const carpet = new THREE.Mesh(
@@ -67,7 +67,7 @@ async function buildScene(scene: THREE.Scene): Promise<void> {
 
   // --- Walls ---
   const WALL_H = 80, WALL_T = 12
-  const wallTex = await loadTex("/_godot/assets/tiles/office/wall.png")
+  const wallTex = await loadTex("/assets/tiles/office/wall.png")
   wallTex.wrapS = wallTex.wrapT = THREE.RepeatWrapping
 
   const makeWall = (width: number, depth: number, wx: number, wy: number) => {
@@ -89,7 +89,7 @@ async function buildScene(scene: THREE.Scene): Promise<void> {
 
   // --- Furniture ---
   const placeFurniture = async (item: string, theme: string, wx: number, wy: number) => {
-    const tex = await loadTex(`/_godot/assets/furniture/${theme}/${item}.png`)
+    const tex = await loadTex(`/assets/furniture/${theme}/${item}.png`)
     const w = (tex.image as HTMLImageElement).width
     const h = (tex.image as HTMLImageElement).height
     const mesh = new THREE.Mesh(
@@ -101,15 +101,19 @@ async function buildScene(scene: THREE.Scene): Promise<void> {
   }
 
   // Desk pods in open area (mirrors current drawOffice layout)
+  const furniturePromises: Promise<void>[] = []
   for (let row = 0; row < 2; row++) {
     for (let col = 0; col < 4; col++) {
       const bx = 744 + col * 160
       const by = 172 + row * 160
-      await placeFurniture("desk", "office", bx, by)
-      await placeFurniture("chair", "office", bx, by + 52)
-      await placeFurniture("pc", "office", bx, by - 20)
+      furniturePromises.push(
+        placeFurniture("desk", "office", bx, by),
+        placeFurniture("chair", "office", bx, by + 52),
+        placeFurniture("pc", "office", bx, by - 20),
+      )
     }
   }
+  await Promise.all(furniturePromises)
 
   // Meeting room
   const m = SPIKE_ZONES.find((z) => z.kind === "meeting")!.bounds
@@ -215,25 +219,27 @@ export async function createWorld(
 
   const $ = getStateCallbacks(room)
 
-  $(room.state).players.onAdd(async (p, id) => {
-    const name = p.character || "luffy"
-    const cs = await loadCharacterSprite(name)
-    cs.setPosition(p.x, p.y)
-    scene.add(cs.sprite)
+  $(room.state).players.onAdd((p, id) => {
+    void (async () => {
+      const name = p.character || "luffy"
+      const cs = await loadCharacterSprite(name)
+      cs.setPosition(p.x, p.y)
+      scene.add(cs.sprite)
 
-    if (id === room.sessionId) {
-      own = { cs, state: p }
-      $(p).listen("zoneId", (zoneId) => bridge.emit("player:zone-changed", { zoneId }))
-      $(p).listen("xp", (xp) => bridge.emit("player:xp-changed", { xp, level: p.level }))
-      $(p).listen("level", (level) => bridge.emit("player:xp-changed", { xp: p.xp, level }))
-      $(p).listen("questStep", (questStep) => bridge.emit("player:quest-changed", { questStep }))
-      $(p).listen("streak", (streak) => bridge.emit("player:streak-changed", { streak }))
-    } else {
-      const buf = new SnapshotBuffer()
-      buf.push({ t: performance.now(), x: p.x, y: p.y })
-      remotes.set(id, { cs, buf, state: p })
-      $(p).onChange(() => buf.push({ t: performance.now(), x: p.x, y: p.y }))
-    }
+      if (id === room.sessionId) {
+        own = { cs, state: p }
+        $(p).listen("zoneId", (zoneId) => bridge.emit("player:zone-changed", { zoneId }))
+        $(p).listen("xp", (xp) => bridge.emit("player:xp-changed", { xp, level: p.level }))
+        $(p).listen("level", (level) => bridge.emit("player:xp-changed", { xp: p.xp, level }))
+        $(p).listen("questStep", (questStep) => bridge.emit("player:quest-changed", { questStep }))
+        $(p).listen("streak", (streak) => bridge.emit("player:streak-changed", { streak }))
+      } else {
+        const buf = new SnapshotBuffer()
+        buf.push({ t: performance.now(), x: p.x, y: p.y })
+        remotes.set(id, { cs, buf, state: p })
+        $(p).onChange(() => buf.push({ t: performance.now(), x: p.x, y: p.y }))
+      }
+    })().catch((err) => console.error("avatar load failed", id, err))
   })
 
   $(room.state).players.onRemove((_p, id) => {
