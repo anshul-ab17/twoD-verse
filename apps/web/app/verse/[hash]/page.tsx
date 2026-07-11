@@ -15,6 +15,7 @@ import { startMediaWatcher, setMic, setCam } from "../../../lib/media"
 import { toggleAmbient } from "../../../lib/ambient"
 import { useAuthGuard } from "../../../lib/use-auth-guard"
 import { GameShell, VideoTile, type PanelTab, type ChatMsg } from "../../_components/game/game-shell"
+import { PixiWorld } from "../_components/PixiWorld"
 import { SearchPanel } from "../../_components/game/search-panel"
 import { CharacterPicker, type CharacterName } from "../../_components/game/character-picker"
 
@@ -257,7 +258,11 @@ export default function GamePage() {
         </>
       }
     >
-      <div ref={mount} className="h-full w-full" />
+      <div className="h-full w-full relative">
+        <PixiWorld theme="office" userName={sessionId ? sessionId.slice(0,2).toUpperCase() : "You"} />
+        {/* Legacy world mount — kept for WebRTC/audio bridge */}
+        <div ref={mount} className="absolute inset-0 pointer-events-none opacity-0" aria-hidden />
+      </div>
     </GameShell>
   )
 }
