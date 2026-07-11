@@ -12,9 +12,9 @@
     "colyseus.js": "^0.16",
     "livekit-client": "^2",
     "next": "^15",
-    "pixi.js": "^8",
     "react": "^19",
-    "react-dom": "^19"
+    "react-dom": "^19",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
@@ -22,6 +22,7 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/three": "^0.185.1",
     "postcss": "^8.5.16",
     "tailwindcss": "^4.3.2",
     "typescript": "^5.9.2"
