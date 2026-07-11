@@ -32,6 +32,7 @@ export class PlayerState extends Schema {
   @type("number") level = 1
   @type("number") questStep = 0 // index of next quest in QUESTS; >= length = done
   @type("number") streak = 0 // focus streak, consecutive days
+  @type("string") character = "luffy"
 }
 
 /** server -> clients broadcast when a player's level increases */

@@ -144,13 +144,16 @@ export class WorldRoom extends Room<WorldRoomState> {
     }, PRESENCE_REFRESH_MS)
   }
 
-  override async onJoin(client: Client) {
+  override async onJoin(client: Client, options?: { token?: string; character?: string }) {
     const auth = client.auth as { userId: string; guest?: boolean }
     const player = new PlayerState()
     // label = JWT identity from onAuth; sessionId stays the map key
     player.id = auth.userId
     player.x = WORLD.width / 2
     player.y = WORLD.height / 2
+    // trust boundary: whitelist valid names, default to luffy
+    const VALID = ["luffy", "zoro", "nami", "sanji", "robin", "brook", "chopper", "usopp"]
+    player.character = VALID.includes(options?.character ?? "") ? options!.character! : "luffy"
     this.state.players.set(client.sessionId, player)
 
     if (auth.guest) return // guests have no DB row, no xp, no presence
