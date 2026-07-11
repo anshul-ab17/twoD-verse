@@ -16,6 +16,7 @@ import { toggleAmbient } from "../../../lib/ambient"
 import { useAuthGuard } from "../../../lib/use-auth-guard"
 import { GameShell, VideoTile, type PanelTab, type ChatMsg } from "../../_components/game/game-shell"
 import { SearchPanel } from "../../_components/game/search-panel"
+import { CharacterPicker, type CharacterName } from "../../_components/game/character-picker"
 
 const AI = process.env.NEXT_PUBLIC_AI_URL ?? "http://localhost:2570"
 
@@ -42,6 +43,9 @@ export default function GamePage() {
   const mount = useRef<HTMLDivElement>(null)
   const world = useRef<import("../../../lib/world").WorldHandle | null>(null)
 
+  const [character, setCharacter] = useState<CharacterName | null>(
+    () => (typeof window !== "undefined" ? (localStorage.getItem("verse_character") as CharacterName | null) : null)
+  )
   const [tab, setTab] = useState<PanelTab | null>(null)
   const [status, setStatus] = useState<"connecting" | "connected" | "disconnected">("connecting")
   const [sessionId, setSessionId] = useState("")
@@ -98,10 +102,9 @@ export default function GamePage() {
   }, [tab, messages.length])
 
   useEffect(() => {
-    if (!token) return
+    if (!token || !character) return
     let cancelled = false
     const stopMedia = startMediaWatcher()
-    const character = (typeof window !== "undefined" && localStorage.getItem("verse_character")) || "luffy"
     import("../../../lib/world")
       .then(async (m) => {
         try {
@@ -127,7 +130,7 @@ export default function GamePage() {
       world.current?.destroy()
       world.current = null
     }
-  }, [token, router])
+  }, [token, character, router])
 
   const [draft, setDraft] = useState("")
   const sendChat = () => {
@@ -178,6 +181,13 @@ export default function GamePage() {
   }
 
   if (!token) return null
+
+  if (!character) return (
+    <CharacterPicker onPick={(name) => {
+      localStorage.setItem("verse_character", name)
+      setCharacter(name)
+    }} />
+  )
 
   return (
     <GameShell
