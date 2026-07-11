@@ -12,7 +12,6 @@
     "colyseus.js": "^0.16",
     "livekit-client": "^2",
     "next": "^15",
-    "pixi.js": "^8",
     "react": "^19",
     "react-dom": "^19",
     "three": "^0.185.1"
