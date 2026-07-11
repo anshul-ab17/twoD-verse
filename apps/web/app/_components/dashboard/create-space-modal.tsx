@@ -3,10 +3,11 @@
 import { useRef, useState } from "react"
 
 const TEMPLATES = [
-  { id: "office", icon: "🏢", label: "Office" },
-  { id: "campus", icon: "🎓", label: "Campus" },
-  { id: "hackathon", icon: "⚡", label: "Hackathon" },
-  { id: "lounge", icon: "🛋", label: "Lounge" },
+  { id: "office",  label: "Office",  preview: "/_godot/assets/preview_map_office.png"  },
+  { id: "cafe",    label: "Cafe",    preview: "/_godot/assets/preview_map_cafe.png"    },
+  { id: "zen",     label: "Zen",     preview: "/_godot/assets/preview_map_zen.png"     },
+  { id: "library", label: "Library", preview: "/_godot/assets/preview_map_library.png" },
+  { id: "lounge",  label: "Lounge",  preview: "/_godot/assets/preview_map_lounge.png"  },
 ]
 
 export function CreateSpaceModal({ onCreate }: { onCreate: (name: string, template: string) => Promise<void> }) {
@@ -44,16 +45,20 @@ export function CreateSpaceModal({ onCreate }: { onCreate: (name: string, templa
           <input autoFocus value={name} onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submit()} placeholder="Space name…"
             className="mt-4 w-full rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3.5 py-2.5 text-sm outline-none transition-colors duration-200 placeholder:text-[var(--text-muted)] focus:border-[var(--accent)]" />
-          <div className="mt-4 grid grid-cols-2 gap-2">
+          <div className="mt-4 grid grid-cols-5 gap-2">
             {TEMPLATES.map((t) => (
               <button key={t.id} onClick={() => setTemplate(t.id)}
-                className={`rounded-xl border p-4 text-left text-sm transition-all duration-200 ${
+                className={`rounded-xl border overflow-hidden text-center text-xs font-medium transition-all duration-200 ${
                   template === t.id
                     ? "border-[var(--accent)] bg-[var(--accent-dim)]"
                     : "border-[var(--border-subtle)] bg-[var(--bg-surface)] hover:border-[var(--border-default)]"
                 }`}>
-                <span className="mr-2">{t.icon}</span>
-                {t.label}
+                <img
+                  src={t.preview}
+                  alt={t.label}
+                  style={{ imageRendering: "pixelated", width: "100%", aspectRatio: "1", objectFit: "cover" }}
+                />
+                <span className="block py-1.5 text-[var(--text-secondary)]">{t.label}</span>
               </button>
             ))}
           </div>
