@@ -1094,25 +1094,30 @@ export function ThemesShowcase() {
       name: "Modern Tech HQ",
       tag: "THEME 01 // COOL BLUE",
       desc: "Cool blue/gray palette featuring collaborative sprint zones. Work side-by-side with your engineering squad to unlock team-wide XP multipliers.",
-      src: "/assets/preview_office.png"
+      anchor: "1a",
+      // y-offset within the iframe (each card is ~590px tall including header+padding)
+      scrollY: 0,
     },
     {
       name: "Zen Garden Studio",
       tag: "THEME 02 // SAGE HARMONY",
       desc: "Warm wood floors and soft sage carpets. Features a centering koi pond centerpiece. Maintain focus streaks to water and grow your custom desk bonsai.",
-      src: "/assets/preview_zen.png"
+      anchor: "1b",
+      scrollY: 590,
     },
     {
       name: "Library Loft",
       tag: "THEME 03 // DARK ACADEMIA",
       desc: "Quiet-zone rules enforced automatically. Auto-mute microphone buffers in the reading corridors and take on coding quests from the local bulletin board.",
-      src: "/assets/preview_tiles.png"
+      anchor: "1c",
+      scrollY: 1180,
     },
     {
-      name: "Sunny Cafe Cowork",
+      name: "Sunny Café Cowork",
       tag: "THEME 04 // GOLDEN HOUR",
-      desc: "Light wood floors and gold carpets. A vibrant social hub with barista bars and automated coffee-chat matching to pair you with online peers.",
-      src: "/assets/preview_cafe.png"
+      desc: "Light wood floors and gold carpets. A vibrant social hub with barista bars and automated coffee-chat pairing to connect you with nearby peers.",
+      anchor: "1d",
+      scrollY: 1770,
     }
   ]
 
@@ -1140,66 +1145,103 @@ export function ThemesShowcase() {
     resetTimer()
   }
 
+  // Scale factor: iframe is 1200px wide, container is ~700px wide  
+  const iframeW = 1200
+  const iframeH = 700
+
   return (
-    <section id="themes" className="px-6 py-24 border-t border-zinc-200 bg-[#fbfbfa] select-none">
+    <section id="themes" className="px-6 py-24 border-t border-zinc-200 bg-[#0e0e0e] select-none">
       <div className="mx-auto max-w-6xl">
-        <p className="text-[12px] font-mono font-bold tracking-widest uppercase text-black mb-2">/ PLAYABLE OFFICE THEMES</p>
+        <p className="text-[12px] font-mono font-bold tracking-widest uppercase text-zinc-400 mb-2">/ PLAYABLE OFFICE THEMES</p>
         <h2 
-          className="uppercase text-black font-extrabold tracking-tight mb-12 text-3xl sm:text-4xl"
+          className="uppercase text-white font-extrabold tracking-tight mb-12 text-3xl sm:text-4xl"
         >
           Curated workspace aesthetics
         </h2>
         
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           {/* Left: Dynamic details block */}
-          <div className="lg:col-span-5 flex flex-col gap-6 order-2 lg:order-1">
-            <span className="text-[11px] font-mono tracking-[0.2em] text-[#5b5bf0] font-bold uppercase">
+          <div className="lg:col-span-4 flex flex-col gap-6 order-2 lg:order-1">
+            <span className="text-[11px] font-mono tracking-[0.2em] text-[#7b7bf8] font-bold uppercase">
               {themes[themeIndex]?.tag}
             </span>
             <h3 
-              className="text-zinc-900 text-3xl sm:text-4xl font-normal tracking-tight"
+              className="text-white text-3xl font-normal tracking-tight"
               style={{ fontFamily: "Georgia, serif" }}
             >
               {themes[themeIndex]?.name}
             </h3>
-            <p className="text-zinc-500 text-sm leading-relaxed max-w-md font-sans">
+            <p className="text-zinc-400 text-sm leading-relaxed max-w-sm font-sans">
               {themes[themeIndex]?.desc}
             </p>
             
+            {/* Progress dots */}
+            <div className="flex gap-2 mt-2">
+              {themes.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => { setThemeIndex(i); resetTimer() }}
+                  className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${i === themeIndex ? "w-8 bg-[#7b7bf8]" : "w-1.5 bg-zinc-600 hover:bg-zinc-400"}`}
+                />
+              ))}
+            </div>
+
             {/* Manual Controls */}
-            <div className="flex items-center gap-4 mt-4">
+            <div className="flex items-center gap-4 mt-2">
               <button 
                 onClick={prevTheme}
-                className="w-10 h-10 rounded-full border border-zinc-200 bg-white hover:bg-zinc-50 flex items-center justify-center cursor-pointer shadow-sm transition-all"
+                className="w-10 h-10 rounded-full border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center cursor-pointer transition-all"
               >
-                <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-zinc-700 stroke-[2.5]">
+                <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-zinc-300 stroke-[2.5]">
                   <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
-              <span className="text-xs font-mono font-bold text-zinc-400">
+              <span className="text-xs font-mono font-bold text-zinc-500">
                 0{themeIndex + 1} / 04
               </span>
               <button 
                 onClick={nextTheme}
-                className="w-10 h-10 rounded-full border border-zinc-200 bg-white hover:bg-zinc-50 flex items-center justify-center cursor-pointer shadow-sm transition-all"
+                className="w-10 h-10 rounded-full border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center cursor-pointer transition-all"
               >
-                <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-zinc-700 stroke-[2.5]">
+                <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-zinc-300 stroke-[2.5]">
                   <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
             </div>
           </div>
           
-          {/* Right: Big Zoomed image */}
-          <div className="lg:col-span-7 order-1 lg:order-2">
-            <div className="relative aspect-[16/10] w-full overflow-hidden rounded-[24px] border border-black/10 shadow-2xl bg-white group cursor-pointer">
-              <img 
-                src={themes[themeIndex]?.src || ""} 
-                alt=""
-                className="w-full h-full object-cover transition-transform duration-700 ease-out scale-[1.03] hover:scale-[1.12]"
-                style={{ imageRendering: "pixelated" }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+          {/* Right: Live gamified map iframe */}
+          <div className="lg:col-span-8 order-1 lg:order-2">
+            <div
+              className="relative w-full overflow-hidden rounded-[20px] border border-zinc-800 shadow-[0_0_60px_rgba(123,123,248,0.12)] bg-[#23262f]"
+              style={{ aspectRatio: "16/10" }}
+            >
+              {/* Iframe viewport clip */}
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  overflow: "hidden",
+                }}
+              >
+                <iframe
+                  key={themeIndex}
+                  src={`/gamified-themes.html#${themes[themeIndex]?.anchor}`}
+                  scrolling="no"
+                  style={{
+                    border: "none",
+                    width: `${iframeW}px`,
+                    height: `${iframeH + (themes[themeIndex]?.scrollY || 0) + 200}px`,
+                    transformOrigin: "top left",
+                    transform: `scale(var(--theme-scale, 0.63)) translateY(-${themes[themeIndex]?.scrollY || 0}px)`,
+                    pointerEvents: "none",
+                    display: "block",
+                  }}
+                  className="[--theme-scale:0.63]"
+                />
+              </div>
+              {/* Subtle gradient vignette bottom */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#23262f]/40 via-transparent to-transparent pointer-events-none rounded-[20px]" />
             </div>
           </div>
         </div>

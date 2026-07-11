@@ -7,6 +7,7 @@ import {
   Hero, 
   ClientLogoReel, 
   Features, 
+  ThemesShowcase,
   StrategySection, 
   HowItWorks, 
   FAQ,
@@ -32,6 +33,7 @@ export default function Page() {
         <Hero phase={phase} />
         <ClientLogoReel />
         <Features />
+        <ThemesShowcase />
         <StrategySection />
         <HowItWorks />
         <FAQ />
