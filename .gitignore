@@ -18,3 +18,4 @@ docs
 .claude/skills
 /.superpowers
 /apps/web/public/_godot
+/apps/web/public/models
