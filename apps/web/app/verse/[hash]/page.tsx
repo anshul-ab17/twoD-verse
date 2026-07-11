@@ -101,14 +101,15 @@ export default function GamePage() {
     if (!token) return
     let cancelled = false
     const stopMedia = startMediaWatcher()
+    const character = (typeof window !== "undefined" && localStorage.getItem("verse_character")) || "luffy"
     import("../../../lib/world")
       .then(async (m) => {
         try {
-          return await m.createWorld(mount.current!, token)
+          return await m.createWorld(mount.current!, token, character)
         } catch (err) {
           const pair = await refresh()
           if (!pair) throw err
-          return m.createWorld(mount.current!, pair.accessToken)
+          return m.createWorld(mount.current!, pair.accessToken, character)
         }
       })
       .then((h) => {
