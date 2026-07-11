@@ -3,6 +3,19 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 
+function TwoDVerseLogo({ className = "text-black" }: { className?: string }) {
+  return (
+    <div className="relative w-7 h-7 flex items-center justify-center select-none">
+      <svg viewBox="0 0 24 24" className={`w-full h-full fill-none stroke-current stroke-[2.5] ${className}`}>
+        <rect x="3" y="3" width="18" height="18" rx="5" strokeWidth="2.5" />
+        <circle cx="12" cy="12" r="2.5" className="fill-current" />
+        <line x1="12" y1="3" x2="12" y2="21" className="opacity-20" />
+        <line x1="3" y1="12" x2="21" y2="12" className="opacity-20" />
+      </svg>
+    </div>
+  )
+}
+
 const MASONRY_FEATURES = [
   {
     id: "01",
@@ -55,7 +68,7 @@ interface Entity {
 
 // Canvas-based interactive mockup that simulates a Gather.town spatial video office.
 // Styled strictly with Afternow's project surface fills (orange, yellow, malva, deep blue, light blue).
-function InteractiveWorldPreview() {
+function TelemetryRadarPreview() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [hoverText, setHoverText] = useState("PEER COORDINATES: IDLE | CURSOR OUTSIDE GRAPH")
@@ -81,9 +94,9 @@ function InteractiveWorldPreview() {
     handleResize()
 
     // Using validated Afternow colors for entities
-    const you = { x: width / 2, y: height / 2, radius: 10, targetX: width / 2, targetY: height / 2, speed: 0.08, color: "#fd8a65", name: "YOU", role: "GUEST_PEER" } // Orange
-    const alice = { x: width * 0.25, y: height * 0.35, radius: 8, angle: 0, speed: 0.012, color: "#aadcff", name: "ALICE", role: "UI_DESIGNER" } // Light Blue
-    const bob = { x: width * 0.75, y: height * 0.65, radius: 8, angle: Math.PI, speed: 0.008, color: "#e7d8ee", name: "BOB", role: "ENGINEER" } // Malva
+    const you = { x: width / 2, y: height / 2, radius: 10, targetX: width / 2, targetY: height / 2, speed: 0.08, color: "#fd8a65", name: "YOU", role: "GUEST_PEER" }
+    const alice = { x: width * 0.25, y: height * 0.35, radius: 8, angle: 0, speed: 0.012, color: "#aadcff", name: "ALICE", role: "UI_DESIGNER" }
+    const bob = { x: width * 0.75, y: height * 0.65, radius: 8, angle: Math.PI, speed: 0.008, color: "#e7d8ee", name: "BOB", role: "ENGINEER" }
 
     let mouseActive = false
     let tick = 0
@@ -101,8 +114,8 @@ function InteractiveWorldPreview() {
       tick++
       ctx.clearRect(0, 0, width, height)
 
-      // 1. Draw Technical Blueprint Background (Strict Monochrome gray line grid)
-      ctx.strokeStyle = "#dadbd7" // Gray 200
+      // 1. Draw Technical Grid
+      ctx.strokeStyle = "#dadbd7"
       ctx.lineWidth = 1
       const gridSize = 40
       for (let x = 0; x < width; x += gridSize) {
@@ -118,7 +131,7 @@ function InteractiveWorldPreview() {
         ctx.stroke()
       }
 
-      ctx.fillStyle = "#77786d" // Gray 500
+      ctx.fillStyle = "#77786d"
       ctx.font = "8px var(--font-messina-sans-mono), monospace"
       for (let x = 80; x < width; x += 160) {
         ctx.fillText(`X:${x}`, x, 12)
@@ -127,12 +140,11 @@ function InteractiveWorldPreview() {
         ctx.fillText(`Y:${y}`, 6, y)
       }
 
-      // 2. Draw Office Spatial Zones (Strict borders, solid fills)
-      // Meeting Zone (Deep Blue fill)
+      // 2. Draw Office Spatial Zones
       const mZone = { x: width * 0.35, y: height * 0.2, w: width * 0.3, h: height * 0.6 }
-      ctx.fillStyle = "rgba(39, 98, 132, 0.03)" // Deep Blue
+      ctx.fillStyle = "rgba(39, 98, 132, 0.03)"
       ctx.fillRect(mZone.x, mZone.y, mZone.w, mZone.h)
-      ctx.strokeStyle = "#276284" // Deep Blue
+      ctx.strokeStyle = "#276284"
       ctx.lineWidth = 1.5
       ctx.strokeRect(mZone.x, mZone.y, mZone.w, mZone.h)
       
@@ -142,11 +154,10 @@ function InteractiveWorldPreview() {
       ctx.fillStyle = "#77786d"
       ctx.fillText(`BOUNDS: [${Math.floor(mZone.x)}, ${Math.floor(mZone.y)}, ${Math.floor(mZone.w)}x${Math.floor(mZone.h)}]`, mZone.x + 15, mZone.y + 40)
       
-      // Focus Desks (Gray Surface)
       const deskL = { x: width * 0.08, y: height * 0.55, w: 160, h: 100 }
-      ctx.fillStyle = "#f0f0ef" // Gray 100
+      ctx.fillStyle = "#f0f0ef"
       ctx.fillRect(deskL.x, deskL.y, deskL.w, deskL.h)
-      ctx.strokeStyle = "#dadbd7" // Gray 200
+      ctx.strokeStyle = "#dadbd7"
       ctx.strokeRect(deskL.x, deskL.y, deskL.w, deskL.h)
       ctx.fillStyle = "#000000"
       ctx.fillText("// ZONE_02_FOCUS_DESK", deskL.x + 12, deskL.y + 22)
@@ -210,8 +221,7 @@ function InteractiveWorldPreview() {
         setHoverText(mouseActive ? `PEER COORDINATES: [X: ${Math.floor(you.x)}, Y: ${Math.floor(you.y)}] | APPROACH OTHERS FOR PROXIMITY LINK` : "PEER COORDINATES: IDLE | CURSOR OUTSIDE GRAPH")
       }
 
-      // Proximity Rings
-      const drawProximityRing = (ent: Entity) => {
+      const drawProximityRing = (ent: any) => {
         ctx.strokeStyle = "rgba(0, 0, 0, 0.05)"
         ctx.lineWidth = 1
         ctx.beginPath()
@@ -220,8 +230,7 @@ function InteractiveWorldPreview() {
       }
       drawProximityRing(you)
 
-      // Avatars (Strict sharp layout boxes with Afternow pill rounded labels)
-      const drawAvatar = (ent: Entity, isActive: boolean) => {
+      const drawAvatar = (ent: any, isActive: boolean) => {
         ctx.strokeStyle = ent.color
         ctx.lineWidth = 2
         ctx.strokeRect(ent.x - 12, ent.y - 12, 24, 24)
@@ -234,7 +243,6 @@ function InteractiveWorldPreview() {
           ctx.fillRect(ent.x - 2, ent.y - 2, 4, 4)
         }
 
-        // Technical coordinate ticks
         ctx.beginPath()
         ctx.moveTo(ent.x - 16, ent.y)
         ctx.lineTo(ent.x + 16, ent.y)
@@ -243,7 +251,6 @@ function InteractiveWorldPreview() {
         ctx.strokeStyle = "rgba(0, 0, 0, 0.08)"
         ctx.stroke()
 
-        // Name tag (Messina Mono, flat bordered card)
         ctx.fillStyle = "#ffffff"
         ctx.fillRect(ent.x - 55, ent.y + 20, 110, 24)
         ctx.strokeStyle = "#000000"
@@ -261,8 +268,7 @@ function InteractiveWorldPreview() {
       drawAvatar(bob, distToBob < 200 || distAliceBob < 200)
       drawAvatar(you, distToAlice < 200 || distToBob < 200)
 
-      // Video feeds (Flat solid white bordered panels)
-      const drawVideoFeed = (ent: Entity, offset: number, faceSeed: number) => {
+      const drawVideoFeed = (ent: any, offset: number, faceSeed: number) => {
         const vX = ent.x
         const vY = ent.y - 95
         const vW = 100
@@ -278,7 +284,6 @@ function InteractiveWorldPreview() {
         ctx.fillRect(vX - vW / 2 - 1, vY - 1, 6, 6)
         ctx.fillRect(vX + vW / 2 - 5, vY - 1, 6, 6)
 
-        // Wave lines
         ctx.strokeStyle = "rgba(0,0,0,0.15)"
         ctx.beginPath()
         for (let i = 0; i < vW; i += 4) {
@@ -306,7 +311,6 @@ function InteractiveWorldPreview() {
         }
       }
 
-      // Dialog Speech Bubbles (Monochrome box, no shadow)
       if (tick % 600 < 200 && distToAlice < 200) {
         ctx.fillStyle = "#ffffff"
         ctx.fillRect(alice.x + 20, alice.y - 30, 210, 34)
@@ -361,13 +365,13 @@ function InteractiveWorldPreview() {
   }, [])
 
   return (
-    <div ref={containerRef} className="relative w-full aspect-video rounded-[24px] overflow-hidden border border-black bg-white">
+    <div ref={containerRef} className="relative w-full h-full bg-[#f9f9f8] select-none">
       <div className="absolute top-4 left-4 z-10 flex items-center gap-2 rounded-[100px] bg-[#f0f0ef] border border-black px-3.5 py-1.5 text-[9px] font-mono tracking-widest text-black">
         <span className="h-1.5 w-1.5 rounded-full bg-black animate-pulse" />
         TELEMETRY_RADAR_MAP_v2.0
       </div>
       <canvas ref={canvasRef} className="w-full h-full block cursor-crosshair" />
-      <div className="absolute bottom-4 left-4 right-4 z-10 flex justify-between items-center bg-white border border-black px-4 py-3 rounded-[12px] text-[9px] font-mono text-black">
+      <div className="absolute bottom-16 left-4 right-4 z-10 flex justify-between items-center bg-white border border-black px-4 py-3 rounded-[12px] text-[9.5px] font-mono text-black">
         <span className="tracking-tight">{hoverText}</span>
         <span className="text-[#77786d] text-[8px] tracking-wide">GRID: 80x80 · STATUS: PERSISTENT</span>
       </div>
@@ -375,106 +379,502 @@ function InteractiveWorldPreview() {
   )
 }
 
-export function Hero() {
-  const [scrollY, setScrollY] = useState(0)
+export function GamifiedOfficeSpacePreview() {
+  const [activeTheme, setActiveTheme] = useState<"tech" | "zen" | "library" | "cafe">("tech")
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(1)
+  
+  const [techPos, setTechPos] = useState({ x: 330, y: 270 })
+  const [zenPos, setZenPos] = useState({ x: 328, y: 236 })
+  const [libPos, setLibPos] = useState({ x: 330, y: 330 })
+  const [cafePos, setCafePos] = useState({ x: 196, y: 200 })
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrollY(window.scrollY)
+    const handleResize = () => {
+      if (containerRef.current) {
+        const parentW = containerRef.current.clientWidth
+        const parentH = containerRef.current.clientHeight
+        const scaleX = parentW / 720
+        const scaleY = (parentH - 90) / 490
+        const newScale = Math.min(scaleX, scaleY, 1.0)
+        setScale(newScale)
+      }
     }
-    window.addEventListener("scroll", handleScroll, { passive: true })
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+    window.addEventListener("resize", handleResize)
+    handleResize()
+    const timer = setTimeout(handleResize, 100)
+    return () => {
+      window.removeEventListener("resize", handleResize)
+      clearTimeout(timer)
+    }
+  }, [activeTheme])
 
-  // Parallax & smooth scroll scaling factors matching afternow.co hero pins
-  const textOpacity = Math.max(0, 1 - scrollY / 500)
-  const textTranslateY = scrollY * 0.35
-  const mediaScale = Math.min(1.0, 0.65 + (scrollY / 500) * 0.35)
+  const handleFloorClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const clickX = Math.round((e.clientX - rect.left) / scale)
+    const clickY = Math.round((e.clientY - rect.top) / scale)
+    
+    if (clickY > 44 && clickY < 460 && clickX > 20 && clickX < 700) {
+      if (activeTheme === "tech") setTechPos({ x: clickX - 20, y: clickY - 20 })
+      else if (activeTheme === "zen") setZenPos({ x: clickX - 20, y: clickY - 20 })
+      else if (activeTheme === "library") setLibPos({ x: clickX - 18, y: clickY - 20 })
+      else if (activeTheme === "cafe") setCafePos({ x: clickX - 20, y: clickY - 20 })
+    }
+  }
 
   return (
-    <header className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-32 pb-24 bg-white tech-grid overflow-hidden">
-      {/* Background soft ambient monochrome overlays */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background: "radial-gradient(circle 900px at 50% -300px, rgba(0,0,0,0.02), transparent, transparent)"
-        }}
-        aria-hidden
-      />
-
-      <div 
-        style={{ 
-          opacity: textOpacity, 
-          transform: `translateY(${textTranslateY}px)`,
-          transition: "transform 0.1s ease-out, opacity 0.1s ease-out"
-        }}
-        className="flex flex-col items-center text-center"
-      >
-        <span className="relative inline-flex items-center gap-1.5 rounded-[100px] border border-black bg-[#f0f0ef] px-4 py-1.5 text-[9px] font-mono font-bold tracking-widest text-black uppercase">
-          MODEL_SPEC_2.0 // DEPLOYED
-        </span>
-
-        <h1
-          className="relative mt-8 h-display uppercase text-black text-center"
-          style={{ fontSize: "clamp(3.625rem, 2.06rem + 5.217vw, 6.625rem)", letterSpacing: "-0.05em", lineHeight: 1.09 }}
-        >
-          We build spatial
-          <br />
-          coordinate engines.
-        </h1>
-
-        <p 
-          className="relative mt-8 max-w-xl text-center text-xs tracking-tight text-[#77786d]"
-          style={{ fontFamily: "var(--font-messina-sans)", fontSize: "15.7376px", lineHeight: "22.8195px", letterSpacing: "-0.314752px" }}
-        >
-          Verse is a global digital workspace that transitions companies from dry video call lists to dense, real-time, proximity-based spatial presence. Engineered for rapid collaboration.
-        </p>
-
-        <div className="relative mt-12 flex items-center justify-center gap-4">
-          <Link
-            href="/verse"
-            className="rounded-[100px] bg-black hover:bg-zinc-800 text-white px-8 py-4.5 text-[12px] font-bold font-mono uppercase tracking-widest transition-all duration-200 border border-black"
-          >
-            Initialize Space →
-          </Link>
-          <a
-            href="#features"
-            className="flex items-center gap-2 rounded-[100px] border border-black bg-white hover:bg-[#f0f0ef] px-6 py-4.5 text-[12px] font-bold font-mono uppercase tracking-widest text-black transition-all duration-200"
-          >
-            View Specs
-          </a>
+    <div ref={containerRef} className="w-full h-full flex flex-col bg-[#17181c] select-none text-white font-mono p-4 items-center justify-between border-[3px] border-black rounded-none relative overflow-hidden">
+      
+      {/* Top Header Bar */}
+      <div className="w-full flex flex-col sm:flex-row items-center justify-between gap-3 pb-3 border-b border-zinc-800 z-10">
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-[10px] uppercase font-bold tracking-widest text-[#7c7c82]">/ PLAYABLE_MAP_PREVIEW_v2</span>
+        </div>
+        
+        {/* Theme Tabs */}
+        <div className="flex flex-wrap gap-1">
+          {(["tech", "zen", "library", "cafe"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setActiveTheme(t)}
+              className={`px-3 py-1.5 text-[9px] font-bold border-2 border-black rounded-none transition-all cursor-pointer ${
+                activeTheme === t
+                  ? "bg-[#fd8a65] text-black shadow-[2px_2px_0px_rgba(0,0,0,1)] translate-y-[-1px]"
+                  : "bg-zinc-900 text-zinc-400 hover:text-white border-zinc-700"
+              }`}
+            >
+              {t === "tech" && "1a MODERN TECH HQ"}
+              {t === "zen" && "1b ZEN GARDEN"}
+              {t === "library" && "1c LIBRARY LOFT"}
+              {t === "cafe" && "1d SUNNY CAFE"}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Hero visual Laptop Showcase card with Celeste/Purple border gradient */}
-      <div 
-        style={{
-          transform: `scale(${mediaScale})`,
-          transition: "transform 0.1s ease-out"
-        }}
-        className="relative mt-24 w-full max-w-5xl p-2 bg-[#f0f0ef] border-4 border-[#276284] rounded-[24px]"
-      >
-        <InteractiveWorldPreview />
+      {/* Main Playable Map Container */}
+      <div className="flex-1 w-full flex items-center justify-center overflow-hidden py-2">
+        <div 
+          onClick={handleFloorClick}
+          className="relative shrink-0 overflow-hidden cursor-crosshair border-2 border-black/30 shadow-2xl transition-all duration-300"
+          style={{
+            width: "720px",
+            height: "490px",
+            transform: `scale(${scale})`,
+            transformOrigin: "center center",
+            imageRendering: "pixelated"
+          }}
+        >
+          {activeTheme === "tech" && (
+            <div className="w-full h-full relative" style={{ backgroundImage: "url('/assets/tiles/floor_gray.png')", backgroundSize: "48px 48px" }}>
+              <div className="absolute left-0 top-0 w-[720px] h-[44px]" style={{ backgroundImage: "url('/assets/tiles/wall_gray.png')", backgroundSize: "48px 44px" }} />
+              <div className="absolute left-0 top-[44px] w-[336px] h-[212px]" style={{ backgroundImage: "url('/assets/tiles/carpet_blue.png')", backgroundSize: "48px 48px", boxShadow: "inset -4px -4px 0 rgba(30,35,48,.55)" }} />
+              <div className="absolute left-[96px] top-[52px] bg-white border border-black px-2.5 py-0.5 font-sans font-bold text-[9px] text-[#333] rounded-full shadow-md z-10">Engineering · +10 XP/hr</div>
+              <div className="absolute left-[384px] top-[44px] w-[336px] h-[196px]" style={{ backgroundImage: "url('/assets/tiles/floor_beige.png')", backgroundSize: "48px 48px", boxShadow: "inset 4px -4px 0 rgba(30,35,48,.55)" }} />
+              <div className="absolute left-[492px] top-[52px] bg-white border border-black px-2.5 py-0.5 font-sans font-bold text-[9px] text-[#333] rounded-full shadow-md z-10">War Room</div>
+              <div className="absolute left-[448px] top-[308px] w-[272px] h-[182px]" style={{ backgroundImage: "url('/assets/tiles/floor_cream.png')", backgroundSize: "48px 48px", boxShadow: "inset 4px 4px 0 rgba(30,35,48,.55)" }} />
+              <div className="absolute left-[470px] top-[316px] bg-white border border-black px-2.5 py-0.5 font-sans font-bold text-[9px] text-[#333] rounded-full shadow-md z-10">Kitchen · coffee buff ☕ x2 focus</div>
+              <div className="absolute left-[64px] top-[446px] bg-white border border-black px-2.5 py-0.5 font-sans font-bold text-[9px] text-[#333] rounded-full shadow-md z-10">Lounge · daily trivia</div>
+              <div className="absolute select-none flex flex-col items-center gap-0.5 z-20" style={{ left: 150, top: 236, width: 64 }}>
+                <div className="bg-[#1e2330]/90 text-[#7ee787] border border-black/35 font-bold text-[8px] font-sans px-2 py-0.5 rounded-full">● Nami · Lv 9</div>
+                <img src="/assets/chars/f10.png" alt="" style={{ width: 40, imageRendering: "pixelated" }} />
+              </div>
+              <div className="absolute select-none flex flex-col items-center gap-0.5 z-20" style={{ left: 600, top: 368, width: 64 }}>
+                <div className="bg-[#1e2330]/90 text-[#7ee787] border border-black/35 font-bold text-[8px] font-sans px-2 py-0.5 rounded-full">● Sanji · Lv 15</div>
+                <img src="/assets/chars/f12.png" alt="" style={{ width: 36, imageRendering: "pixelated" }} />
+              </div>
+              <div className="absolute flex flex-col items-center gap-0.5 transition-all duration-500 ease-out z-30" style={{ left: techPos.x, top: techPos.y, width: 64 }}>
+                <div className="bg-[#1e2330] text-white border border-black text-[9px] px-2.5 py-0.5 rounded font-sans font-semibold whitespace-nowrap animate-[bob_2.2s_infinite]">Standup in 5! 🔔</div>
+                <div className="bg-[#1e2330]/90 text-[#7ee787] border border-black/35 font-bold text-[8px] font-sans px-2 py-0.5 rounded-full">● Luffy (You)</div>
+                <img src="/assets/chars/f00.png" alt="" style={{ width: 38, imageRendering: "pixelated" }} />
+              </div>
+            </div>
+          )}
+          {activeTheme === "zen" && (
+            <div className="w-full h-full relative" style={{ backgroundImage: "url('/assets/tiles/wood_honey.png')", backgroundSize: "48px 48px" }}>
+              <div className="absolute left-0 top-0 w-[720px] h-[44px]" style={{ backgroundImage: "url('/assets/tiles/wall_tan.png')", backgroundSize: "48px 44px" }} />
+              <div className="absolute left-[216px] top-[140px] w-[288px] h-[220px] rounded-[14px]" style={{ backgroundImage: "url('/assets/tiles/carpet_sage.png')", backgroundSize: "48px 48px", border: "4px solid rgba(90,110,80,.5)" }} />
+              <div className="absolute left-[242px] top-[366px] bg-white border border-black px-2.5 py-0.5 font-sans font-bold text-[9px] text-[#4a5d3a] rounded-full shadow-md z-10">🧘 Garden · 25-min focus = +1 bonsai leaf</div>
+              <div className="absolute left-[52px] top-[462px] bg-white border border-black px-2.5 py-0.5 font-sans font-bold text-[9px] text-[#4a5d3a] rounded-full shadow-md z-10">Tea corner 🍵</div>
+              <div className="absolute select-none flex flex-col items-center gap-0.5 z-20" style={{ left: 130, top: 340, width: 64 }}>
+                <div className="bg-[#3d4a33]/90 text-[#c9e4a5] border border-black/35 font-bold text-[8px] font-sans px-2 py-0.5 rounded-full">● Zoro · meditating</div>
+                <img src="/assets/chars/f04.png" alt="" style={{ width: 38, imageRendering: "pixelated" }} />
+              </div>
+              <div className="absolute flex flex-col items-center gap-0.5 transition-all duration-500 ease-out z-30" style={{ left: zenPos.x, top: zenPos.y, width: 64 }}>
+                <div className="bg-[#3d4a33] text-white border border-black text-[9px] px-2.5 py-0.5 rounded font-sans font-semibold whitespace-nowrap animate-[bob_2.8s_infinite]">Zen mode 🔕 47-day streak</div>
+                <div className="bg-[#3d4a33]/90 text-[#c9e4a5] border border-black/35 font-bold text-[8px] font-sans px-2 py-0.5 rounded-full">● Robin (You)</div>
+                <img src="/assets/chars/f18.png" alt="" style={{ width: 40, imageRendering: "pixelated" }} />
+              </div>
+            </div>
+          )}
+          {activeTheme === "library" && (
+            <div className="w-full h-full relative" style={{ backgroundImage: "url('/assets/tiles/wood_dark.png')", backgroundSize: "48px 48px" }}>
+              <div className="absolute left-0 top-0 w-[720px] h-[44px]" style={{ backgroundImage: "url('/assets/tiles/wall_mauve.png')", backgroundSize: "48px 44px" }} />
+              <div className="absolute left-0 top-[190px] w-[340px] h-[300px]" style={{ backgroundImage: "url('/assets/tiles/carpet_red.png')", backgroundSize: "48px 48px", boxShadow: "inset -4px 0 0 rgba(25,18,16,.6)" }} />
+              <div className="absolute left-[70px] top-[200px] bg-[#f4e8d8] border border-black px-2.5 py-0.5 font-sans font-bold text-[9px] text-[#6b3030] rounded-full shadow-md z-10">📖 Quiet zone · mic auto-muted</div>
+              <div className="absolute left-[420px] top-[210px] w-[300px] h-[280px]" style={{ backgroundImage: "url('/assets/tiles/floor_mauve.png')", backgroundSize: "48px 48px", boxShadow: "inset 4px 0 0 rgba(25,18,16,.6)" }} />
+              <div className="absolute left-[500px] top-[218px] bg-[#f4e8d8] border border-black px-2.5 py-0.5 font-sans font-bold text-[9px] text-[#6b3030] rounded-full shadow-md z-10">Study carrels</div>
+              <div className="absolute left-[168px] top-[150px] bg-[#2a1f1a] text-[#e8c88a] border border-[#3e2f27] px-2 py-0.5 rounded font-sans font-bold text-[9px] shadow z-10">📜 Quest board · 3 new bounties</div>
+              <div className="absolute select-none flex flex-col items-center gap-0.5 z-20" style={{ left: 60, top: 120, width: 64 }}>
+                <div className="bg-[#2a1f1a]/90 text-[#e8c88a] border border-black/35 font-bold text-[8px] font-sans px-2 py-0.5 rounded-full">● Usopp · Lv 7</div>
+                <img src="/assets/chars/f26.png" alt="" style={{ width: 38, imageRendering: "pixelated" }} />
+              </div>
+              <div className="absolute flex flex-col items-center gap-0.5 transition-all duration-500 ease-out z-30" style={{ left: libPos.x, top: libPos.y, width: 64 }}>
+                <div className="bg-[#2a1f1a] text-white border border-black text-[9px] px-2.5 py-0.5 rounded font-sans font-semibold whitespace-nowrap animate-[bob_2.6s_infinite]">Shhh… 🤫</div>
+                <div className="bg-[#2a1f1a]/90 text-[#e8c88a] border border-black/35 font-bold text-[8px] font-sans px-2 py-0.5 rounded-full">● Brook (You)</div>
+                <img src="/assets/chars/f22.png" alt="" style={{ width: 36, imageRendering: "pixelated" }} />
+              </div>
+            </div>
+          )}
+          {activeTheme === "cafe" && (
+            <div className="w-full h-full relative" style={{ backgroundImage: "url('/assets/tiles/wood_light.png')", backgroundSize: "48px 48px" }}>
+              <div className="absolute left-0 top-0 w-[720px] h-[44px]" style={{ backgroundImage: "url('/assets/tiles/wall_cream.png')", backgroundSize: "48px 44px" }} />
+              <div className="absolute left-[490px] top-[44px] w-[230px] h-[180px]" style={{ backgroundImage: "url('/assets/tiles/floor_tan.png')", backgroundSize: "48px 48px", boxShadow: "inset 4px -4px 0 rgba(60,45,30,.4)" }} />
+              <div className="absolute left-[520px] top-[186px] bg-white border border-black px-2.5 py-0.5 font-sans font-bold text-[9px] text-[#7a5c20] rounded-full shadow-md z-10">☕ Barista bar · order = emote</div>
+              <div className="absolute left-[36px] top-[120px] w-[400px] h-[250px] rounded-[12px]" style={{ backgroundImage: "url('/assets/tiles/carpet_gold.png')", backgroundSize: "48px 48px", border: "4px solid rgba(140,105,40,.45)" }} />
+              <div className="absolute left-[140px] top-[342px] bg-white border border-black px-2.5 py-0.5 font-sans font-bold text-[9px] text-[#7a5c20] rounded-full shadow-md z-10">🎲 Sit here → random coffee-chat match</div>
+              <div className="absolute left-[512px] top-[396px] bg-white border border-black px-2.5 py-0.5 font-sans font-bold text-[9px] text-[#7a5c20] rounded-full shadow-md z-10">🎤 Demo Friday stage</div>
+              <div className="absolute select-none flex flex-col items-center gap-0.5 z-20" style={{ left: 300, top: 206, width: 64 }}>
+                <div className="bg-[#7a5c20]/90 text-[#ffe9b0] border border-black/35 font-bold text-[8px] font-sans px-2 py-0.5 rounded-full">● Nami</div>
+                <img src="/assets/chars/f08.png" alt="" style={{ width: 38, imageRendering: "pixelated" }} />
+              </div>
+              <div className="absolute select-none flex flex-col items-center gap-0.5 z-20" style={{ left: 600, top: 330, width: 64 }}>
+                <div className="bg-[#7a5c20]/90 text-[#ffe9b0] border border-black/35 font-bold text-[8px] font-sans px-2 py-0.5 rounded-full">● Luffy · presenting</div>
+                <img src="/assets/chars/f02.png" alt="" style={{ width: 40, imageRendering: "pixelated" }} />
+              </div>
+              <div className="absolute flex flex-col items-center gap-0.5 transition-all duration-500 ease-out z-30" style={{ left: cafePos.x, top: cafePos.y, width: 64 }}>
+                <div className="bg-[#7a5c20] text-white border border-black text-[9px] px-2.5 py-0.5 rounded font-sans font-semibold whitespace-nowrap animate-[bob_2.2s_infinite]">Matched! Say hi 👋</div>
+                <div className="bg-[#7a5c20]/90 text-[#ffe9b0] border border-black/35 font-bold text-[8px] font-sans px-2 py-0.5 rounded-full">● Chopper (You)</div>
+                <img src="/assets/chars/f24.png" alt="" style={{ width: 40, imageRendering: "pixelated" }} />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </header>
+
+      {/* Bottom Telemetry Bar */}
+      <div className="w-full bg-[#111115] border border-zinc-800 p-3 flex justify-between items-center text-[9.5px] text-[#7c7c82] z-10">
+        <span className="tracking-tight uppercase">
+          {activeTheme === "tech" && `TELEMETRY // COORDINATES: [X: ${techPos.x}, Y: ${techPos.y}] | CLICK MAP TO MOVE LUFFY`}
+          {activeTheme === "zen" && `TELEMETRY // COORDINATES: [X: ${zenPos.x}, Y: ${zenPos.y}] | CLICK MAP TO MOVE ROBIN`}
+          {activeTheme === "library" && `TELEMETRY // COORDINATES: [X: ${libPos.x}, Y: ${libPos.y}] | CLICK MAP TO MOVE BROOK`}
+          {activeTheme === "cafe" && `TELEMETRY // COORDINATES: [X: ${cafePos.x}, Y: ${cafePos.y}] | CLICK MAP TO MOVE CHOPPER`}
+        </span>
+        <span className="text-[8px] tracking-widest hidden sm:inline">SCALE: {scale.toFixed(2)}x · ACTIVE_THEME: {activeTheme.toUpperCase()}</span>
+      </div>
+    </div>
+  )
+}
+
+function InteractiveWorldPreview() {
+  return <TelemetryRadarPreview />
+}
+
+function PixelOfficeScene() {
+  return (
+    <div
+      style={{
+        position: "relative",
+        width: "100%",
+        height: "100%",
+        background: "#f4f1ea",
+        backgroundImage: "linear-gradient(rgba(24,21,16,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(24,21,16,0.05) 1px,transparent 1px)",
+        backgroundSize: "36px 36px",
+        overflow: "hidden",
+      }}
+    >
+      {/* sprites use actual public assets */}
+      <img src="/assets/furniture/office/window.png" alt="" style={{ position: "absolute", left: 56, top: 28, width: 96, imageRendering: "pixelated" }} />
+      <img src="/assets/furniture/office/whiteboard.png" alt="" style={{ position: "absolute", left: 420, top: 30, width: 128, imageRendering: "pixelated" }} />
+      <img src="/assets/furniture/office/wall_clock.png" alt="" style={{ position: "absolute", left: 640, top: 36, width: 56, imageRendering: "pixelated" }} />
+      <img src="/assets/furniture/office/painting.png" alt="" style={{ position: "absolute", left: 930, top: 34, width: 72, imageRendering: "pixelated" }} />
+      <img src="/assets/furniture/office/desk.png" alt="" style={{ position: "absolute", left: 120, top: 150, width: 170, imageRendering: "pixelated" }} />
+      <img src="/assets/furniture/office/pc.png" alt="" style={{ position: "absolute", left: 160, top: 96, width: 80, imageRendering: "pixelated" }} />
+      <img src="/assets/furniture/office/chair.png" alt="" style={{ position: "absolute", left: 300, top: 180, width: 66, imageRendering: "pixelated" }} />
+      <img src="/assets/furniture/office/meeting_table.png" alt="" style={{ position: "absolute", left: 480, top: 170, width: 180, imageRendering: "pixelated" }} />
+      <img src="/assets/furniture/office/sofa.png" alt="" style={{ position: "absolute", left: 730, top: 160, width: 140, imageRendering: "pixelated" }} />
+      <img src="/assets/furniture/office/floor_lamp.png" alt="" style={{ position: "absolute", left: 890, top: 130, width: 58, imageRendering: "pixelated" }} />
+      <img src="/assets/furniture/office/plant.png" alt="" style={{ position: "absolute", left: 1000, top: 160, width: 80, imageRendering: "pixelated" }} />
+      <img src="/assets/furniture/office/water_cooler.png" alt="" style={{ position: "absolute", left: 1130, top: 150, width: 60, imageRendering: "pixelated" }} />
+      {/* avatar labels */}
+      <div style={{ position: "absolute", left: 390, top: 220, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+        <div style={{ background: "#181510", color: "#fff", fontSize: 11, padding: "3px 8px", borderRadius: 6, fontFamily: "var(--font-space-grotesk, sans-serif)" }}>maya · in standup</div>
+        <div style={{ width: 26, height: 26, background: "#c66a2e", border: "2px solid #181510", borderRadius: 6 }} />
+      </div>
+      <div style={{ position: "absolute", left: 820, top: 210, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+        <div style={{ background: "#181510", color: "#fff", fontSize: 11, padding: "3px 8px", borderRadius: 6, fontFamily: "var(--font-space-grotesk, sans-serif)" }}>dev · afk</div>
+        <div style={{ width: 26, height: 26, background: "#3e9b4f", border: "2px solid #181510", borderRadius: 6 }} />
+      </div>
+    </div>
+  )
+}
+
+export function Hero({ phase = "done" }: { phase?: "loading" | "exit" | "done" }) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [e, setE] = useState(0) // scroll progress
+  const [vh, setVh] = useState(800)
+
+  useEffect(() => {
+    setVh(window.innerHeight)
+    const handleResize = () => setVh(window.innerHeight)
+    window.addEventListener("resize", handleResize)
+
+    const handleScroll = () => {
+      if (!containerRef.current) return
+      const rect = containerRef.current.getBoundingClientRect()
+      const scrollRange = 1.55 * window.innerHeight
+      const scrolled = -rect.top
+      const raw = Math.max(0, Math.min(1, scrolled / scrollRange))
+      
+      // ease in-out cubic
+      const ease = raw < 0.5 ? 4 * raw * raw * raw : 1 - Math.pow(-2 * raw + 2, 3) / 2
+      setE(ease)
+    }
+
+    window.addEventListener("scroll", handleScroll, { passive: true })
+    return () => {
+      window.removeEventListener("scroll", handleScroll)
+      window.removeEventListener("resize", handleResize)
+    }
+  }, [])
+
+  const revealed = phase === "exit" || phase === "done"
+  const heroOpacity = revealed ? 1 : 0
+  const heroY = revealed ? 0 : 46
+
+  // Calculate values
+  const imgW = (34 + 59 * e) + "vw"
+  const imgH = (42 + 42 * e) + "vh"
+  const framePad = 14 * e // in px
+  const frameOuterR = 16 + 10 * e // in px
+  const frameInnerR = 12 + 4 * e // in px
+  const headlineOpacity = revealed ? Math.max(0, 1 - e * 2.4) : 0
+  const headlineY = e * 70
+
+  return (
+    <section ref={containerRef} style={{ height: "260vh", position: "relative" }}>
+      <div style={{ position: "sticky", top: 0, height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", background: "#ffffff" }}>
+        
+        {/* expanding media frame */}
+        <div 
+          style={{ 
+            position: "relative", 
+            width: imgW, 
+            height: imgH,
+            opacity: heroOpacity,
+            transform: `translateY(${heroY}px)`,
+            transition: "opacity 0.8s ease 0.35s, transform 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.35s, width 0.05s ease-out, height 0.05s ease-out"
+          }}
+        >
+          <div style={{ position: "absolute", inset: 0, background: "#111111", borderRadius: `${frameOuterR}px`, padding: `${framePad}px`, boxSizing: "border-box", transition: "border-radius 0.05s ease-out, padding 0.05s ease-out" }}>
+            <div style={{ width: "100%", height: "100%", borderRadius: `${frameInnerR}px`, overflow: "hidden", background: "#F2F1EE", transition: "border-radius 0.05s ease-out" }}>
+              <InteractiveWorldPreview />
+            </div>
+          </div>
+        </div>
+
+        {/* headline */}
+        <h1 
+          style={{ 
+            position: "absolute", 
+            left: "4.5vw", 
+            bottom: "5vh", 
+            margin: 0, 
+            maxWidth: "56vw", 
+            fontWeight: 400, 
+            fontSize: "clamp(34px, 4.4vw, 76px)", 
+            lineHeight: 1.08, 
+            letterSpacing: "-0.03em", 
+            color: "#111111",
+            fontFamily: "var(--font-space-grotesk, sans-serif)",
+            opacity: headlineOpacity, 
+            transform: `translateY(${headlineY}px)`,
+            transition: "opacity 0.1s ease-out, transform 0.1s ease-out"
+          }}
+        >
+          Build living virtual workspaces where teams meet and collaborate with real‑time spatial presence.
+        </h1>
+
+        {/* scroll cue */}
+        <div style={{ position: "absolute", right: "4.5vw", bottom: "5vh", display: "flex", alignItems: "center", gap: 10, fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: "#111111", opacity: headlineOpacity, transition: "opacity 0.1s ease-out" }}>
+          <span style={{ fontFamily: "var(--font-space-grotesk, sans-serif)" }}>Scroll</span>
+          <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "#111111" }}></span>
+        </div>
+
+      </div>
+    </section>
   )
 }
 
 // Staggered masonry client/stack logo reel
 export function ClientLogoReel() {
-  const logos = ["NEXT.JS", "TAILWIND CSS", "WEBRTC", "COLYSEUS.JS", "TYPESCRIPT"]
+  const logos = [
+    "MONOREPO",
+    "NEXT.JS",
+    "EXPRESS",
+    "BUN",
+    "WEBRTC",
+    "COLYSEUS.JS",
+    "TYPESCRIPT",
+    "GODOT",
+  ]
+  const duplicatedLogos = [...logos, ...logos, ...logos, ...logos]
+
   return (
-    <section className="bg-white py-16 border-t border-black/10">
-      <div className="mx-auto max-w-6xl px-6">
-        <div className="flex flex-wrap items-center justify-between gap-12 opacity-50 grayscale hover:grayscale-0 transition-all duration-300">
-          {logos.map((l) => (
-            <div key={l} className="text-[16px] font-extrabold font-sans tracking-widest text-black">
-              {l}
+    <section className="bg-white py-16 border-t border-black/10 overflow-hidden relative">
+      <style>{`
+        @keyframes marquee-right {
+          0% {
+            transform: translateX(-50%);
+          }
+          100% {
+            transform: translateX(0%);
+          }
+        }
+        .animate-marquee-right {
+          display: flex;
+          width: max-content;
+          animation: marquee-right 20s linear infinite;
+        }
+      `}</style>
+      <div className="w-full relative flex overflow-x-hidden">
+        <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+        <div className="absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+
+        <div className="animate-marquee-right flex gap-16 py-2 opacity-40 hover:opacity-85 transition-opacity duration-300 select-none">
+          {duplicatedLogos.map((l, index) => (
+            <div
+              key={`${l}-${index}`}
+              className="text-[14px] font-mono tracking-[0.2em] font-bold text-black flex items-center gap-3"
+            >
+              <span>{l}</span>
+              <span className="text-[#dadbd7] text-[10px]">·</span>
             </div>
           ))}
         </div>
       </div>
     </section>
+  )
+}
+
+function ProximityAudioVisualizer() {
+  return (
+    <div className="relative w-full h-full flex items-center justify-center bg-[#aadcff]/30 overflow-hidden select-none">
+      {/* Grid Coordinates Overlay */}
+      <div className="absolute inset-0 opacity-15" style={{
+        backgroundImage: "radial-gradient(circle, rgba(0,0,0,0.15) 1px, transparent 1px)",
+        backgroundSize: "20px 20px"
+      }} />
+      
+      {/* Central User Node */}
+      <div className="absolute z-10 flex flex-col items-center gap-1.5">
+        <div className="h-7 w-7 border-2 border-black bg-white flex items-center justify-center font-mono text-[8px] font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+          YOU
+        </div>
+      </div>
+      
+      {/* Proximity Limit Boundary Ring */}
+      <div className="absolute h-32 w-32 rounded-full border-2 border-dashed border-black/20 animate-[pulse-ring_3s_infinite_ease-in-out]" />
+      
+      {/* Orbiting Peer Node */}
+      <div className="absolute z-10 flex flex-col items-center gap-1.5 animate-[orbit_8s_infinite_ease-in-out]">
+        <div className="h-6 w-6 border-2 border-black bg-[#fd8a65] flex items-center justify-center font-mono text-[7px] font-bold shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]">
+          PEER
+        </div>
+      </div>
+
+      {/* Proximity Soundwave Equalizer (Bottom-Right) */}
+      <div className="absolute bottom-5 right-6 flex gap-1 items-end h-8">
+        {[0.6, 0.9, 0.4, 0.8, 0.5].map((val, i) => (
+          <span 
+            key={i}
+            className="w-1.5 bg-black rounded-sm animate-[soundwave_1s_infinite_ease-in-out]" 
+            style={{ 
+              height: `${val * 100}%`,
+              animationDelay: `${i * 0.15}s`,
+              transformOrigin: "bottom"
+            }} 
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function WebRTCStreamVisualizer() {
+  return (
+    <div className="relative w-full h-full flex items-center justify-center bg-[#e7d8ee]/30 overflow-hidden select-none p-4">
+      {/* Grid Coordinates Overlay */}
+      <div className="absolute inset-0 opacity-15" style={{
+        backgroundImage: "radial-gradient(circle, rgba(0,0,0,0.15) 1px, transparent 1px)",
+        backgroundSize: "20px 20px"
+      }} />
+
+      <svg className="w-full h-full max-h-[140px] z-10" viewBox="0 0 200 100">
+        {/* Animated Flowing Data Paths */}
+        <path d="M 20 20 L 100 50 L 180 20" fill="none" stroke="black" strokeWidth="2" strokeDasharray="6, 6" className="animate-[flow-line_1.2s_infinite_linear]" />
+        <path d="M 20 50 L 100 50 L 180 50" fill="none" stroke="black" strokeWidth="2" strokeDasharray="6, 6" className="animate-[flow-line_0.8s_infinite_linear]" />
+        <path d="M 20 80 L 100 50 L 180 80" fill="none" stroke="black" strokeWidth="2" strokeDasharray="6, 6" className="animate-[flow-line_1.6s_infinite_linear]" />
+        
+        {/* Central Router Node */}
+        <circle cx="100" cy="50" r="20" fill="white" stroke="black" strokeWidth="2.5" />
+        <text x="100" y="53" textAnchor="middle" fontSize="7" fontWeight="bold" fontFamily="monospace">RTC_MUX</text>
+        
+        {/* Source Nodes */}
+        <circle cx="20" cy="20" r="6" fill="#aadcff" stroke="black" strokeWidth="2" />
+        <circle cx="20" cy="50" r="6" fill="#fd8a65" stroke="black" strokeWidth="2" />
+        <circle cx="20" cy="80" r="6" fill="#ffff8c" stroke="black" strokeWidth="2" />
+        
+        {/* Destination Nodes */}
+        <circle cx="180" cy="20" r="6" fill="#aadcff" stroke="black" strokeWidth="2" />
+        <circle cx="180" cy="50" r="6" fill="#fd8a65" stroke="black" strokeWidth="2" />
+        <circle cx="180" cy="80" r="6" fill="#ffff8c" stroke="black" strokeWidth="2" />
+      </svg>
+    </div>
+  )
+}
+
+function AutopilotConsoleVisualizer() {
+  const [logs, setLogs] = useState<string[]>([
+    "> INIT COORDS PARSER // CONSOLE ACTIVE",
+    "> TELEMETRY BINDING ATTACHED",
+  ])
+  
+  useEffect(() => {
+    const pool = [
+      "> SPEAKER ALICE: 'adjust audio zone bounds'",
+      "> NLP INFERENCE: IDENTIFIED WORKSPACE CONFIG",
+      "> ACTIVE TOPICS: [audio_scale, latency, webrtc]",
+      "> GENERATED ACTION ITEM: TWEAK SOUND ATTENUATION",
+      "> DETECTED SPEAKER dev: 'handshake timing is low'",
+      "> COMPLETED SYNC PROCESS WITH COLYSEUS_GATEWAY",
+    ]
+    let idx = 0
+    const interval = setInterval(() => {
+      setLogs((prev) => {
+        const next = [...prev, pool[idx] as string]
+        if (next.length > 5) next.shift() // keep last 5 lines
+        return next
+      })
+      idx = (idx + 1) % pool.length
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [])
+
+  return (
+    <div className="relative w-full h-full flex flex-col bg-black p-6 font-mono text-[9px] text-[#28a745] overflow-hidden leading-normal select-none">
+      <div className="absolute top-3 right-4 h-1.5 w-1.5 rounded-full bg-[#28a745] animate-pulse" />
+      <div className="flex-grow flex flex-col gap-1.5 justify-end font-mono">
+        {logs.map((log, i) => (
+          <div key={i} className="truncate tracking-wide">{log}</div>
+        ))}
+        <div className="flex items-center gap-0.5 mt-0.5 opacity-90">
+          <span>&gt; STREAMING COORD_METRICS</span>
+          <span className="w-1.5 h-3 bg-[#28a745] animate-pulse" />
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -496,12 +896,10 @@ export function Features() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
         {/* Column 1: Proximity Audio */}
         <div className="flex flex-col gap-6">
-          <div className="rounded-[24px] overflow-hidden border border-black bg-[#aadcff] aspect-[4/3] p-8 flex flex-col justify-between">
-            <span className="text-[12px] font-mono text-black font-bold uppercase">/ FIELD_DYNAMICS</span>
-            <div className="flex flex-col gap-1.5">
-              <span className="h-2 w-full rounded-full bg-black/10 relative overflow-hidden"><span className="absolute inset-y-0 left-0 w-2/3 bg-black" /></span>
-              <span className="h-2 w-full rounded-full bg-black/10 relative overflow-hidden"><span className="absolute inset-y-0 left-0 w-1/3 bg-black" /></span>
-              <span className="h-2 w-full rounded-full bg-black/10 relative overflow-hidden"><span className="absolute inset-y-0 left-0 w-4/5 bg-black" /></span>
+          <div className="rounded-[24px] overflow-hidden border border-black bg-[#aadcff] aspect-[4/3] flex flex-col justify-between hover:shadow-lg hover:border-black transition-all duration-300 transform hover:-translate-y-1">
+            <span className="text-[12px] font-mono text-black font-bold uppercase p-8 pb-0">/ FIELD_DYNAMICS</span>
+            <div className="flex-grow h-0 w-full overflow-hidden">
+              <ProximityAudioVisualizer />
             </div>
           </div>
           <div>
@@ -518,10 +916,10 @@ export function Features() {
 
         {/* Column 2: WebRTC - Staggered offset (margin-top in desktop) */}
         <div className="flex flex-col gap-6 md:mt-16">
-          <div className="rounded-[24px] overflow-hidden border border-black bg-[#e7d8ee] aspect-[4/3] p-8 flex flex-col justify-between">
-            <span className="text-[12px] font-mono text-black font-bold uppercase">/ MULTIPLEX_STREAM</span>
-            <div className="flex justify-center items-center h-full">
-              <span className="h-16 w-16 rounded-full border-2 border-black flex items-center justify-center font-mono text-[10px] text-black">RTC_MUX</span>
+          <div className="rounded-[24px] overflow-hidden border border-black bg-[#e7d8ee] aspect-[4/3] flex flex-col justify-between hover:shadow-lg hover:border-black transition-all duration-300 transform hover:-translate-y-1">
+            <span className="text-[12px] font-mono text-black font-bold uppercase p-8 pb-0">/ MULTIPLEX_STREAM</span>
+            <div className="flex-grow h-0 w-full overflow-hidden">
+              <WebRTCStreamVisualizer />
             </div>
           </div>
           <div>
@@ -538,12 +936,10 @@ export function Features() {
 
         {/* Column 3: AI Summarizer */}
         <div className="flex flex-col gap-6">
-          <div className="rounded-[24px] overflow-hidden border border-black bg-[#ffff8c] aspect-[4/3] p-8 flex flex-col justify-between">
-            <span className="text-[12px] font-mono text-black font-bold uppercase">/ LOGS_PARSING</span>
-            <div className="flex flex-col gap-2 font-mono text-[9px] text-black/70">
-              <div>&gt; PARSING MEETING ZONE 1</div>
-              <div>&gt; DETECTED SPEAKER: ALICE</div>
-              <div>&gt; SUMMARIZING ACTION ITEMS...</div>
+          <div className="rounded-[24px] overflow-hidden border border-black bg-black aspect-[4/3] flex flex-col justify-between hover:shadow-lg hover:border-black transition-all duration-300 transform hover:-translate-y-1">
+            <span className="text-[12px] font-mono text-[#28a745] font-bold uppercase p-8 pb-0">/ LOGS_PARSING</span>
+            <div className="flex-grow h-0 w-full overflow-hidden">
+              <AutopilotConsoleVisualizer />
             </div>
           </div>
           <div>
@@ -566,29 +962,123 @@ export function Features() {
 export function StrategySection() {
   const serviceCards = [
     {
-      title: "Strategy",
-      desc: "We establish clarity and direction before anything gets built. Discovery, benchmarking and coordinate mapping that grounds decisions in spatial flow, not assumptions. We interrogate the requirements, identify what's actually possible, and set a common thread."
+      head: "/ AUDIO_PIPELINE",
+      title: "Spatial Audio Engine",
+      desc: "Drives real-time 3D panning audio based on coordinates. As peers move closer, voice levels dynamically mix, creating natural proximity-based conversations.",
+      accent: "#aadcff", // Celeste
+      renderVisual: () => (
+        <div className="relative h-16 w-full bg-[#aadcff]/10 rounded-[12px] border border-black/10 flex items-center justify-center gap-1.5 overflow-hidden">
+          {[0.6, 0.4, 0.8, 0.5, 0.7, 0.3].map((val, i) => (
+            <span
+              key={i}
+              className={`w-1.5 bg-[#276284] rounded-full bar-anim bar-anim-${(i % 4) + 1}`}
+              style={{
+                height: `${val * 100}%`,
+                animationDelay: `${i * 0.15}s`,
+                maxHeight: "36px"
+              }}
+            />
+          ))}
+        </div>
+      )
     },
     {
-      title: "Brand",
-      desc: "We design visual and verbal systems that resonate and endure. Space guidelines, component libraries, and visual assets are built for consistency across every coordinate zone and room, rendering a unique spatial brand identity."
+      head: "/ TELEMETRY_MESH",
+      title: "State Sync Engine",
+      desc: "Synchronizes user positions, states, and client telemetry via Bun and Colyseus.js. Delivering sub-50ms updates for seamless multiplayer interactions.",
+      accent: "#fd8a65", // Coral
+      renderVisual: () => (
+        <div className="relative h-16 w-full bg-[#fd8a65]/10 rounded-[12px] border border-black/10 flex items-center justify-center overflow-hidden">
+          <div className="relative h-6 w-6 rounded-full bg-[#fd8a65] flex items-center justify-center">
+            <span className="absolute inset-0 rounded-full bg-[#fd8a65] animate-ping opacity-60" />
+            <span className="absolute inset-[-8px] rounded-full bg-[#fd8a65] animate-ping opacity-30" style={{ animationDelay: "0.4s" }} />
+            <span className="h-2.5 w-2.5 rounded-full bg-white" />
+          </div>
+        </div>
+      )
     },
     {
-      title: "Website",
-      desc: "We build brand-led workspaces that work hard for your business. Clear messaging, smooth user navigation journeys, and coordinate management systems with robust guardrails baked in. Interfaces your teams can use without losing consistency."
+      head: "/ CANVAS_GEOMETRY",
+      title: "Custom Space Editor",
+      desc: "Create, partition, and theme rooms in a flexible canvas workspace. Build custom interactive zones, focus rooms, and private corridors instantly.",
+      accent: "#e7d8ee", // Malva
+      renderVisual: () => (
+        <div className="relative h-16 w-full bg-[#e7d8ee]/10 rounded-[12px] border border-black/10 flex items-center justify-center overflow-hidden">
+          <div className="relative w-12 h-12 flex flex-col items-center justify-center">
+            <div className="absolute w-8 h-4 bg-[#e7d8ee] border border-[#7a488f] rounded-[2px] iso-layer iso-layer-1" style={{ transform: "translateY(-6px) rotate(-15deg) skewX(20deg)" }} />
+            <div className="absolute w-8 h-4 bg-white border border-[#7a488f] rounded-[2px] iso-layer iso-layer-2" style={{ transform: "translateY(0px) rotate(-15deg) skewX(20deg)" }} />
+            <div className="absolute w-8 h-4 bg-[#7a488f] border border-black rounded-[2px] iso-layer iso-layer-3" style={{ transform: "translateY(6px) rotate(-15deg) skewX(20deg)" }} />
+          </div>
+        </div>
+      )
     },
     {
-      title: "Product",
-      desc: "We create platforms and digital tools that solve real presence problems. We design and build interaction flows, spatial audio zones, and low-latency client libraries. Through fast prototyping and testing, we validate direction early."
-    },
-    {
-      title: "Development",
-      desc: "We back our designs with robust engineering. Spatial engine programmers and web developers work hand-in-hand to create technology built for performance, low-latency multiplayer syncing, and long-term flexibility."
+      head: "/ PLATFORM_PORTABILITY",
+      title: "Multi-Platform SDK",
+      desc: "Run TwoD VERSE on Next.js, or connect via our Godot SDK for native desktop and 3D spatial clients. Complete developer flexibility out of the box.",
+      accent: "#bbf7d0", // Light Green
+      renderVisual: () => (
+        <div className="relative h-16 w-full bg-black rounded-[12px] p-3 border border-black/20 flex flex-col justify-center overflow-hidden">
+          <code className="text-[7.5px] font-mono text-[#28a745] leading-normal tracking-wide block truncate">
+            {`$ bun add @twoD-verse/client`}
+          </code>
+          <code className="text-[7.5px] font-mono text-white/60 leading-normal tracking-wide block truncate mt-1 flex items-center gap-0.5">
+            {`> Initializing Spatial Engine...`}
+            <span className="w-1 h-3 bg-[#28a745] animate-pulse" />
+          </code>
+        </div>
+      )
     }
   ]
-
   return (
     <section id="services" className="relative mx-auto max-w-6xl px-6 py-36 border-t border-black">
+      <style>{`
+        @keyframes soundwave {
+          0%, 100% { transform: scaleY(0.4); }
+          50% { transform: scaleY(1); }
+        }
+        .bar-anim {
+          animation: soundwave 1.2s ease-in-out infinite;
+          transform-origin: center;
+        }
+        .bar-anim-1 { animation-duration: 0.9s; }
+        .bar-anim-2 { animation-duration: 0.6s; }
+        .bar-anim-3 { animation-duration: 0.8s; }
+        .bar-anim-4 { animation-duration: 0.5s; }
+
+        .iso-layer {
+          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .card-hover:hover .iso-layer-1 {
+          transform: translateY(-12px) rotate(-15deg) skewX(20deg) !important;
+        }
+        .card-hover:hover .iso-layer-2 {
+          transform: translateY(0px) rotate(-15deg) skewX(20deg) !important;
+        }
+        .card-hover:hover .iso-layer-3 {
+          transform: translateY(12px) rotate(-15deg) skewX(20deg) !important;
+        }
+
+        @keyframes pulse-ring {
+          0% { transform: scale(0.85); opacity: 0.15; }
+          50% { transform: scale(1.1); opacity: 0.45; }
+          100% { transform: scale(0.85); opacity: 0.15; }
+        }
+        @keyframes orbit {
+          0%, 100% { transform: translate(45px, -22px); }
+          25% { transform: translate(-22px, -35px); }
+          50% { transform: translate(-45px, 22px); }
+          75% { transform: translate(22px, 35px); }
+        }
+        @keyframes flow-line {
+          0% { stroke-dashoffset: 24; }
+          100% { stroke-dashoffset: 0; }
+        }
+        @keyframes bob {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-5px); }
+        }
+      `}</style>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
         <div className="lg:col-span-8">
           <h2 className="uppercase text-black h-2-tight" style={{ fontSize: "clamp(1.875rem, 1.092rem + 2.609vw, 3.375rem)" }}>
@@ -605,15 +1095,24 @@ export function StrategySection() {
         </div>
       </div>
 
-      {/* Services Grid with Detailed Text Cards (matching frame 40) */}
-      <div className="mt-16 grid grid-cols-1 md:grid-cols-5 gap-6">
+      {/* Services Grid with 4 Unique Animated Cards */}
+      <div className="mt-16 grid grid-cols-1 md:grid-cols-4 gap-6">
         {serviceCards.map((sc) => (
           <div 
             key={sc.title} 
-            className="rounded-[24px] bg-[#f0f0ef] border border-black/10 p-8 flex flex-col gap-6"
+            className="card-hover rounded-[24px] bg-[#f0f0ef] border border-black/10 p-6.5 flex flex-col justify-between min-h-[340px] hover:border-black hover:bg-white hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 cursor-pointer"
+            style={{
+              outline: "none"
+            }}
           >
-            <h3 className="text-[18px] font-bold text-black uppercase tracking-tight">{sc.title}</h3>
-            <p className="text-[11px] text-[#77786d] leading-relaxed tracking-tight">{sc.desc}</p>
+            <div className="flex flex-col gap-5">
+              <span className="text-[9px] font-mono font-bold text-[#77786d] uppercase tracking-widest block">{sc.head}</span>
+              <h3 className="text-[17px] font-bold text-black uppercase tracking-tight leading-snug">{sc.title}</h3>
+              <p className="text-[11.5px] text-[#77786d] leading-relaxed tracking-tight" style={{ fontFamily: "var(--font-messina-sans)" }}>{sc.desc}</p>
+            </div>
+            <div className="mt-6 pt-4 border-t border-black/5">
+              {sc.renderVisual()}
+            </div>
           </div>
         ))}
       </div>
@@ -623,28 +1122,25 @@ export function StrategySection() {
 
 export function HowItWorks() {
   return (
-    <section id="how" className="px-6 py-20 border-t border-black bg-[#f0f0ef]">
+    <section id="how" className="px-6 py-24 border-t-[4px] border-black bg-[#f5f4f0] select-none font-mono">
       <div className="mx-auto max-w-6xl">
-        <p className="text-[12px] font-mono font-bold tracking-widest uppercase text-black mb-2">/ DEPLOYMENT PIPELINE</p>
+        <p className="text-[12px] font-bold tracking-widest uppercase text-black mb-2">/ DEPLOYMENT PIPELINE</p>
         <h2 
-          className="uppercase text-black h-2-tight mb-16"
-          style={{ fontSize: "clamp(1.875rem, 1.092rem + 2.609vw, 3.375rem)" }}
+          className="uppercase text-black font-extrabold tracking-tight mb-16 text-3xl sm:text-4xl"
         >
           System initialization flow
         </h2>
-        <div className="grid grid-cols-1 gap-12 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           {STEPS.map((s) => (
-            <div key={s.n} className="border-t border-black pt-6">
-              <span className="text-[12px] font-mono text-[#77786d] block mb-4">{s.n}</span>
+            <div key={s.n} className="border-[3px] border-black bg-white p-6 rounded-none shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[4px_4px_0px_rgba(0,0,0,1)] transition-all">
+              <span className="bg-black text-white px-2.5 py-0.5 text-[10px] font-bold font-mono inline-block mb-4">{s.n}</span>
               <h3 
-                className="uppercase text-black"
-                style={{ fontSize: "17.7376px", fontWeight: "500", letterSpacing: "-0.354752px" }}
+                className="uppercase text-black font-bold tracking-tight text-[16px]"
               >
                 {s.title}
               </h3>
               <p 
-                className="mt-3 text-[#77786d] leading-relaxed"
-                style={{ fontSize: "13.8752px", letterSpacing: "-0.354752px" }}
+                className="mt-3 text-zinc-600 leading-relaxed text-[11.5px]"
               >
                 {s.text}
               </p>
@@ -656,55 +1152,168 @@ export function HowItWorks() {
   )
 }
 
-// Gorgeous white-on-black collaborative footer (matching frame 5)
+export function FAQ() {
+  const [openFaq, setOpenFaq] = useState<number>(-1)
+  
+  const faqData = [
+    { q: 'What is TwoD VERSE?', a: 'A 2D spatial workspace where your team shares one living map. You move an avatar between rooms and desks, and conversations happen based on where you stand.' },
+    { q: 'Does it run in the browser?', a: 'Yes. Nothing to install for you or your guests — share a link and anyone joins from Chrome, Safari, Firefox, or Edge on desktop and mobile.' },
+    { q: 'How does spatial audio work?', a: 'Voices get louder as avatars move closer and fade as they move apart, so several conversations can share the same room without talking over each other.' },
+    { q: 'How many people can join a space?', a: 'Free spaces host up to 25 people at once. Paid plans scale to hundreds of concurrent teammates and guests across rooms and stages.' },
+    { q: 'Is there a free plan?', a: 'Yes — one space with all core features, free forever. Upgrade when you need bigger capacity, custom floors, or guest analytics.' }
+  ]
+
+  return (
+    <section id="faq" className="px-6 py-28 border-t border-zinc-200 bg-white select-none">
+      <div className="mx-auto max-w-6xl">
+        
+        {/* Centered Header block like Golden Child */}
+        <div className="text-center mb-20">
+          <p className="text-[11px] font-mono tracking-[0.25em] uppercase text-zinc-400">FAQS</p>
+          <h2 
+            className="mt-3 text-black font-normal tracking-tight text-4xl sm:text-5xl"
+            style={{ fontFamily: "Georgia, serif", textTransform: "none" }}
+          >
+            Frequently Asked Questions
+          </h2>
+        </div>
+
+        {/* Widescreen Video block matching Golden Child banner */}
+        <div className="w-full mb-16 overflow-hidden rounded-[24px] border border-zinc-200/50 shadow-sm">
+          <video 
+            src="/videos/v2.mp4" 
+            autoPlay 
+            loop 
+            muted 
+            playsInline 
+            className="w-full h-auto max-h-[480px] object-cover block" 
+          />
+        </div>
+
+        {/* 2-Column Split Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+          
+          {/* Left Column: FAQ Items styled like Nocturn (soft, faded, rounded cards) */}
+          <div className="lg:col-span-8 flex flex-col gap-4">
+            {faqData.map((f, i) => (
+              <div 
+                key={i} 
+                className="bg-[#f8f9fc] p-6 rounded-[16px] transition-all duration-200 hover:bg-[#f3f5fa]"
+              >
+                <button 
+                  onClick={() => setOpenFaq(openFaq === i ? -1 : i)} 
+                  className="w-full flex items-center justify-between gap-5 bg-transparent border-0 outline-none cursor-pointer text-left font-medium text-[16px] text-zinc-900"
+                >
+                  <span style={{ fontFamily: "var(--font-space-grotesk, system-ui), sans-serif", letterSpacing: "-0.01em" }}>{f.q}</span>
+                  <span className="text-[20px] font-medium text-[#5b5bf0] select-none transition-transform duration-200">
+                    {openFaq === i ? "−" : "+"}
+                  </span>
+                </button>
+                {openFaq === i && (
+                  <div 
+                    className="mt-4 pt-4 border-t border-zinc-200/50 text-[14px] text-zinc-500 leading-relaxed"
+                    style={{ fontFamily: "var(--font-space-grotesk, system-ui), sans-serif" }}
+                  >
+                    {f.a}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Right Column: "Didn't find the answer..." styled like Golden Child */}
+          <div className="lg:col-span-4 lg:sticky lg:top-24 flex flex-col gap-6 p-2">
+            <h3 
+              className="text-zinc-950 text-3xl font-normal leading-tight tracking-tight"
+              style={{ fontFamily: "Georgia, serif" }}
+            >
+              Didn't find the answer you were looking for?
+            </h3>
+            <a 
+              href="mailto:hello@twodverse.com"
+              className="text-[11px] font-bold tracking-[0.2em] uppercase text-zinc-800 hover:text-black transition-colors self-start border-b-2 border-black pb-1.5 font-mono"
+            >
+              SEND US AN EMAIL
+            </a>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+  )
+}
+
+// Upgraded white-on-black collaborative footer matching mockup with pixel-art vibe
 export function Footer() {
   return (
-    <footer className="bg-black text-white px-6 pt-36 pb-20 border-t border-black">
-      <div className="mx-auto max-w-6xl flex flex-col justify-between min-h-[400px]">
-        {/* Let's explore block */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-          <div>
-            <h2 className="text-4xl md:text-6xl font-mono uppercase tracking-tighter leading-none">
-              Let's explore
-              <br />
-              what's next.
+    <footer className="bg-black text-white px-6 pt-24 pb-12 border-t-[4px] border-black select-none font-mono">
+      <div className="mx-auto max-w-6xl">
+        
+        <div className="flex flex-col lg:flex-row items-start justify-between gap-16 pb-20 border-b-[4px] border-white/10">
+          <div className="max-w-[340px] flex flex-col gap-5">
+            <h2 className="text-3xl font-extrabold tracking-tight text-white leading-tight uppercase">
+              Start working somewhere great.
             </h2>
-          </div>
-          <div>
+            <p className="text-[12px] text-zinc-400 leading-relaxed">
+              A living workspace for your whole team. Get started in seconds, no setup needed.
+            </p>
             <Link
               href="/verse"
-              className="rounded-[100px] bg-white hover:bg-zinc-200 text-black px-10 py-5 text-[12px] font-bold font-mono uppercase tracking-widest transition-all duration-200 border border-white flex items-center gap-2"
+              className="rounded-none bg-white border-[3px] border-white hover:bg-zinc-200 text-black px-8 py-3.5 text-xs font-bold uppercase tracking-widest mt-2 self-start shadow-[4px_4px_0px_rgba(255,255,255,0.15)] transition-all duration-75 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_rgba(255,255,255,0.15)] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none"
             >
-              Let's Collaborate <span>▶</span>
+              Get started
             </Link>
           </div>
-        </div>
-
-        {/* Bottom Metadata & Giant Logo overlay */}
-        <div className="mt-32 pt-12 border-t border-white/10 flex flex-col gap-12">
-          {/* Huge Logo */}
-          <div className="w-full text-center">
-            <h1 className="text-[15vw] md:text-[18vw] font-black tracking-tighter uppercase leading-[0.8] select-none text-white opacity-95">
-              VERSE
-            </h1>
-          </div>
-
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 text-[9px] font-mono uppercase tracking-wider text-[#77786d]">
-            <div className="flex flex-wrap items-center gap-4">
-              <a href="#" className="hover:text-white transition-colors duration-150">Privacy Policy</a>
-              <span>·</span>
-              <a href="#" className="hover:text-white transition-colors duration-150">Cookie Policy</a>
-              <span>·</span>
-              <span>© VERSE 2026. ALL RIGHTS RESERVED.</span>
+          
+          <div className="grid grid-cols-3 gap-16">
+            {/* Product */}
+            <div className="flex flex-col gap-3.5 text-xs text-zinc-400">
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Product</span>
+              <a href="#" className="hover:text-white transition-colors duration-150">Spaces</a>
+              <a href="#" className="hover:text-white transition-colors duration-150">Pricing</a>
+              <a href="#" className="hover:text-white transition-colors duration-150">Templates</a>
+              <a href="#" className="hover:text-white transition-colors duration-150">Changelog</a>
             </div>
             
-            <div className="flex gap-4">
-              <a href="#" className="rounded-[100px] bg-zinc-900 px-3.5 py-1 text-white border border-white/10 hover:bg-zinc-800">GitHub</a>
-              <a href="#" className="rounded-[100px] bg-zinc-900 px-3.5 py-1 text-white border border-white/10 hover:bg-zinc-800">Discord</a>
-              <a href="#" className="rounded-[100px] bg-zinc-900 px-3.5 py-1 text-white border border-white/10 hover:bg-zinc-800">Specs</a>
+            {/* Company */}
+            <div className="flex flex-col gap-3.5 text-xs text-zinc-400">
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Company</span>
+              <a href="#" className="hover:text-white transition-colors duration-150">About</a>
+              <a href="#" className="hover:text-white transition-colors duration-150">Careers</a>
+              <a href="#" className="hover:text-white transition-colors duration-150">Journal</a>
+              <a href="#" className="hover:text-white transition-colors duration-150">Contact</a>
+            </div>
+            
+            {/* Legal */}
+            <div className="flex flex-col gap-3.5 text-xs text-zinc-400">
+              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Legal</span>
+              <a href="#" className="hover:text-white transition-colors duration-150">Privacy</a>
+              <a href="#" className="hover:text-white transition-colors duration-150">Terms</a>
+              <a href="#" className="hover:text-white transition-colors duration-150">Security</a>
             </div>
           </div>
         </div>
+
+        {/* Giant wordmark */}
+        <div 
+          className="text-center text-white font-extrabold tracking-tighter pt-16 pb-8 leading-none block select-none uppercase"
+          style={{
+            fontFamily: "'Anybody', sans-serif",
+            fontWeight: 900,
+            fontStretch: "140%",
+            fontSize: "clamp(48px, 10.5vw, 190px)"
+          }}
+        >
+          TwoD VERSE
+        </div>
+
+        {/* Bottom Bar */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] text-zinc-500 uppercase tracking-widest pt-4">
+          <span>© 2026 TwoD VERSE</span>
+          <span>Spatial presence for every team</span>
+        </div>
+
       </div>
     </footer>
   )

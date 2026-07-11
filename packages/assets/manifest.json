@@ -6,8 +6,7 @@
     "origin": "in-house",
     "license": "owned",
     "tags": [
-      "spike",
-      "placeholder"
+      "programmatic"
     ]
   },
   {
@@ -17,8 +16,7 @@
     "origin": "in-house",
     "license": "owned",
     "tags": [
-      "spike",
-      "placeholder"
+      "programmatic"
     ]
   },
   {
@@ -28,33 +26,1983 @@
     "origin": "in-house",
     "license": "owned",
     "tags": [
-      "spike",
-      "placeholder",
-      "voice-zone"
+      "programmatic"
     ]
   },
   {
-    "id": "avatar-svg-kit",
+    "id": "char-brook",
     "kind": "avatar",
-    "path": "programmatic:svg-art-kit",
+    "path": "characters/brook.png",
     "origin": "in-house",
     "license": "owned",
     "tags": [
       "character",
-      "svg",
-      "variants"
+      "godot"
     ]
   },
   {
-    "id": "office-furniture-svg",
+    "id": "char-chopper",
+    "kind": "avatar",
+    "path": "characters/chopper.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "character",
+      "godot"
+    ]
+  },
+  {
+    "id": "char-franky",
+    "kind": "avatar",
+    "path": "characters/franky.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "character",
+      "godot"
+    ]
+  },
+  {
+    "id": "char-luffy",
+    "kind": "avatar",
+    "path": "characters/luffy.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "character",
+      "godot"
+    ]
+  },
+  {
+    "id": "char-nami",
+    "kind": "avatar",
+    "path": "characters/nami.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "character",
+      "godot"
+    ]
+  },
+  {
+    "id": "char-robin",
+    "kind": "avatar",
+    "path": "characters/robin.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "character",
+      "godot"
+    ]
+  },
+  {
+    "id": "char-sanji",
+    "kind": "avatar",
+    "path": "characters/sanji.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "character",
+      "godot"
+    ]
+  },
+  {
+    "id": "char-usopp",
+    "kind": "avatar",
+    "path": "characters/usopp.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "character",
+      "godot"
+    ]
+  },
+  {
+    "id": "char-zoro",
+    "kind": "avatar",
+    "path": "characters/zoro.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "character",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-bonsai-a",
     "kind": "tileset",
-    "path": "programmatic:svg-art-kit",
+    "path": "furniture/office/bonsai_a.png",
     "origin": "in-house",
     "license": "owned",
     "tags": [
       "furniture",
-      "svg",
-      "office"
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-bonsai-b",
+    "kind": "tileset",
+    "path": "furniture/office/bonsai_b.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-bonsai-c",
+    "kind": "tileset",
+    "path": "furniture/office/bonsai_c.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-bookshelf",
+    "kind": "tileset",
+    "path": "furniture/office/bookshelf.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-chair",
+    "kind": "tileset",
+    "path": "furniture/office/chair.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-coffee-machine",
+    "kind": "tileset",
+    "path": "furniture/office/coffee_machine.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-desk",
+    "kind": "tileset",
+    "path": "furniture/office/desk.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-door",
+    "kind": "tileset",
+    "path": "furniture/office/door.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-floor-lamp",
+    "kind": "tileset",
+    "path": "furniture/office/floor_lamp.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-fridge",
+    "kind": "tileset",
+    "path": "furniture/office/fridge.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-koi-pond",
+    "kind": "tileset",
+    "path": "furniture/office/koi_pond.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-laptop",
+    "kind": "tileset",
+    "path": "furniture/office/laptop.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-meeting-table",
+    "kind": "tileset",
+    "path": "furniture/office/meeting_table.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-painting",
+    "kind": "tileset",
+    "path": "furniture/office/painting.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-pc",
+    "kind": "tileset",
+    "path": "furniture/office/pc.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-pet-bed",
+    "kind": "tileset",
+    "path": "furniture/office/pet_bed.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-plant",
+    "kind": "tileset",
+    "path": "furniture/office/plant.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-projector",
+    "kind": "tileset",
+    "path": "furniture/office/projector.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-projector-screen",
+    "kind": "tileset",
+    "path": "furniture/office/projector_screen.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-rug",
+    "kind": "tileset",
+    "path": "furniture/office/rug.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-sofa",
+    "kind": "tileset",
+    "path": "furniture/office/sofa.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-trash-bin",
+    "kind": "tileset",
+    "path": "furniture/office/trash_bin.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-wall-clock",
+    "kind": "tileset",
+    "path": "furniture/office/wall_clock.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-water-cooler",
+    "kind": "tileset",
+    "path": "furniture/office/water_cooler.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-whiteboard",
+    "kind": "tileset",
+    "path": "furniture/office/whiteboard.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-office-window",
+    "kind": "tileset",
+    "path": "furniture/office/window.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-bonsai-a",
+    "kind": "tileset",
+    "path": "furniture/cafe/bonsai_a.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-bonsai-b",
+    "kind": "tileset",
+    "path": "furniture/cafe/bonsai_b.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-bonsai-c",
+    "kind": "tileset",
+    "path": "furniture/cafe/bonsai_c.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-bookshelf",
+    "kind": "tileset",
+    "path": "furniture/cafe/bookshelf.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-chair",
+    "kind": "tileset",
+    "path": "furniture/cafe/chair.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-coffee-machine",
+    "kind": "tileset",
+    "path": "furniture/cafe/coffee_machine.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-desk",
+    "kind": "tileset",
+    "path": "furniture/cafe/desk.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-door",
+    "kind": "tileset",
+    "path": "furniture/cafe/door.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-floor-lamp",
+    "kind": "tileset",
+    "path": "furniture/cafe/floor_lamp.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-fridge",
+    "kind": "tileset",
+    "path": "furniture/cafe/fridge.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-koi-pond",
+    "kind": "tileset",
+    "path": "furniture/cafe/koi_pond.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-laptop",
+    "kind": "tileset",
+    "path": "furniture/cafe/laptop.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-meeting-table",
+    "kind": "tileset",
+    "path": "furniture/cafe/meeting_table.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-painting",
+    "kind": "tileset",
+    "path": "furniture/cafe/painting.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-pc",
+    "kind": "tileset",
+    "path": "furniture/cafe/pc.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-pet-bed",
+    "kind": "tileset",
+    "path": "furniture/cafe/pet_bed.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-plant",
+    "kind": "tileset",
+    "path": "furniture/cafe/plant.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-projector",
+    "kind": "tileset",
+    "path": "furniture/cafe/projector.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-projector-screen",
+    "kind": "tileset",
+    "path": "furniture/cafe/projector_screen.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-rug",
+    "kind": "tileset",
+    "path": "furniture/cafe/rug.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-sofa",
+    "kind": "tileset",
+    "path": "furniture/cafe/sofa.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-trash-bin",
+    "kind": "tileset",
+    "path": "furniture/cafe/trash_bin.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-wall-clock",
+    "kind": "tileset",
+    "path": "furniture/cafe/wall_clock.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-water-cooler",
+    "kind": "tileset",
+    "path": "furniture/cafe/water_cooler.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-whiteboard",
+    "kind": "tileset",
+    "path": "furniture/cafe/whiteboard.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-cafe-window",
+    "kind": "tileset",
+    "path": "furniture/cafe/window.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-bonsai-a",
+    "kind": "tileset",
+    "path": "furniture/zen/bonsai_a.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-bonsai-b",
+    "kind": "tileset",
+    "path": "furniture/zen/bonsai_b.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-bonsai-c",
+    "kind": "tileset",
+    "path": "furniture/zen/bonsai_c.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-bookshelf",
+    "kind": "tileset",
+    "path": "furniture/zen/bookshelf.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-chair",
+    "kind": "tileset",
+    "path": "furniture/zen/chair.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-coffee-machine",
+    "kind": "tileset",
+    "path": "furniture/zen/coffee_machine.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-desk",
+    "kind": "tileset",
+    "path": "furniture/zen/desk.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-door",
+    "kind": "tileset",
+    "path": "furniture/zen/door.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-floor-lamp",
+    "kind": "tileset",
+    "path": "furniture/zen/floor_lamp.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-fridge",
+    "kind": "tileset",
+    "path": "furniture/zen/fridge.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-koi-pond",
+    "kind": "tileset",
+    "path": "furniture/zen/koi_pond.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-laptop",
+    "kind": "tileset",
+    "path": "furniture/zen/laptop.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-meeting-table",
+    "kind": "tileset",
+    "path": "furniture/zen/meeting_table.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-painting",
+    "kind": "tileset",
+    "path": "furniture/zen/painting.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-pc",
+    "kind": "tileset",
+    "path": "furniture/zen/pc.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-pet-bed",
+    "kind": "tileset",
+    "path": "furniture/zen/pet_bed.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-plant",
+    "kind": "tileset",
+    "path": "furniture/zen/plant.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-projector",
+    "kind": "tileset",
+    "path": "furniture/zen/projector.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-projector-screen",
+    "kind": "tileset",
+    "path": "furniture/zen/projector_screen.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-rug",
+    "kind": "tileset",
+    "path": "furniture/zen/rug.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-sofa",
+    "kind": "tileset",
+    "path": "furniture/zen/sofa.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-trash-bin",
+    "kind": "tileset",
+    "path": "furniture/zen/trash_bin.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-wall-clock",
+    "kind": "tileset",
+    "path": "furniture/zen/wall_clock.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-water-cooler",
+    "kind": "tileset",
+    "path": "furniture/zen/water_cooler.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-whiteboard",
+    "kind": "tileset",
+    "path": "furniture/zen/whiteboard.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-zen-window",
+    "kind": "tileset",
+    "path": "furniture/zen/window.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-bonsai-a",
+    "kind": "tileset",
+    "path": "furniture/library/bonsai_a.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-bonsai-b",
+    "kind": "tileset",
+    "path": "furniture/library/bonsai_b.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-bonsai-c",
+    "kind": "tileset",
+    "path": "furniture/library/bonsai_c.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-bookshelf",
+    "kind": "tileset",
+    "path": "furniture/library/bookshelf.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-chair",
+    "kind": "tileset",
+    "path": "furniture/library/chair.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-coffee-machine",
+    "kind": "tileset",
+    "path": "furniture/library/coffee_machine.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-desk",
+    "kind": "tileset",
+    "path": "furniture/library/desk.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-door",
+    "kind": "tileset",
+    "path": "furniture/library/door.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-floor-lamp",
+    "kind": "tileset",
+    "path": "furniture/library/floor_lamp.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-fridge",
+    "kind": "tileset",
+    "path": "furniture/library/fridge.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-koi-pond",
+    "kind": "tileset",
+    "path": "furniture/library/koi_pond.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-laptop",
+    "kind": "tileset",
+    "path": "furniture/library/laptop.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-meeting-table",
+    "kind": "tileset",
+    "path": "furniture/library/meeting_table.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-painting",
+    "kind": "tileset",
+    "path": "furniture/library/painting.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-pc",
+    "kind": "tileset",
+    "path": "furniture/library/pc.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-pet-bed",
+    "kind": "tileset",
+    "path": "furniture/library/pet_bed.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-plant",
+    "kind": "tileset",
+    "path": "furniture/library/plant.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-projector",
+    "kind": "tileset",
+    "path": "furniture/library/projector.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-projector-screen",
+    "kind": "tileset",
+    "path": "furniture/library/projector_screen.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-rug",
+    "kind": "tileset",
+    "path": "furniture/library/rug.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-sofa",
+    "kind": "tileset",
+    "path": "furniture/library/sofa.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-trash-bin",
+    "kind": "tileset",
+    "path": "furniture/library/trash_bin.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-wall-clock",
+    "kind": "tileset",
+    "path": "furniture/library/wall_clock.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-water-cooler",
+    "kind": "tileset",
+    "path": "furniture/library/water_cooler.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-whiteboard",
+    "kind": "tileset",
+    "path": "furniture/library/whiteboard.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-library-window",
+    "kind": "tileset",
+    "path": "furniture/library/window.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-bonsai-a",
+    "kind": "tileset",
+    "path": "furniture/lounge/bonsai_a.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-bonsai-b",
+    "kind": "tileset",
+    "path": "furniture/lounge/bonsai_b.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-bonsai-c",
+    "kind": "tileset",
+    "path": "furniture/lounge/bonsai_c.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-bookshelf",
+    "kind": "tileset",
+    "path": "furniture/lounge/bookshelf.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-chair",
+    "kind": "tileset",
+    "path": "furniture/lounge/chair.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-coffee-machine",
+    "kind": "tileset",
+    "path": "furniture/lounge/coffee_machine.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-desk",
+    "kind": "tileset",
+    "path": "furniture/lounge/desk.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-door",
+    "kind": "tileset",
+    "path": "furniture/lounge/door.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-floor-lamp",
+    "kind": "tileset",
+    "path": "furniture/lounge/floor_lamp.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-fridge",
+    "kind": "tileset",
+    "path": "furniture/lounge/fridge.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-koi-pond",
+    "kind": "tileset",
+    "path": "furniture/lounge/koi_pond.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-laptop",
+    "kind": "tileset",
+    "path": "furniture/lounge/laptop.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-meeting-table",
+    "kind": "tileset",
+    "path": "furniture/lounge/meeting_table.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-painting",
+    "kind": "tileset",
+    "path": "furniture/lounge/painting.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-pc",
+    "kind": "tileset",
+    "path": "furniture/lounge/pc.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-pet-bed",
+    "kind": "tileset",
+    "path": "furniture/lounge/pet_bed.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-plant",
+    "kind": "tileset",
+    "path": "furniture/lounge/plant.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-projector",
+    "kind": "tileset",
+    "path": "furniture/lounge/projector.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-projector-screen",
+    "kind": "tileset",
+    "path": "furniture/lounge/projector_screen.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-rug",
+    "kind": "tileset",
+    "path": "furniture/lounge/rug.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-sofa",
+    "kind": "tileset",
+    "path": "furniture/lounge/sofa.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-trash-bin",
+    "kind": "tileset",
+    "path": "furniture/lounge/trash_bin.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-wall-clock",
+    "kind": "tileset",
+    "path": "furniture/lounge/wall_clock.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-water-cooler",
+    "kind": "tileset",
+    "path": "furniture/lounge/water_cooler.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-whiteboard",
+    "kind": "tileset",
+    "path": "furniture/lounge/whiteboard.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "fur-lounge-window",
+    "kind": "tileset",
+    "path": "furniture/lounge/window.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "furniture",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "tile-office-floor-wood",
+    "kind": "tileset",
+    "path": "tiles/office/floor_wood.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "tile",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "tile-office-floor-soft",
+    "kind": "tileset",
+    "path": "tiles/office/floor_soft.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "tile",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "tile-office-wall",
+    "kind": "tileset",
+    "path": "tiles/office/wall.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "tile",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "tile-office-wall-base",
+    "kind": "tileset",
+    "path": "tiles/office/wall_base.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "tile",
+      "office",
+      "godot"
+    ]
+  },
+  {
+    "id": "tile-cafe-floor-wood",
+    "kind": "tileset",
+    "path": "tiles/cafe/floor_wood.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "tile",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "tile-cafe-floor-soft",
+    "kind": "tileset",
+    "path": "tiles/cafe/floor_soft.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "tile",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "tile-cafe-wall",
+    "kind": "tileset",
+    "path": "tiles/cafe/wall.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "tile",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "tile-cafe-wall-base",
+    "kind": "tileset",
+    "path": "tiles/cafe/wall_base.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "tile",
+      "cafe",
+      "godot"
+    ]
+  },
+  {
+    "id": "tile-zen-floor-wood",
+    "kind": "tileset",
+    "path": "tiles/zen/floor_wood.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "tile",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "tile-zen-floor-soft",
+    "kind": "tileset",
+    "path": "tiles/zen/floor_soft.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "tile",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "tile-zen-wall",
+    "kind": "tileset",
+    "path": "tiles/zen/wall.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "tile",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "tile-zen-wall-base",
+    "kind": "tileset",
+    "path": "tiles/zen/wall_base.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "tile",
+      "zen",
+      "godot"
+    ]
+  },
+  {
+    "id": "tile-library-floor-wood",
+    "kind": "tileset",
+    "path": "tiles/library/floor_wood.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "tile",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "tile-library-floor-soft",
+    "kind": "tileset",
+    "path": "tiles/library/floor_soft.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "tile",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "tile-library-wall",
+    "kind": "tileset",
+    "path": "tiles/library/wall.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "tile",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "tile-library-wall-base",
+    "kind": "tileset",
+    "path": "tiles/library/wall_base.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "tile",
+      "library",
+      "godot"
+    ]
+  },
+  {
+    "id": "tile-lounge-floor-wood",
+    "kind": "tileset",
+    "path": "tiles/lounge/floor_wood.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "tile",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "tile-lounge-floor-soft",
+    "kind": "tileset",
+    "path": "tiles/lounge/floor_soft.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "tile",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "tile-lounge-wall",
+    "kind": "tileset",
+    "path": "tiles/lounge/wall.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "tile",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "tile-lounge-wall-base",
+    "kind": "tileset",
+    "path": "tiles/lounge/wall_base.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "tile",
+      "lounge",
+      "godot"
+    ]
+  },
+  {
+    "id": "ui-emote-alert",
+    "kind": "emote",
+    "path": "ui/emote_alert.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "ui",
+      "godot"
+    ]
+  },
+  {
+    "id": "ui-emote-coffee",
+    "kind": "emote",
+    "path": "ui/emote_coffee.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "ui",
+      "godot"
+    ]
+  },
+  {
+    "id": "ui-emote-heart",
+    "kind": "emote",
+    "path": "ui/emote_heart.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "ui",
+      "godot"
+    ]
+  },
+  {
+    "id": "ui-emote-music",
+    "kind": "emote",
+    "path": "ui/emote_music.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "ui",
+      "godot"
+    ]
+  },
+  {
+    "id": "ui-emote-sleep",
+    "kind": "emote",
+    "path": "ui/emote_sleep.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "ui",
+      "godot"
+    ]
+  },
+  {
+    "id": "ui-highlight",
+    "kind": "ui",
+    "path": "ui/highlight.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "ui",
+      "godot"
+    ]
+  },
+  {
+    "id": "ui-speech-bubble",
+    "kind": "ui",
+    "path": "ui/speech_bubble.png",
+    "origin": "in-house",
+    "license": "owned",
+    "tags": [
+      "ui",
+      "godot"
     ]
   }
 ]

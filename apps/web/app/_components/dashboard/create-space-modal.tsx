@@ -34,8 +34,8 @@ export function CreateSpaceModal({ onCreate }: { onCreate: (name: string, templa
   return (
     <>
       <button onClick={() => ref.current?.showModal()}
-        className="rounded-[999px] bg-[var(--accent)] px-4 py-1.5 text-sm font-semibold text-white transition-colors duration-200 hover:bg-[var(--accent-bright)]">
-        + New Space
+        style={{ background: "#c66a2e", color: "#fff", fontSize: 14, fontWeight: 500, padding: "10px 22px", borderRadius: 999, border: "none", cursor: "pointer", fontFamily: "var(--font-space-grotesk, system-ui, sans-serif)" }}>
+        + New verse
       </button>
       <dialog ref={ref}
         className="m-auto w-full max-w-md rounded-2xl border border-[var(--border-default)] bg-[var(--bg-elevated)] p-0 text-[var(--text-primary)] backdrop:bg-black/60 backdrop:backdrop-blur-sm">

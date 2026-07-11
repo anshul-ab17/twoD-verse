@@ -17,3 +17,4 @@ logs
 docs
 .claude/skills
 /.superpowers
+/apps/web/public/_godot

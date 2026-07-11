@@ -124,4 +124,7 @@ body {
   letter-spacing: -0.354752px;
 }
 
-
+@keyframes dotPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(0.72); }
+}
