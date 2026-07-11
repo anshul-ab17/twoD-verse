@@ -78,7 +78,7 @@
       p = decodeURIComponent(p);
     } catch {
     }
-    const base = p.split("/").pop() || "Root";
+    const base = (typeof p === "string" ? p.split("/") : [""]).pop() || "Root";
     return base.replace(/\.dc\.html$/, "").replace(/\.html?$/, "") || "Root";
   }
 

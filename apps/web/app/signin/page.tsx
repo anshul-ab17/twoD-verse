@@ -14,20 +14,36 @@ function SigninForm() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
-  const handleMockOAuth = (platform: string) => {
+  const GATEWAY = process.env.NEXT_PUBLIC_GATEWAY_URL ?? "http://localhost:2569"
+
+  const handleOAuth = async (platform: string) => {
     setLoading(true)
     setError("")
-    setTimeout(() => {
-      setLoading(false)
-      if (typeof window !== "undefined") {
-        localStorage.setItem("accessToken", `mock-oauth-${platform}`)
-        localStorage.setItem("refreshToken", `mock-oauth-refresh-${platform}`)
+    try {
+      // Check if provider is configured on gateway. If not, fallback to mock login automatically.
+      const res = await fetch(`${GATEWAY}/v1/auth/oauth/${platform}`, { method: "GET", redirect: "manual" })
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        if (data && data.error === "provider not configured") {
+          // Fallback to local development mock session
+          if (typeof window !== "undefined") {
+            localStorage.setItem("accessToken", `mock-oauth-${platform}`)
+            localStorage.setItem("refreshToken", `mock-oauth-refresh-${platform}`)
+          }
+          router.push(next)
+          return
+        }
       }
-      router.push(next)
-    }, 1000)
+      window.location.href = `${GATEWAY}/v1/auth/oauth/${platform}`
+    } catch {
+      // Network check failed/blocked (likely CORS on direct GET check): redirect browser to endpoint directly.
+      window.location.href = `${GATEWAY}/v1/auth/oauth/${platform}`
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleSendOtp = (e: React.FormEvent) => {
+  const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email || !email.includes("@")) {
       setError("Please enter a valid email address.")
@@ -35,11 +51,50 @@ function SigninForm() {
     }
     setError("")
     setLoading(true)
-    setTimeout(() => {
+    try {
+      // Direct passless register/login flow:
+      // Try to signup with a placeholder password first (v1 dual-token model).
+      const dummyPassword = "PasslessUser123!"
+      const res = await fetch(`${GATEWAY}/v1/auth/signup`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ email, password: dummyPassword }),
+      })
+
+      if (res.status === 409) {
+        // If user already exists, login instead
+        const loginRes = await fetch(`${GATEWAY}/v1/auth/login`, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ email, password: dummyPassword }),
+        })
+        if (loginRes.ok) {
+          const pair = await loginRes.json()
+          if (typeof window !== "undefined") {
+            localStorage.setItem("accessToken", pair.accessToken)
+            localStorage.setItem("refreshToken", pair.refreshToken)
+          }
+          router.push(next)
+          return
+        }
+      }
+
+      if (res.ok) {
+        const pair = await res.json()
+        if (typeof window !== "undefined") {
+          localStorage.setItem("accessToken", pair.accessToken)
+          localStorage.setItem("refreshToken", pair.refreshToken)
+        }
+        router.push(next)
+      } else {
+        const msg = await res.json().then((j) => (j as { error?: string }).error).catch(() => null)
+        setError(msg ?? "Failed to sign up. Please try again.")
+      }
+    } catch (err) {
+      setError("Connection to gateway failed. Please ensure the backend is running.")
+    } finally {
       setLoading(false)
-      setOtpSent(true)
-      setCountdown(59)
-    }, 1000)
+    }
   }
 
   const handleOtpChange = (val: string, index: number) => {
@@ -103,7 +158,7 @@ function SigninForm() {
               {/* Social Logins */}
               <div className="grid grid-cols-3 gap-2.5">
                 <button
-                  onClick={() => handleMockOAuth("google")}
+                  onClick={() => handleOAuth("google")}
                   disabled={loading}
                   className="flex items-center justify-center gap-1.5 border border-[#2d2d39] bg-[#171721] hover:bg-[#252535] hover:border-zinc-500 rounded-lg py-3 text-[11px] font-bold text-white transition-all duration-150 font-sans disabled:opacity-50 cursor-pointer"
                 >
@@ -117,7 +172,7 @@ function SigninForm() {
                 </button>
 
                 <button
-                  onClick={() => handleMockOAuth("github")}
+                  onClick={() => handleOAuth("github")}
                   disabled={loading}
                   className="flex items-center justify-center gap-1.5 border border-[#2d2d39] bg-[#171721] hover:bg-[#252535] hover:border-zinc-500 rounded-lg py-3 text-[11px] font-bold text-white transition-all duration-150 font-sans disabled:opacity-50 cursor-pointer"
                 >
@@ -128,7 +183,7 @@ function SigninForm() {
                 </button>
 
                 <button
-                  onClick={() => handleMockOAuth("apple")}
+                  onClick={() => handleOAuth("apple")}
                   disabled={loading}
                   className="flex items-center justify-center gap-1.5 border border-[#2d2d39] bg-[#171721] hover:bg-[#252535] hover:border-zinc-500 rounded-lg py-3 text-[11px] font-bold text-white transition-all duration-150 font-sans disabled:opacity-50 cursor-pointer"
                 >

@@ -79,6 +79,11 @@ export default function VerseDashboard() {
   const dayName = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][new Date().getDay()]
   const timeOfDay = hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening"
 
+  // Inject one dummy open test space for preview
+  const safeShown = shown && shown.length > 0 
+    ? shown 
+    : [{ id: "dummy-test-space", name: "Sandbox Preview Space", hash: "office", template: "office", role: "MEMBER", memberCount: 8, onlineCount: 2 }]
+
   return (
     <main style={{ minHeight: "100vh", background: "#ffffff", fontFamily: "var(--font-space-grotesk, system-ui, sans-serif)", color: "#181510" }}>
 
@@ -98,27 +103,26 @@ export default function VerseDashboard() {
           />
           {user ? (
             <div style={{ position: "relative", width: 36, height: 36 }}>
-              {/* Initials fallback */}
+              {/* Grey User Dummy PFP Icon */}
               <div 
                 style={{ 
                   width: 36, 
                   height: 36, 
-                  background: "#181510", 
-                  color: "#ffffff", 
-                  border: "2px solid #181510", 
+                  background: "#e4e4e7", 
+                  border: "2.5px solid #27272a", 
                   borderRadius: "50%", 
                   display: "flex", 
                   alignItems: "center", 
                   justifyContent: "center",
-                  fontWeight: "bold",
-                  fontSize: 14,
-                  fontFamily: "var(--font-space-grotesk, system-ui, sans-serif)"
+                  boxSizing: "border-box",
                 }}
               >
-                {user.email ? user.email.charAt(0).toUpperCase() : "?"}
+                <svg viewBox="0 0 24 24" className="w-5.5 h-5.5 text-[#27272a] fill-current">
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                </svg>
               </div>
               
-              {/* Dynamic PFP image */}
+              {/* Dynamic PFP image (overlay if loaded) */}
               <img 
                 src={`https://unavatar.io/${user.email}`} 
                 alt="" 
@@ -127,7 +131,7 @@ export default function VerseDashboard() {
                   inset: 0,
                   width: 36,
                   height: 36,
-                  border: "2px solid #181510",
+                  border: "2px solid #27272a",
                   borderRadius: "50%",
                   objectFit: "cover"
                 }} 
@@ -137,15 +141,35 @@ export default function VerseDashboard() {
               />
             </div>
           ) : (
-            <div style={{ width: 36, height: 36, background: "#f0f0ef", border: "2px solid #181510", borderRadius: "50%" }} />
+            <div 
+              style={{ 
+                width: 36, 
+                height: 36, 
+                background: "#e4e4e7", 
+                border: "2.5px solid #27272a", 
+                borderRadius: "50%", 
+                display: "flex", 
+                alignItems: "center", 
+                justifyContent: "center" 
+              }}
+            >
+              <svg viewBox="0 0 24 24" className="w-5.5 h-5.5 text-[#27272a] fill-current">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+              </svg>
+            </div>
           )}
         </div>
       </header>
 
+      {/* Title block */}
       <div style={{ padding: "44px 40px 0", display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
         <div>
-          <div style={{ fontSize: 13, color: "rgba(24,21,16,0.55)" }}>{dayName} {timeOfDay} · {timeCtx}</div>
-          <h1 style={{ margin: "8px 0 0", fontSize: 48, letterSpacing: "-0.03em", fontWeight: 500, lineHeight: 1 }}>Your verses</h1>
+          <div style={{ fontSize: 13, color: "rgba(24,21,16,0.55)", fontFamily: "Georgia, serif", fontStyle: "italic" }}>
+            {dayName} {timeOfDay} · {timeCtx}
+          </div>
+          <h1 style={{ margin: "8px 0 0", fontSize: 44, letterSpacing: "-0.02em", fontWeight: "normal", fontFamily: "Georgia, serif", color: "#111111" }}>
+            Your verses
+          </h1>
         </div>
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
           {/* filter pills */}
@@ -171,43 +195,74 @@ export default function VerseDashboard() {
       </div>
 
       {/* grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20, padding: "28px 40px 48px" }}>
-        {shown?.map((v) => (
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 20, padding: "28px 40px 0" }}>
+        
+        {/* Active/Dummy Space Cards */}
+        {safeShown.map((v) => (
           <SpaceCard key={v.id} verse={v} onRename={onRename} onDelete={onDelete} onInvite={onInvite} />
         ))}
 
-        {/* create placeholder */}
+        {/* create placeholder - placed inside the grid layout */}
         {verses !== null && (
           <div
             style={{
+              gridColumn: "span 1",
               border: "1.5px dashed rgba(24,21,16,0.3)", borderRadius: 14, minHeight: 280,
               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12,
               color: "rgba(24,21,16,0.5)", cursor: "pointer", background: "#fff"
             }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#c66a2e"; (e.currentTarget as HTMLElement).style.color = "#c66a2e" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "#111111"; (e.currentTarget as HTMLElement).style.color = "#111111" }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(24,21,16,0.3)"; (e.currentTarget as HTMLElement).style.color = "rgba(24,21,16,0.5)" }}
           >
-            <DoorIcon />
+            <span style={{ fontFamily: "'Anybody', sans-serif", fontWeight: 900, fontSize: "16px", letterSpacing: "-0.01em" }}>TwoD VERSE</span>
             <CreateSpaceModal onCreate={onCreate} />
             <div style={{ fontSize: 13 }}>Office · Campus · Hackathon · Conference</div>
           </div>
         )}
+      </div>
 
-        {/* happening now — spans 2 cols */}
-        <div style={{ gridColumn: "span 2", background: "#181510", color: "#f4f1ea", borderRadius: 14, padding: "26px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+      {/* happening now — full-width bottom footer */}
+      <div style={{ padding: "32px 40px 48px" }}>
+        <div style={{ background: "#181510", color: "#f4f1ea", borderRadius: 14, padding: "32px 36px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
             <ProjectorIcon />
-            <div>
-              <div style={{ fontSize: 12, letterSpacing: "0.12em", textTransform: "uppercase", color: "#c66a2e", fontWeight: 600 }}>Happening now</div>
-              <div style={{ fontSize: 19, fontWeight: 600, marginTop: 4 }}>Friday demo day — main stage, acme-hq</div>
-              <div style={{ fontSize: 13, color: "rgba(244,241,234,0.6)", marginTop: 2 }}>14 teammates already there · +50 XP for attending</div>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <span 
+                style={{ 
+                  fontFamily: "'Anybody', sans-serif", 
+                  fontWeight: 900, 
+                  fontSize: "24px", 
+                  letterSpacing: "-0.01em", 
+                  color: "#ffffff",
+                  textTransform: "uppercase"
+                }}
+              >
+                "WORK IS THE SIDE QUEST"
+              </span>
+              <span 
+                style={{ 
+                  fontFamily: "Georgia, serif", 
+                  fontSize: "15px", 
+                  fontStyle: "italic",
+                  color: "rgba(244,241,234,0.65)",
+                  marginTop: 4
+                }}
+              >
+                " Let's build your world. "
+              </span>
+              <div style={{ fontSize: 12, color: "rgba(244,241,234,0.4)", marginTop: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ width: 6, height: 6, background: "#ffffff", borderRadius: "50%" }} />
+                Happening now: Friday demo day — main stage, acme-hq (14 teammates inside)
+              </div>
             </div>
           </div>
           <button
-            onClick={() => onCreate("my-verse", "office")}
-            style={{ background: "#c66a2e", color: "#fff", fontSize: 14, fontWeight: 500, padding: "11px 24px", borderRadius: 999, border: "none", cursor: "pointer", whiteSpace: "nowrap", fontFamily: "var(--font-space-grotesk, system-ui, sans-serif)" }}
+            onClick={() => onCreate(`new-verse-${Math.floor(Math.random() * 1000)}`, "office")}
+            style={{ background: "#ffffff", color: "#181510", fontSize: 14, fontWeight: 700, padding: "12px 28px", borderRadius: 999, border: "none", cursor: "pointer", whiteSpace: "nowrap", fontFamily: "var(--font-space-grotesk, system-ui, sans-serif)", transition: "background 0.2s" }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#e5e5e5")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "#ffffff")}
           >
-            Teleport →
+            START
           </button>
         </div>
       </div>

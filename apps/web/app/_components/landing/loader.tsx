@@ -15,6 +15,7 @@ export function Loader({ onDone, onPhaseChange }: { onDone: () => void, onPhaseC
     if (hasStarted.current) return
     hasStarted.current = true
 
+    // Start animation
     document.documentElement.style.overflow = "hidden"
     if (onPhaseChange) onPhaseChange("loading")
 

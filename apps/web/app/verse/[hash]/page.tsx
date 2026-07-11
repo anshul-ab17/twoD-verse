@@ -123,7 +123,8 @@ export default function GamePage() {
       .catch((err) => {
         console.error("world failed to start", err)
         clearTokens()
-        if (!cancelled) router.replace("/signin?next=" + encodeURIComponent(location.pathname))
+        const path = typeof location !== "undefined" ? location.pathname : ""
+        if (!cancelled) router.replace("/signin?next=" + encodeURIComponent(path))
       })
     return () => {
       cancelled = true

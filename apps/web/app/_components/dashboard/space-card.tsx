@@ -127,9 +127,9 @@ export function SpaceCard({
         </div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16 }}>
           <div style={{ display: "flex", alignItems: "center" }}>
-            <span style={{ width: 26, height: 26, background: "#c66a2e", border: "2px solid #fff", borderRadius: 8 }} />
-            <span style={{ width: 26, height: 26, background: "#3e9b4f", border: "2px solid #fff", borderRadius: 8, marginLeft: -8 }} />
-            <span style={{ width: 26, height: 26, background: "#2f6db8", border: "2px solid #fff", borderRadius: 8, marginLeft: -8 }} />
+            <span style={{ width: 26, height: 26, background: "#111111", border: "2px solid #fff", borderRadius: 8 }} />
+            <span style={{ width: 26, height: 26, background: "#71717a", border: "2px solid #fff", borderRadius: 8, marginLeft: -8 }} />
+            <span style={{ width: 26, height: 26, background: "#d4d4d8", border: "2px solid #fff", borderRadius: 8, marginLeft: -8 }} />
             <span style={{ width: 26, height: 26, background: "#efe9dd", border: "2px solid #fff", borderRadius: 8, marginLeft: -8, fontSize: 10, display: "inline-flex", alignItems: "center", justifyContent: "center", color: "#181510", fontWeight: 600 }}>+{verse.memberCount}</span>
           </div>
           <div style={{ display: "flex", gap: 4, alignItems: "center" }}>

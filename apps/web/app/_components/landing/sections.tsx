@@ -1150,98 +1150,84 @@ export function ThemesShowcase() {
   const iframeH = 700
 
   return (
-    <section id="themes" className="px-6 py-24 border-t border-zinc-200 bg-[#0e0e0e] select-none">
+    <section id="themes" className="px-6 py-24 border-t border-zinc-200 bg-white select-none">
       <div className="mx-auto max-w-6xl">
-        <p className="text-[12px] font-mono font-bold tracking-widest uppercase text-zinc-400 mb-2">/ PLAYABLE OFFICE THEMES</p>
-        <h2 
-          className="uppercase text-white font-extrabold tracking-tight mb-12 text-3xl sm:text-4xl"
-        >
-          Curated workspace aesthetics
-        </h2>
+        
+        {/* Header Block with Title and Top-Right Controls */}
+        <div className="flex items-end justify-between mb-12 pb-4 border-b border-zinc-200">
+          <div>
+            <p className="text-[12px] font-mono font-bold tracking-widest uppercase text-zinc-400 mb-2">/ PLAYABLE OFFICE THEMES</p>
+            <h2 className="uppercase text-black font-extrabold tracking-tight text-3xl sm:text-4xl">
+              Curated workspace aesthetics
+            </h2>
+          </div>
+          
+          {/* Controls positioned in the top-right casually appearing above the themes */}
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={prevTheme}
+              className="w-10 h-10 rounded-full border border-zinc-200 bg-white hover:bg-zinc-50 flex items-center justify-center cursor-pointer transition-all shadow-sm"
+            >
+              <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-zinc-700 stroke-[2.5]">
+                <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <span className="text-xs font-mono font-bold text-zinc-400">
+              0{themeIndex + 1} / 04
+            </span>
+            <button 
+              onClick={nextTheme}
+              className="w-10 h-10 rounded-full border border-zinc-200 bg-white hover:bg-zinc-50 flex items-center justify-center cursor-pointer transition-all shadow-sm"
+            >
+              <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-zinc-700 stroke-[2.5]">
+                <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          </div>
+        </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           {/* Left: Dynamic details block */}
           <div className="lg:col-span-4 flex flex-col gap-6 order-2 lg:order-1">
-            <span className="text-[11px] font-mono tracking-[0.2em] text-[#7b7bf8] font-bold uppercase">
-              {themes[themeIndex]?.tag}
+            <span className="text-[11px] font-mono tracking-[0.2em] text-[#5b5bf0] font-bold uppercase">
+              {themes[themeIndex]?.tag.replace(/THEME \d+ \/\/ /i, "")}
             </span>
             <h3 
-              className="text-white text-3xl font-normal tracking-tight"
+              className="text-zinc-900 text-3xl font-normal tracking-tight"
               style={{ fontFamily: "Georgia, serif" }}
             >
               {themes[themeIndex]?.name}
             </h3>
-            <p className="text-zinc-400 text-sm leading-relaxed max-w-sm font-sans">
+            <p className="text-zinc-500 text-sm leading-relaxed max-w-sm font-sans">
               {themes[themeIndex]?.desc}
             </p>
             
             {/* Progress dots */}
-            <div className="flex gap-2 mt-2">
+            <div className="flex gap-2">
               {themes.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => { setThemeIndex(i); resetTimer() }}
-                  className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${i === themeIndex ? "w-8 bg-[#7b7bf8]" : "w-1.5 bg-zinc-600 hover:bg-zinc-400"}`}
+                  className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${i === themeIndex ? "w-8 bg-[#5b5bf0]" : "w-1.5 bg-zinc-300 hover:bg-zinc-400"}`}
                 />
               ))}
             </div>
-
-            {/* Manual Controls */}
-            <div className="flex items-center gap-4 mt-2">
-              <button 
-                onClick={prevTheme}
-                className="w-10 h-10 rounded-full border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center cursor-pointer transition-all"
-              >
-                <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-zinc-300 stroke-[2.5]">
-                  <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-              <span className="text-xs font-mono font-bold text-zinc-500">
-                0{themeIndex + 1} / 04
-              </span>
-              <button 
-                onClick={nextTheme}
-                className="w-10 h-10 rounded-full border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center cursor-pointer transition-all"
-              >
-                <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-zinc-300 stroke-[2.5]">
-                  <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </div>
           </div>
           
-          {/* Right: Live gamified map iframe */}
+          {/* Right: Live gamified map asset image */}
           <div className="lg:col-span-8 order-1 lg:order-2">
             <div
-              className="relative w-full overflow-hidden rounded-[20px] border border-zinc-800 shadow-[0_0_60px_rgba(123,123,248,0.12)] bg-[#23262f]"
+              className="relative w-full overflow-hidden rounded-[20px] shadow-xl bg-[#fafafa]"
               style={{ aspectRatio: "16/10" }}
             >
-              {/* Iframe viewport clip */}
-              <div
-                style={{
-                  position: "absolute",
-                  inset: 0,
-                  overflow: "hidden",
-                }}
-              >
-                <iframe
-                  key={themeIndex}
-                  src={`/gamified-themes.html#${themes[themeIndex]?.anchor}`}
-                  scrolling="no"
-                  style={{
-                    border: "none",
-                    width: `${iframeW}px`,
-                    height: `${iframeH + (themes[themeIndex]?.scrollY || 0) + 200}px`,
-                    transformOrigin: "top left",
-                    transform: `scale(var(--theme-scale, 0.63)) translateY(-${themes[themeIndex]?.scrollY || 0}px)`,
-                    pointerEvents: "none",
-                    display: "block",
-                  }}
-                  className="[--theme-scale:0.63]"
-                />
-              </div>
+              <img
+                src={`/themes/t${themeIndex}.png`}
+                alt={themes[themeIndex]?.name}
+                className="w-full h-full object-cover block transition-opacity duration-300"
+                style={{ imageRendering: "pixelated" }}
+              />
               {/* Subtle gradient vignette bottom */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#23262f]/40 via-transparent to-transparent pointer-events-none rounded-[20px]" />
+              <div className="absolute inset-0 bg-gradient-to-t from-white/10 via-transparent to-transparent pointer-events-none rounded-[20px]" />
             </div>
           </div>
         </div>
@@ -1483,20 +1469,20 @@ export function FAQ() {
             {faqData.map((f, i) => (
               <div 
                 key={i} 
-                className="bg-[#f8f9fc] p-6 rounded-[16px] transition-all duration-200 hover:bg-[#f3f5fa]"
+                className="p-6 rounded-[16px] border border-transparent bg-[#f8f9fc] hover:bg-[#f3f5fa] transition-all duration-200"
               >
                 <button 
                   onClick={() => setOpenFaq(openFaq === i ? -1 : i)} 
                   className="w-full flex items-center justify-between gap-5 bg-transparent border-0 outline-none cursor-pointer text-left font-medium text-[16px] text-zinc-900"
                 >
-                  <span style={{ fontFamily: "var(--font-space-grotesk, system-ui), sans-serif", letterSpacing: "-0.01em" }}>{f.q}</span>
-                  <span className="text-[20px] font-medium text-[#5b5bf0] select-none transition-transform duration-200">
+                  <span style={{ fontFamily: "Georgia, serif", fontSize: "19px", color: "#18181b" }}>{f.q}</span>
+                  <span className="text-[20px] font-medium text-black select-none transition-transform duration-200">
                     {openFaq === i ? "−" : "+"}
                   </span>
                 </button>
                 {openFaq === i && (
                   <div 
-                    className="mt-4 pt-4 border-t border-zinc-200/50 text-[14px] text-zinc-500 leading-relaxed"
+                    className="mt-4 p-4 rounded-xl bg-[#f8f9fc]/50 text-[14px] text-zinc-900 leading-relaxed font-medium"
                     style={{ fontFamily: "var(--font-space-grotesk, system-ui), sans-serif" }}
                   >
                     {f.a}
@@ -1506,17 +1492,17 @@ export function FAQ() {
             ))}
           </div>
 
-          {/* Right Column: "Didn't find the answer..." styled like Golden Child */}
-          <div className="lg:col-span-4 lg:sticky lg:top-24 flex flex-col gap-6 p-2">
+          {/* Right Column: "Didn't find the answer..." centered vertically */}
+          <div className="lg:col-span-4 lg:sticky lg:top-24 flex flex-col items-center text-center justify-center gap-6 p-6 border border-zinc-100 rounded-[16px] bg-[#f8f9fc] min-h-[220px]">
             <h3 
-              className="text-zinc-950 text-3xl font-normal leading-tight tracking-tight"
+              className="text-zinc-950 text-2xl font-normal leading-tight tracking-tight max-w-xs"
               style={{ fontFamily: "Georgia, serif" }}
             >
               Didn't find the answer you were looking for?
             </h3>
             <a 
-              href="mailto:hello@twodverse.com"
-              className="text-[11px] font-bold tracking-[0.2em] uppercase text-zinc-800 hover:text-black transition-colors self-start border-b-2 border-black pb-1.5 font-mono"
+              href="mailto:anshul.ab17x@gmail.com"
+              className="text-[11px] font-bold tracking-[0.2em] uppercase text-zinc-800 hover:text-black transition-colors border-b-2 border-black pb-1.5 font-mono"
             >
               SEND US AN EMAIL
             </a>
@@ -1550,17 +1536,17 @@ export function Footer() {
             
             {/* Social Icons (bottom left of left column) */}
             <div className="flex items-center gap-5 mt-4 text-zinc-400">
-              <a href="#" className="hover:text-white transition-colors">
+              <a href="https://x.com/anshul_ab17" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors" title="X / Twitter">
                 <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                   <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                 </svg>
               </a>
-              <a href="#" className="hover:text-white transition-colors">
+              <a href="https://www.linkedin.com/in/anshul-bt17/" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors" title="LinkedIn">
                 <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                   <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93zM6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37z"/>
                 </svg>
               </a>
-              <a href="#" className="hover:text-white transition-colors">
+              <a href="https://github.com/anshul-ab17/twoD-verse" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors" title="GitHub">
                 <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
                   <path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.9-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.07 2.91.83.1-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"/>
                 </svg>

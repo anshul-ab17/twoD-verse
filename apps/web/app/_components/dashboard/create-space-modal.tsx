@@ -35,7 +35,10 @@ export function CreateSpaceModal({ onCreate }: { onCreate: (name: string, templa
   return (
     <>
       <button onClick={() => ref.current?.showModal()}
-        style={{ background: "#c66a2e", color: "#fff", fontSize: 14, fontWeight: 500, padding: "10px 22px", borderRadius: 999, border: "none", cursor: "pointer", fontFamily: "var(--font-space-grotesk, system-ui, sans-serif)" }}>
+        style={{ background: "#111111", color: "#fff", fontSize: 14, fontWeight: 500, padding: "10px 22px", borderRadius: 999, border: "none", cursor: "pointer", fontFamily: "var(--font-space-grotesk, system-ui, sans-serif)", transition: "background 0.2s" }}
+        onMouseEnter={(e) => (e.currentTarget.style.background = "#222222")}
+        onMouseLeave={(e) => (e.currentTarget.style.background = "#111111")}
+      >
         + New verse
       </button>
       <dialog ref={ref}
