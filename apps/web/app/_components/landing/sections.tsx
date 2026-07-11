@@ -1,7 +1,9 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { getAccessToken } from "../../../lib/auth"
 
 function TwoDVerseLogo({ className = "text-black" }: { className?: string }) {
   return (
@@ -52,9 +54,9 @@ const SERVICES = [
 ]
 
 const STEPS = [
-  { n: "01 / STEP", title: "Initialize Sandbox", text: "Select an architectural layout profile: standard headquarters, hackathon floor, or custom coordinate map." },
-  { n: "02 / STEP", title: "Establish Peers", text: "Generate tokenized gateway links. Access is instant via standard browsers with no dependency installs." },
-  { n: "03 / STEP", title: "Coordinate Drop-in", text: "Avatars initialize on the 2D grid. Proximity circles activate spatial audio feeds automatically." },
+  { n: "01 / STEP", title: "Initialize Sandbox", text: "Select an architectural layout profile: standard headquarters, hackathon floor, or custom coordinate map.", color: "#efe9dd" },
+  { n: "02 / STEP", title: "Establish Peers", text: "Generate tokenized gateway links. Access is instant via standard browsers with no dependency installs.", color: "#d9ebd4" },
+  { n: "03 / STEP", title: "Coordinate Drop-in", text: "Avatars initialize on the 2D grid. Proximity circles activate spatial audio feeds automatically.", color: "#d8ebff" },
 ]
 
 interface Entity {
@@ -644,11 +646,9 @@ export function Hero({ phase = "done" }: { phase?: "loading" | "exit" | "done" }
   const heroY = revealed ? 0 : 46
 
   // Calculate values
-  const imgW = (34 + 59 * e) + "vw"
-  const imgH = (42 + 42 * e) + "vh"
-  const framePad = 14 * e // in px
+  const imgW = (26 + 67 * e) + "vw"
+  const imgH = (32 + 52 * e) + "vh"
   const frameOuterR = 16 + 10 * e // in px
-  const frameInnerR = 12 + 4 * e // in px
   const headlineOpacity = revealed ? Math.max(0, 1 - e * 2.4) : 0
   const headlineY = e * 70
 
@@ -663,12 +663,13 @@ export function Hero({ phase = "done" }: { phase?: "loading" | "exit" | "done" }
             width: imgW, 
             height: imgH,
             opacity: heroOpacity,
+            zIndex: 10,
             transform: `translateY(${heroY}px)`,
             transition: "opacity 0.8s ease 0.35s, transform 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.35s, width 0.05s ease-out, height 0.05s ease-out"
           }}
         >
-          <div style={{ position: "absolute", inset: 0, background: "#111111", borderRadius: `${frameOuterR}px`, padding: `${framePad}px`, boxSizing: "border-box", transition: "border-radius 0.05s ease-out, padding 0.05s ease-out" }}>
-            <div style={{ width: "100%", height: "100%", borderRadius: `${frameInnerR}px`, overflow: "hidden", background: "#F2F1EE", transition: "border-radius 0.05s ease-out" }}>
+          <div style={{ position: "absolute", inset: 0, overflow: "hidden", border: "1px solid rgba(24,21,16,0.12)", borderRadius: `${frameOuterR}px`, background: "#ffffff", boxShadow: "0 20px 40px rgba(0,0,0,0.06)", transition: "border-radius 0.05s ease-out" }}>
+            <div style={{ width: "100%", height: "100%", position: "relative" }}>
               <InteractiveWorldPreview />
             </div>
           </div>
@@ -679,16 +680,17 @@ export function Hero({ phase = "done" }: { phase?: "loading" | "exit" | "done" }
           style={{ 
             position: "absolute", 
             left: "4.5vw", 
-            bottom: "5vh", 
+            bottom: "6vh", 
             margin: 0, 
-            maxWidth: "56vw", 
+            maxWidth: "38vw", 
             fontWeight: 400, 
-            fontSize: "clamp(34px, 4.4vw, 76px)", 
-            lineHeight: 1.08, 
-            letterSpacing: "-0.03em", 
+            fontSize: "clamp(24px, 2.8vw, 42px)", 
+            lineHeight: 1.15, 
+            letterSpacing: "-0.02em", 
             color: "#111111",
             fontFamily: "var(--font-space-grotesk, sans-serif)",
             opacity: headlineOpacity, 
+            zIndex: 1,
             transform: `translateY(${headlineY}px)`,
             transition: "opacity 0.1s ease-out, transform 0.1s ease-out"
           }}
@@ -697,13 +699,138 @@ export function Hero({ phase = "done" }: { phase?: "loading" | "exit" | "done" }
         </h1>
 
         {/* scroll cue */}
-        <div style={{ position: "absolute", right: "4.5vw", bottom: "5vh", display: "flex", alignItems: "center", gap: 10, fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: "#111111", opacity: headlineOpacity, transition: "opacity 0.1s ease-out" }}>
+        <div style={{ position: "absolute", right: "4.5vw", bottom: "5vh", display: "flex", alignItems: "center", gap: 10, fontSize: 12, letterSpacing: "0.18em", textTransform: "uppercase", color: "#111111", opacity: headlineOpacity, zIndex: 1, transition: "opacity 0.1s ease-out" }}>
           <span style={{ fontFamily: "var(--font-space-grotesk, sans-serif)" }}>Scroll</span>
           <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "#111111" }}></span>
         </div>
 
       </div>
     </section>
+  )
+}
+
+export function SlideToExploreButton() {
+  const router = useRouter()
+  const [dragOffset, setDragOffset] = useState(0)
+  const [isDragging, setIsDragging] = useState(false)
+  const buttonRef = useRef<HTMLDivElement>(null)
+  const startXRef = useRef(0)
+
+  const maxDrag = 186 // Travel distance: 240px button width - 40px circle diameter - 8px padding = 192px max. Constrained to 186px for visual padding.
+
+  const handleStart = (clientX: number) => {
+    setIsDragging(true)
+    startXRef.current = clientX - dragOffset
+  }
+
+  const handleMove = useCallback((clientX: number) => {
+    if (!isDragging) return
+    const offset = Math.max(0, Math.min(186, clientX - startXRef.current))
+    setDragOffset(offset)
+  }, [isDragging])
+
+  const handleEnd = useCallback(() => {
+    if (!isDragging) return
+    setIsDragging(false)
+    if (dragOffset > 145) {
+      setDragOffset(186)
+      triggerRedirect()
+    } else {
+      setDragOffset(0)
+    }
+  }, [isDragging, dragOffset])
+
+  const triggerRedirect = () => {
+    const signedIn = !!getAccessToken()
+    router.push(signedIn ? "/verse" : "/signin")
+  }
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (dragOffset < 10) {
+      triggerRedirect()
+    }
+  }
+
+  useEffect(() => {
+    if (!isDragging) return
+
+    const onPointerMove = (e: PointerEvent) => {
+      handleMove(e.clientX)
+    }
+    const onPointerUp = () => {
+      handleEnd()
+    }
+
+    window.addEventListener("pointermove", onPointerMove)
+    window.addEventListener("pointerup", onPointerUp)
+    return () => {
+      window.removeEventListener("pointermove", onPointerMove)
+      window.removeEventListener("pointerup", onPointerUp)
+    }
+  }, [isDragging, handleMove, handleEnd])
+
+  return (
+    <div 
+      ref={buttonRef}
+      onClick={handleClick}
+      style={{
+        position: "relative",
+        width: "240px",
+        height: "48px",
+        borderRadius: "24px",
+        backgroundColor: "#111111",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        cursor: "pointer",
+        userSelect: "none",
+        overflow: "hidden",
+        boxShadow: "0 4px 14px rgba(17, 17, 17, 0.4)",
+        transition: "background-color 0.2s ease"
+      }}
+      className="group hover:bg-zinc-800"
+    >
+      <span 
+        style={{
+          color: "#ffffff",
+          fontSize: "14px",
+          fontWeight: "bold",
+          fontFamily: "var(--font-space-grotesk, sans-serif)",
+          opacity: Math.max(0.2, 1 - (dragOffset / 140)),
+          transition: "opacity 0.15s ease",
+          pointerEvents: "none"
+        }}
+      >
+        Explore the space
+      </span>
+
+      <div
+        onPointerDown={(e) => {
+          e.stopPropagation()
+          handleStart(e.clientX)
+        }}
+        style={{
+          position: "absolute",
+          left: "4px",
+          width: "40px",
+          height: "40px",
+          borderRadius: "50%",
+          backgroundColor: "#ffffff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          cursor: "grab",
+          boxShadow: "0 2px 6px rgba(0, 0, 0, 0.15)",
+          transform: `translateX(${dragOffset}px)`,
+          transition: isDragging ? "none" : "transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+          touchAction: "none"
+        }}
+      >
+        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-none stroke-[#111111] stroke-[3.5]" style={{ transform: "translateX(0.5px)" }}>
+          <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </div>
+    </div>
   )
 }
 
@@ -958,6 +1085,129 @@ export function Features() {
   )
 }
 
+export function ThemesShowcase() {
+  const [themeIndex, setThemeIndex] = useState(0)
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
+
+  const themes = [
+    {
+      name: "Modern Tech HQ",
+      tag: "THEME 01 // COOL BLUE",
+      desc: "Cool blue/gray palette featuring collaborative sprint zones. Work side-by-side with your engineering squad to unlock team-wide XP multipliers.",
+      src: "/assets/preview_office.png"
+    },
+    {
+      name: "Zen Garden Studio",
+      tag: "THEME 02 // SAGE HARMONY",
+      desc: "Warm wood floors and soft sage carpets. Features a centering koi pond centerpiece. Maintain focus streaks to water and grow your custom desk bonsai.",
+      src: "/assets/preview_zen.png"
+    },
+    {
+      name: "Library Loft",
+      tag: "THEME 03 // DARK ACADEMIA",
+      desc: "Quiet-zone rules enforced automatically. Auto-mute microphone buffers in the reading corridors and take on coding quests from the local bulletin board.",
+      src: "/assets/preview_tiles.png"
+    },
+    {
+      name: "Sunny Cafe Cowork",
+      tag: "THEME 04 // GOLDEN HOUR",
+      desc: "Light wood floors and gold carpets. A vibrant social hub with barista bars and automated coffee-chat matching to pair you with online peers.",
+      src: "/assets/preview_cafe.png"
+    }
+  ]
+
+  const resetTimer = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current)
+    timerRef.current = setInterval(() => {
+      setThemeIndex((prev) => (prev + 1) % 4)
+    }, 5000)
+  }, [])
+
+  useEffect(() => {
+    resetTimer()
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current)
+    }
+  }, [resetTimer])
+
+  const nextTheme = () => {
+    setThemeIndex((prev) => (prev + 1) % 4)
+    resetTimer()
+  }
+
+  const prevTheme = () => {
+    setThemeIndex((prev) => (prev === 0 ? 3 : prev - 1))
+    resetTimer()
+  }
+
+  return (
+    <section id="themes" className="px-6 py-24 border-t border-zinc-200 bg-[#fbfbfa] select-none">
+      <div className="mx-auto max-w-6xl">
+        <p className="text-[12px] font-mono font-bold tracking-widest uppercase text-black mb-2">/ PLAYABLE OFFICE THEMES</p>
+        <h2 
+          className="uppercase text-black font-extrabold tracking-tight mb-12 text-3xl sm:text-4xl"
+        >
+          Curated workspace aesthetics
+        </h2>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          {/* Left: Dynamic details block */}
+          <div className="lg:col-span-5 flex flex-col gap-6 order-2 lg:order-1">
+            <span className="text-[11px] font-mono tracking-[0.2em] text-[#5b5bf0] font-bold uppercase">
+              {themes[themeIndex]?.tag}
+            </span>
+            <h3 
+              className="text-zinc-900 text-3xl sm:text-4xl font-normal tracking-tight"
+              style={{ fontFamily: "Georgia, serif" }}
+            >
+              {themes[themeIndex]?.name}
+            </h3>
+            <p className="text-zinc-500 text-sm leading-relaxed max-w-md font-sans">
+              {themes[themeIndex]?.desc}
+            </p>
+            
+            {/* Manual Controls */}
+            <div className="flex items-center gap-4 mt-4">
+              <button 
+                onClick={prevTheme}
+                className="w-10 h-10 rounded-full border border-zinc-200 bg-white hover:bg-zinc-50 flex items-center justify-center cursor-pointer shadow-sm transition-all"
+              >
+                <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-zinc-700 stroke-[2.5]">
+                  <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+              <span className="text-xs font-mono font-bold text-zinc-400">
+                0{themeIndex + 1} / 04
+              </span>
+              <button 
+                onClick={nextTheme}
+                className="w-10 h-10 rounded-full border border-zinc-200 bg-white hover:bg-zinc-50 flex items-center justify-center cursor-pointer shadow-sm transition-all"
+              >
+                <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-zinc-700 stroke-[2.5]">
+                  <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          
+          {/* Right: Big Zoomed image */}
+          <div className="lg:col-span-7 order-1 lg:order-2">
+            <div className="relative aspect-[16/10] w-full overflow-hidden rounded-[24px] border border-black/10 shadow-2xl bg-white group cursor-pointer">
+              <img 
+                src={themes[themeIndex]?.src || ""} 
+                alt=""
+                className="w-full h-full object-cover transition-transform duration-700 ease-out scale-[1.03] hover:scale-[1.12]"
+                style={{ imageRendering: "pixelated" }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 // Strategy & Services section (matching frame 4 & detailed descriptions from frame 40)
 export function StrategySection() {
   const serviceCards = [
@@ -1079,19 +1329,12 @@ export function StrategySection() {
           50% { transform: translateY(-5px); }
         }
       `}</style>
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
-        <div className="lg:col-span-8">
-          <h2 className="uppercase text-black h-2-tight" style={{ fontSize: "clamp(1.875rem, 1.092rem + 2.609vw, 3.375rem)" }}>
-            We bring together spatial technology, low-latency audio, and real-time multiplayer systems to build environments that scale as your team grows.
-          </h2>
-        </div>
-        <div className="lg:col-span-4 flex justify-start lg:justify-end">
-          <Link
-            href="/verse"
-            className="rounded-[100px] bg-black hover:bg-zinc-800 text-white px-8 py-4.5 text-[12px] font-bold font-mono uppercase tracking-widest transition-all duration-200 border border-black flex items-center gap-2"
-          >
-            Explore Platform <span>▶</span>
-          </Link>
+      <div className="flex flex-col items-center text-center gap-10 w-full mb-12">
+        <h2 className="uppercase text-black h-2-tight w-full text-center max-w-5xl" style={{ fontSize: "clamp(1.3125rem, 0.76rem + 1.83vw, 2.3625rem)", lineHeight: 1.15 }}>
+          We bring together spatial technology, low-latency audio, and real-time multiplayer systems to build environments that scale as your team grows.
+        </h2>
+        <div className="flex justify-center w-full">
+          <SlideToExploreButton />
         </div>
       </div>
 
@@ -1132,7 +1375,7 @@ export function HowItWorks() {
         </h2>
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           {STEPS.map((s) => (
-            <div key={s.n} className="border-[3px] border-black bg-white p-6 rounded-none shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[4px_4px_0px_rgba(0,0,0,1)] transition-all">
+            <div key={s.n} style={{ backgroundColor: s.color }} className="border-[3px] border-black p-6 rounded-none shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[4px_4px_0px_rgba(0,0,0,1)] transition-all">
               <span className="bg-black text-white px-2.5 py-0.5 text-[10px] font-bold font-mono inline-block mb-4">{s.n}</span>
               <h3 
                 className="uppercase text-black font-bold tracking-tight text-[16px]"
@@ -1247,70 +1490,88 @@ export function FAQ() {
 // Upgraded white-on-black collaborative footer matching mockup with pixel-art vibe
 export function Footer() {
   return (
-    <footer className="bg-black text-white px-6 pt-24 pb-12 border-t-[4px] border-black select-none font-mono">
+    <footer className="bg-[#121212] text-[#f4f4f5] px-6 py-20 border-t border-zinc-800 select-none font-sans">
       <div className="mx-auto max-w-6xl">
         
-        <div className="flex flex-col lg:flex-row items-start justify-between gap-16 pb-20 border-b-[4px] border-white/10">
-          <div className="max-w-[340px] flex flex-col gap-5">
-            <h2 className="text-3xl font-extrabold tracking-tight text-white leading-tight uppercase">
-              Start working somewhere great.
-            </h2>
-            <p className="text-[12px] text-zinc-400 leading-relaxed">
-              A living workspace for your whole team. Get started in seconds, no setup needed.
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 pb-16">
+          
+          {/* Left Column: Brand, Description, Socials */}
+          <div className="lg:col-span-5 flex flex-col gap-6">
+            <div className="flex items-center gap-3">
+              <TwoDVerseLogo className="text-white" />
+              <span className="font-bold text-white text-[18px] tracking-tight">TwoD VERSE</span>
+            </div>
+            <p className="text-[14px] text-zinc-400 leading-relaxed max-w-sm">
+              TwoD VERSE is a live spatial platform where teams share one living map. Compete in daily standups, collaborate on desk rooms, and build presence from browser-powered spaces.
             </p>
-            <Link
-              href="/verse"
-              className="rounded-none bg-white border-[3px] border-white hover:bg-zinc-200 text-black px-8 py-3.5 text-xs font-bold uppercase tracking-widest mt-2 self-start shadow-[4px_4px_0px_rgba(255,255,255,0.15)] transition-all duration-75 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_rgba(255,255,255,0.15)] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none"
-            >
-              Get started
-            </Link>
+            
+            {/* Social Icons (bottom left of left column) */}
+            <div className="flex items-center gap-5 mt-4 text-zinc-400">
+              <a href="#" className="hover:text-white transition-colors">
+                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+              </a>
+              <a href="#" className="hover:text-white transition-colors">
+                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                  <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93zM6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37z"/>
+                </svg>
+              </a>
+              <a href="#" className="hover:text-white transition-colors">
+                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                  <path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.9-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.07 2.91.83.1-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2"/>
+                </svg>
+              </a>
+            </div>
           </div>
           
-          <div className="grid grid-cols-3 gap-16">
-            {/* Product */}
-            <div className="flex flex-col gap-3.5 text-xs text-zinc-400">
-              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Product</span>
-              <a href="#" className="hover:text-white transition-colors duration-150">Spaces</a>
-              <a href="#" className="hover:text-white transition-colors duration-150">Pricing</a>
-              <a href="#" className="hover:text-white transition-colors duration-150">Templates</a>
-              <a href="#" className="hover:text-white transition-colors duration-150">Changelog</a>
+          {/* Right Columns: Links */}
+          <div className="lg:col-span-7 grid grid-cols-2 md:grid-cols-4 gap-8">
+            
+            {/* Resources */}
+            <div className="flex flex-col gap-3">
+              <span className="text-[14px] font-semibold text-white">Resources</span>
+              <a href="#" className="text-zinc-400 hover:text-white text-[13px] transition-colors duration-150">Blog</a>
+              <a href="#" className="text-zinc-400 hover:text-white text-[13px] transition-colors duration-150">Brand</a>
+              <a href="#" className="text-zinc-400 hover:text-white text-[13px] transition-colors duration-150">FAQ</a>
+              <a href="#" className="text-zinc-400 hover:text-white text-[13px] transition-colors duration-150">Help & Support</a>
+              <a href="#" className="text-zinc-400 hover:text-white text-[13px] transition-colors duration-150">Community</a>
             </div>
             
-            {/* Company */}
-            <div className="flex flex-col gap-3.5 text-xs text-zinc-400">
-              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Company</span>
-              <a href="#" className="hover:text-white transition-colors duration-150">About</a>
-              <a href="#" className="hover:text-white transition-colors duration-150">Careers</a>
-              <a href="#" className="hover:text-white transition-colors duration-150">Journal</a>
-              <a href="#" className="hover:text-white transition-colors duration-150">Contact</a>
+            {/* Developers */}
+            <div className="flex flex-col gap-3">
+              <span className="text-[14px] font-semibold text-white">Developers</span>
+              <a href="#" className="text-zinc-400 hover:text-white text-[13px] transition-colors duration-150">Documentation</a>
+              <a href="#" className="text-zinc-400 hover:text-white text-[13px] transition-colors duration-150">API Reference</a>
+              <a href="#" className="text-zinc-400 hover:text-white text-[13px] transition-colors duration-150">Open Source</a>
+              <a href="#" className="text-zinc-400 hover:text-white text-[13px] transition-colors duration-150">Security</a>
+              <a href="#" className="text-zinc-400 hover:text-white text-[13px] transition-colors duration-150">Bug Bounty</a>
+            </div>
+            
+            {/* About */}
+            <div className="flex flex-col gap-3">
+              <span className="text-[14px] font-semibold text-white">About</span>
+              <a href="#" className="text-zinc-400 hover:text-white text-[13px] transition-colors duration-150">TwoD Labs</a>
+              <a href="#" className="text-zinc-400 hover:text-white text-[13px] transition-colors duration-150">Careers</a>
+              <a href="#" className="text-zinc-400 hover:text-white text-[13px] transition-colors duration-150">Contact</a>
+              <a href="#" className="text-zinc-400 hover:text-white text-[13px] transition-colors duration-150">Press</a>
             </div>
             
             {/* Legal */}
-            <div className="flex flex-col gap-3.5 text-xs text-zinc-400">
-              <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-1">Legal</span>
-              <a href="#" className="hover:text-white transition-colors duration-150">Privacy</a>
-              <a href="#" className="hover:text-white transition-colors duration-150">Terms</a>
-              <a href="#" className="hover:text-white transition-colors duration-150">Security</a>
+            <div className="flex flex-col gap-3">
+              <span className="text-[14px] font-semibold text-white">Legal & Privacy</span>
+              <a href="#" className="text-zinc-400 hover:text-white text-[13px] transition-colors duration-150">Privacy Policy</a>
+              <a href="#" className="text-zinc-400 hover:text-white text-[13px] transition-colors duration-150">Terms of Service</a>
+              <a href="#" className="text-zinc-400 hover:text-white text-[13px] transition-colors duration-150">Cookie Policy</a>
             </div>
+            
           </div>
         </div>
 
-        {/* Giant wordmark */}
-        <div 
-          className="text-center text-white font-extrabold tracking-tighter pt-16 pb-8 leading-none block select-none uppercase"
-          style={{
-            fontFamily: "'Anybody', sans-serif",
-            fontWeight: 900,
-            fontStretch: "140%",
-            fontSize: "clamp(48px, 10.5vw, 190px)"
-          }}
-        >
-          TwoD VERSE
-        </div>
-
-        {/* Bottom Bar */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] text-zinc-500 uppercase tracking-widest pt-4">
-          <span>© 2026 TwoD VERSE</span>
+        {/* Bottom copyright bar */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-[12px] text-zinc-500 pt-8 border-t border-zinc-800/60">
+          <span>© 2026 TwoD VERSE. All rights reserved.</span>
           <span>Spatial presence for every team</span>
         </div>
 

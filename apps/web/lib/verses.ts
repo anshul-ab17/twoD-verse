@@ -51,3 +51,6 @@ export const createInvite = (id: string) =>
 
 export const acceptInvite = (inviteId: string) =>
   api<{ verse: { hash: string } }>("POST", `/v1/verses/invites/${inviteId}/accept`).then((d) => d.verse)
+
+export const getCurrentUser = () =>
+  api<{ id: string; email: string; handle: string | null }>("GET", "/v1/me")

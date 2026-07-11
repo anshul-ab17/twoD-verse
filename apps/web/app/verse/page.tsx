@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import {
-  type Verse, listVerses, createVerse, renameVerse, deleteVerse, createInvite, acceptInvite,
+  type Verse, listVerses, createVerse, renameVerse, deleteVerse, createInvite, acceptInvite, getCurrentUser,
 } from "../../lib/verses"
 import { SpaceCard } from "../_components/dashboard/space-card"
 import { CreateSpaceModal } from "../_components/dashboard/create-space-modal"
@@ -22,12 +23,17 @@ export default function VerseDashboard() {
   const [query, setQuery] = useState("")
   const [note, setNote] = useState("")
   const [filter, setFilter] = useState<"all" | "owned" | "joined">("all")
+  const [user, setUser] = useState<{ id: string; email: string; handle: string | null } | null>(null)
 
   const load = useCallback(() => {
     listVerses().then(setVerses).catch(() => setVerses([]))
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    getCurrentUser().then(setUser).catch(() => {})
+  }, [])
 
   useEffect(() => {
     const invite = new URLSearchParams(location.search).get("invite")
@@ -78,9 +84,11 @@ export default function VerseDashboard() {
 
       {/* Header */}
       <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 40px", borderBottom: "1px solid rgba(24,21,16,0.12)", background: "#ffffff" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, fontWeight: 700, fontSize: 18 }}>
-          <DoorIcon />verse
-        </div>
+        <Link href="/" style={{ display: "flex", alignItems: "center", textDecoration: "none" }}>
+          <span style={{ fontFamily: "'Anybody', sans-serif", fontWeight: 900, fontStretch: "140%", fontSize: "19px", letterSpacing: "-0.02em", color: "#111111" }}>
+            TwoD VERSE
+          </span>
+        </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
           <input
             value={query}
@@ -88,17 +96,49 @@ export default function VerseDashboard() {
             placeholder="Search verses…"
             style={{ background: "#efe9dd", border: "1px solid rgba(24,21,16,0.14)", borderRadius: 999, padding: "7px 16px", fontSize: 13, outline: "none", width: 180, color: "#181510" }}
           />
-          <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, background: "#efe9dd", border: "1px solid rgba(24,21,16,0.14)", padding: "7px 14px", borderRadius: 999 }}>
-            <span style={{ color: "#c66a2e", fontWeight: 600 }}>🔥 12-day streak</span>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, background: "#efe9dd", border: "1px solid rgba(24,21,16,0.14)", padding: "7px 14px", borderRadius: 999 }}>
-            <span style={{ fontWeight: 600 }}>LVL 8</span>
-            <span style={{ display: "inline-block", width: 80, height: 6, background: "rgba(24,21,16,0.12)", borderRadius: 3, overflow: "hidden" }}>
-              <span style={{ display: "block", width: "62%", height: "100%", background: "#c66a2e" }} />
-            </span>
-            <span style={{ color: "rgba(24,21,16,0.55)" }}>620/1000 XP</span>
-          </div>
-          <div style={{ width: 34, height: 34, background: "#3e9b4f", border: "2px solid #181510", borderRadius: 8 }} />
+          {user ? (
+            <div style={{ position: "relative", width: 36, height: 36 }}>
+              {/* Initials fallback */}
+              <div 
+                style={{ 
+                  width: 36, 
+                  height: 36, 
+                  background: "#181510", 
+                  color: "#ffffff", 
+                  border: "2px solid #181510", 
+                  borderRadius: "50%", 
+                  display: "flex", 
+                  alignItems: "center", 
+                  justifyContent: "center",
+                  fontWeight: "bold",
+                  fontSize: 14,
+                  fontFamily: "var(--font-space-grotesk, system-ui, sans-serif)"
+                }}
+              >
+                {user.email ? user.email.charAt(0).toUpperCase() : "?"}
+              </div>
+              
+              {/* Dynamic PFP image */}
+              <img 
+                src={`https://unavatar.io/${user.email}`} 
+                alt="" 
+                style={{ 
+                  position: "absolute",
+                  inset: 0,
+                  width: 36,
+                  height: 36,
+                  border: "2px solid #181510",
+                  borderRadius: "50%",
+                  objectFit: "cover"
+                }} 
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            </div>
+          ) : (
+            <div style={{ width: 36, height: 36, background: "#f0f0ef", border: "2px solid #181510", borderRadius: "50%" }} />
+          )}
         </div>
       </header>
 
