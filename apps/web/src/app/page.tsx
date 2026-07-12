@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { LandingNav } from "@/features/landing/landing-nav"
 import { Loader } from "@/features/landing/loader"
+import { SignInModal } from "@/features/auth/SignInModal"
 import {
   Hero,
   ClientLogoReel,
@@ -18,6 +19,7 @@ type Phase = "loading" | "exit" | "done"
 
 export default function Page() {
   const [phase, setPhase] = useState<Phase>("loading")
+  const [authOpen, setAuthOpen] = useState(false)
 
   return (
     <>
@@ -25,11 +27,12 @@ export default function Page() {
       <div
         style={{
           opacity: phase !== "loading" ? 1 : 0,
-          transition: "opacity 0.7s ease",
+          transition: "opacity 0.7s ease, filter 0.2s ease",
           visibility: phase !== "loading" ? "visible" : "hidden",
+          filter: authOpen ? "blur(3px)" : "none",
         }}
       >
-        <LandingNav phase={phase} />
+        <LandingNav phase={phase} onOpenAuth={() => setAuthOpen(true)} />
         <Hero phase={phase} />
         <ClientLogoReel />
         <Features />
@@ -39,6 +42,7 @@ export default function Page() {
         <FAQ />
         <Footer />
       </div>
+      <SignInModal isOpen={authOpen} onClose={() => setAuthOpen(false)} />
     </>
   )
 }
