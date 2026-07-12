@@ -156,10 +156,12 @@ export default function SpacePage() {
   const { themeKey, theme, setTheme } = useTheme()
 
   //  Character selection
-  const [selectedCharacter, setSelectedCharacter] = useState<string | null>(() => {
-    if (typeof window === "undefined") return null
-    return localStorage.getItem("twodverse:character")
-  })
+  const [selectedCharacter, setSelectedCharacter] = useState<string | null>(null)
+
+  useEffect(() => {
+    const stored = localStorage.getItem("twodverse:character")
+    if (stored) setSelectedCharacter(stored)
+  }, [])
 
   const handleSelectCharacter = useCallback((key: string) => {
     localStorage.setItem("twodverse:character", key)
