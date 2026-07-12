@@ -94,19 +94,16 @@ async function generateTokens(userId: string, role: string) {
     Date.now() + 7 * 24 * 60 * 60 * 1000
   )
 
-  await Promise.all([
-    client.session.create({
-      data: {
-        userId,
-        jti,
-        expiresAt,
-      },
-    }),
-    redis.set(`refresh:${jti}`, userId, {
-      EX: 60 * 60 * 24 * 7,
-    }),
-    redis.sAdd(`sessions:${userId}`, jti),
-  ])
+  const ops: Promise<any>[] = [
+    client.session.create({ data: { userId, jti, expiresAt } }),
+  ]
+  if (redis.isOpen) {
+    ops.push(
+      redis.set(`refresh:${jti}`, userId, { EX: 60 * 60 * 24 * 7 }),
+      redis.sAdd(`sessions:${userId}`, jti),
+    )
+  }
+  await Promise.all(ops)
 
   return { accessToken, refreshToken }
 }

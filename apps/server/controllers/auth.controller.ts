@@ -77,9 +77,12 @@ export const refreshHandler: RequestHandler = async (req, res) => {
       return res.status(401).json({ error: "Invalid token" })
     }
 
-    let exists = await redis.get(`refresh:${decoded.jti}`)
+    let exists: string | null = null
+    if (redis.isOpen) {
+      exists = await redis.get(`refresh:${decoded.jti}`)
+    }
 
-    // Fallback: Redis may have lost data (restart) — check Postgres Session table
+    // Fallback: Redis unavailable or lost data — check Postgres Session table
     if (!exists) {
       const session = await client.session.findUnique({
         where: { jti: decoded.jti },
@@ -91,8 +94,7 @@ export const refreshHandler: RequestHandler = async (req, res) => {
     }
 
     if (!exists) {
-      // Token reuse detected
-      await redis.del(`sessions:${decoded.userId}`)
+      if (redis.isOpen) await redis.del(`sessions:${decoded.userId}`)
       return res.status(403).json({ error: "Token reuse detected" })
     }
 
@@ -109,15 +111,19 @@ export const refreshHandler: RequestHandler = async (req, res) => {
 
     const newExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
 
-    // Atomically: delete old session, create new one in Postgres + Redis
-    await Promise.all([
-      redis.del(`refresh:${decoded.jti}`),
-      redis.sRem(`sessions:${decoded.userId}`, decoded.jti),
+    const refreshOps: Promise<any>[] = [
       client.session.deleteMany({ where: { jti: decoded.jti } }),
-      redis.set(`refresh:${newJti}`, user.id, { EX: 60 * 60 * 24 * 7 }),
-      redis.sAdd(`sessions:${user.id}`, newJti),
       client.session.create({ data: { userId: user.id, jti: newJti, expiresAt: newExpiresAt } }),
-    ])
+    ]
+    if (redis.isOpen) {
+      refreshOps.push(
+        redis.del(`refresh:${decoded.jti}`),
+        redis.sRem(`sessions:${decoded.userId}`, decoded.jti),
+        redis.set(`refresh:${newJti}`, user.id, { EX: 60 * 60 * 24 * 7 }),
+        redis.sAdd(`sessions:${user.id}`, newJti),
+      )
+    }
+    await Promise.all(refreshOps)
 
     res.cookie("accessToken", newAccessToken, ACCESS_COOKIE)
     res.cookie("refreshToken", newRefreshToken, REFRESH_COOKIE)
@@ -135,12 +141,9 @@ export const logoutHandler: RequestHandler = async (req, res) => {
     try {
       const decoded = verifyToken(token)
 
-      if (decoded.jti && decoded.userId) {
+      if (decoded.jti && decoded.userId && redis.isOpen) {
         await redis.del(`refresh:${decoded.jti}`)
-        await redis.sRem(
-          `sessions:${decoded.userId}`,
-          decoded.jti
-        )
+        await redis.sRem(`sessions:${decoded.userId}`, decoded.jti)
       }
     } catch {
       // ignore invalid token
@@ -203,8 +206,10 @@ export const revokeSessionHandler: RequestHandler = async (req, res) => {
     return res.status(400).json({ error: "Missing session id" })
   }
 
-  await redis.del(`refresh:${jti}`)
-  await redis.sRem(`sessions:${req.user.userId}`, jti)
+  if (redis.isOpen) {
+    await redis.del(`refresh:${jti}`)
+    await redis.sRem(`sessions:${req.user.userId}`, jti)
+  }
 
   return res.json({ success: true })
 }

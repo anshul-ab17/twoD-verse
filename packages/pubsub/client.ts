@@ -1,33 +1,27 @@
 import { createClient } from "redis"
 
-const redisUrl = process.env.REDIS_URL
+const redisUrl = process.env.REDIS_URL || "redis://localhost:6379"
 
-if (!redisUrl) {
-  throw new Error("REDIS_URL is not defined")
+function makeClient() {
+  return createClient({
+    url: redisUrl,
+    socket: {
+      // try once, fail fast — no infinite retry loop blocking server startup
+      reconnectStrategy: false,
+    },
+  })
 }
 
-//  Redis client for caching, rate limiting
+export const redis = makeClient()
+export const pub = makeClient()
+export const sub = makeClient()
 
-export const redis = createClient({ url: redisUrl })
-
-// Dedicated Pub/Sub clients
-export const pub = createClient({ url: redisUrl })
-export const sub = createClient({ url: redisUrl })
-
-redis.on("error", (err) => {
-  console.error("Redis Error:", err)
-})
-
-pub.on("error", (err) => {
-  console.error("Redis Pub Error:", err)
-})
-
-sub.on("error", (err) => {
-  console.error("Redis Sub Error:", err)
-})
+redis.on("error", () => {})
+pub.on("error", () => {})
+sub.on("error", () => {})
 
 export async function connectRedis() {
-  if (!redis.isOpen) await redis.connect()
-  if (!pub.isOpen) await pub.connect()
-  if (!sub.isOpen) await sub.connect()
+  await redis.connect()
+  await pub.connect()
+  await sub.connect()
 }

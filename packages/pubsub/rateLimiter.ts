@@ -20,6 +20,7 @@ export async function allow(
   userId: string,
   type: "move" | "chat" | "global"
 ): Promise<boolean> {
+  if (!redis.isOpen) return true
   const key = `rt:rate:${type}:${userId}`
   const count = await redis.eval(RATE_LIMIT_SCRIPT, { keys: [key], arguments: [] }) as number
   return count <= LIMITS[type]
