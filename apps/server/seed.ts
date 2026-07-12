@@ -14,7 +14,7 @@ async function seed() {
 
   await client.user.upsert({
     where: { email },
-    create: { email, password: hashed, role: "user" },
+    create: { email, password: hashed, role: "USER" },
     update: {},
   })
 
