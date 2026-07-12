@@ -1,0 +1,112 @@
+import argon2 from "argon2"
+import {
+  signAccessToken,
+  signRefreshToken,
+} from "@repo/auth"
+import { client } from "@repo/db"
+import { redis } from "@repo/pubsub"
+
+// OWASP-recommended minimum: 19 MB memory, 2 iterations, 1 thread
+// Default argon2 params (64 MB, 3 iter) are too slow for dev/low-spec machines
+const ARGON2_OPTIONS = {
+  memoryCost: 19456,
+  timeCost: 2,
+  parallelism: 1,
+} as const
+
+export async function signup(email: string, password: string) {
+  const existing = await client.user.findUnique({
+    where: { email },
+  })
+
+  if (existing) {
+    throw new Error("User already exists")
+  }
+
+  const hashed = await argon2.hash(password, ARGON2_OPTIONS)
+
+  const user = await client.user.create({
+    data: {
+      email,
+      password: hashed,
+      accounts: {
+        create: {
+          provider: "EMAIL",
+          providerId: email,
+        },
+      },
+    },
+  })
+
+  return generateTokens(user.id, user.role)
+}
+
+export async function signin(email: string, password: string) {
+  const user = await client.user.findUnique({
+    where: { email },
+    include: { accounts: true },
+  })
+
+  if (!user || !user.password) {
+    await argon2.hash("fake-password", ARGON2_OPTIONS)
+    throw new Error("Invalid credentials")
+  }
+
+  const emailAccount = user.accounts.find(
+    (acc) => acc.provider === "EMAIL"
+  )
+
+  if (!emailAccount) {
+    await argon2.hash("fake-password", ARGON2_OPTIONS)
+    throw new Error("Invalid credentials")
+  }
+
+  const valid = await argon2.verify(user.password, password)
+
+  if (!valid) throw new Error("Invalid credentials")
+
+  return generateTokens(user.id, user.role)
+}
+
+export async function changePassword(userId: string, currentPassword: string, newPassword: string) {
+  const user = await client.user.findUnique({
+    where: { id: userId },
+    include: { accounts: true },
+  })
+
+  if (!user || !user.password) throw new Error("No password set for this account")
+
+  const emailAccount = user.accounts.find((acc) => acc.provider === "EMAIL")
+  if (!emailAccount) throw new Error("No password set for this account")
+
+  const valid = await argon2.verify(user.password, currentPassword)
+  if (!valid) throw new Error("Current password is incorrect")
+
+  const hashed = await argon2.hash(newPassword, ARGON2_OPTIONS)
+  await client.user.update({ where: { id: userId }, data: { password: hashed } })
+}
+
+async function generateTokens(userId: string, role: string) {
+  const accessToken = signAccessToken(userId, role)
+  const { token: refreshToken, jti } = signRefreshToken(userId)
+
+  const expiresAt = new Date(
+    Date.now() + 7 * 24 * 60 * 60 * 1000
+  )
+
+  await Promise.all([
+    client.session.create({
+      data: {
+        userId,
+        jti,
+        expiresAt,
+      },
+    }),
+    redis.set(`refresh:${jti}`, userId, {
+      EX: 60 * 60 * 24 * 7,
+    }),
+    redis.sAdd(`sessions:${userId}`, jti),
+  ])
+
+  return { accessToken, refreshToken }
+}

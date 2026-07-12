@@ -1,0 +1,180 @@
+import { client } from "@repo/db"
+import { redis, pub, publish } from "@repo/pubsub"
+
+const CACHE_TTL = 60
+
+function getUserSpacesCacheKey(userId: string) {
+  return `spaces:user:${userId}`
+}
+
+async function getCachedSpaces(cacheKey: string) {
+  if (!redis.isOpen) {
+    return null
+  }
+
+  try {
+    return await redis.get(cacheKey)
+  } catch (error) {
+    console.error("Failed to read spaces cache:", error)
+    return null
+  }
+}
+
+async function setCachedSpaces(cacheKey: string, spaces: unknown) {
+  if (!redis.isOpen) {
+    return
+  }
+
+  try {
+    await redis.set(cacheKey, JSON.stringify(spaces), {
+      EX: CACHE_TTL,
+    })
+  } catch (error) {
+    console.error("Failed to write spaces cache:", error)
+  }
+}
+
+async function invalidateUserSpacesCache(userId: string) {
+  if (!redis.isOpen) {
+    return
+  }
+
+  try {
+    await redis.del(getUserSpacesCacheKey(userId))
+  } catch (error) {
+    console.error("Failed to invalidate spaces cache:", error)
+  }
+}
+
+export async function getSpaces(userId: string) {
+  const cacheKey = getUserSpacesCacheKey(userId)
+
+  const cached = await getCachedSpaces(cacheKey)
+
+  if (cached) {
+    try {
+      return JSON.parse(cached)
+    } catch {
+      if (redis.isOpen) {
+        try {
+          await redis.del(cacheKey)
+        } catch (error) {
+          console.error("Failed to delete invalid spaces cache:", error)
+        }
+      }
+    }
+  }
+
+  const spaces = await client.space.findMany({
+    where: {
+      creatorId: userId,
+    },
+    include: {
+      creator: {
+        select: { id: true, email: true },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  })
+
+  await setCachedSpaces(cacheKey, spaces)
+
+  return spaces
+}
+
+export async function getSpaceById(spaceId: string) {
+  return client.space.findUnique({
+    where: { id: spaceId },
+    include: {
+      creator: {
+        select: { id: true, email: true },
+      },
+    },
+  })
+}
+
+export async function createSpace(
+  userId: string,
+  data: { name: string; width: number; height: number }
+) {
+  const space = await client.space.create({
+    data: {
+      name: data.name,
+      width: data.width,
+      height: data.height,
+      creatorId: userId,
+    },
+  })
+
+  // Invalidate only this user's cache
+  await invalidateUserSpacesCache(userId)
+
+  // Publish event for WS instances when pubsub is available.
+  if (pub.isOpen) {
+    try {
+      await publish("spaces", {
+        type: "SPACE_CREATED",
+        payload: {
+          id: space.id,
+          name: space.name,
+          creatorId: userId,
+        },
+      })
+    } catch (error) {
+      console.error("Failed to publish SPACE_CREATED event:", error)
+    }
+  }
+
+  return space
+}
+
+export async function deleteSpace(
+  userId: string,
+  spaceId: string
+) {
+  const space = await client.space.findUnique({
+    where: { id: spaceId },
+    select: { id: true, creatorId: true },
+  })
+
+  if (!space) {
+    return { status: "not_found" as const }
+  }
+
+  if (space.creatorId !== userId) {
+    return { status: "forbidden" as const }
+  }
+
+  await client.space.delete({
+    where: { id: spaceId },
+  })
+
+  await invalidateUserSpacesCache(userId)
+
+  return { status: "deleted" as const }
+}
+
+export async function renameSpace(
+  userId: string,
+  spaceId: string,
+  name: string
+): Promise<{ status: "renamed" | "not_found" | "forbidden" }> {
+  const space = await client.space.findUnique({
+    where: { id: spaceId },
+    select: { id: true, creatorId: true },
+  })
+
+  if (!space) return { status: "not_found" }
+  if (space.creatorId !== userId) return { status: "forbidden" }
+
+  await client.space.update({
+    where: { id: spaceId },
+    data: { name },
+  })
+
+  await invalidateUserSpacesCache(userId)
+
+  return { status: "renamed" }
+}
