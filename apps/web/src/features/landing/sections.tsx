@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { getAccessToken } from "@/lib/auth"
+import { useAuthSession } from "@/features/auth/AuthSessionProvider"
 
 function TwoDVerseLogo({ className = "text-black" }: { className?: string }) {
   return (
@@ -711,6 +711,7 @@ export function Hero({ phase = "done" }: { phase?: "loading" | "exit" | "done" }
 
 export function SlideToExploreButton() {
   const router = useRouter()
+  const { user } = useAuthSession()
   const [dragOffset, setDragOffset] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const buttonRef = useRef<HTMLDivElement>(null)
@@ -741,8 +742,7 @@ export function SlideToExploreButton() {
   }, [isDragging, dragOffset])
 
   const triggerRedirect = () => {
-    const signedIn = !!getAccessToken()
-    router.push(signedIn ? "/spaces" : "/signin")
+    router.push(user ? "/spaces" : "/signin")
   }
 
   const handleClick = (e: React.MouseEvent) => {
