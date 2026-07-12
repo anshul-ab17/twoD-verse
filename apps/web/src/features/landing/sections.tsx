@@ -709,7 +709,7 @@ export function Hero({ phase = "done" }: { phase?: "loading" | "exit" | "done" }
   )
 }
 
-export function SlideToExploreButton() {
+export function SlideToExploreButton({ onOpenAuth }: { onOpenAuth?: () => void } = {}) {
   const router = useRouter()
   const { user } = useAuthSession()
   const [dragOffset, setDragOffset] = useState(0)
@@ -742,7 +742,8 @@ export function SlideToExploreButton() {
   }, [isDragging, dragOffset])
 
   const triggerRedirect = () => {
-    router.push(user ? "/spaces" : "/signin")
+    if (user) { router.push("/spaces"); return }
+    onOpenAuth ? onOpenAuth() : router.push("/")
   }
 
   const handleClick = (e: React.MouseEvent) => {
@@ -990,15 +991,15 @@ function AutopilotConsoleVisualizer() {
   }, [])
 
   return (
-    <div className="relative w-full h-full flex flex-col bg-black p-6 font-mono text-[9px] text-[#28a745] overflow-hidden leading-normal select-none">
-      <div className="absolute top-3 right-4 h-1.5 w-1.5 rounded-full bg-[#28a745] animate-pulse" />
+    <div className="relative w-full h-full flex flex-col bg-[#f4f9f4] p-6 font-mono text-[9px] text-[#1a6b2e] overflow-hidden leading-normal select-none border-t border-black/8">
+      <div className="absolute top-3 right-4 h-1.5 w-1.5 rounded-full bg-[#22c55e] animate-pulse" />
       <div className="flex-grow flex flex-col gap-1.5 justify-end font-mono">
         {logs.map((log, i) => (
           <div key={i} className="truncate tracking-wide">{log}</div>
         ))}
         <div className="flex items-center gap-0.5 mt-0.5 opacity-90">
           <span>&gt; STREAMING COORD_METRICS</span>
-          <span className="w-1.5 h-3 bg-[#28a745] animate-pulse" />
+          <span className="w-1.5 h-3 bg-[#22c55e] animate-pulse" />
         </div>
       </div>
     </div>
@@ -1063,8 +1064,8 @@ export function Features() {
 
         {/* Column 3: AI Summarizer */}
         <div className="flex flex-col gap-6">
-          <div className="rounded-[24px] overflow-hidden border border-black bg-black aspect-[4/3] flex flex-col justify-between hover:shadow-lg hover:border-black transition-all duration-300 transform hover:-translate-y-1">
-            <span className="text-[12px] font-mono text-[#28a745] font-bold uppercase p-8 pb-0">/ LOGS_PARSING</span>
+          <div className="rounded-[24px] overflow-hidden border border-black bg-[#f0f9f1] aspect-[4/3] flex flex-col justify-between hover:shadow-lg hover:border-black transition-all duration-300 transform hover:-translate-y-1">
+            <span className="text-[12px] font-mono text-black font-bold uppercase p-8 pb-0">/ LOGS_PARSING</span>
             <div className="flex-grow h-0 w-full overflow-hidden">
               <AutopilotConsoleVisualizer />
             </div>
@@ -1237,7 +1238,7 @@ export function ThemesShowcase() {
 }
 
 // Strategy & Services section (matching frame 4 & detailed descriptions from frame 40)
-export function StrategySection() {
+export function StrategySection({ onOpenAuth }: { onOpenAuth?: () => void } = {}) {
   const serviceCards = [
     {
       head: "/ AUDIO_PIPELINE",
@@ -1296,13 +1297,13 @@ export function StrategySection() {
       desc: "Run TwoD VERSE on Next.js, or connect via our Godot SDK for native desktop and 3D spatial clients. Complete developer flexibility out of the box.",
       accent: "#bbf7d0", // Light Green
       renderVisual: () => (
-        <div className="relative h-16 w-full bg-black rounded-[12px] p-3 border border-black/20 flex flex-col justify-center overflow-hidden">
-          <code className="text-[7.5px] font-mono text-[#28a745] leading-normal tracking-wide block truncate">
+        <div className="relative h-16 w-full bg-[#f4f9f4] rounded-[12px] p-3 border border-black/10 flex flex-col justify-center overflow-hidden">
+          <code className="text-[7.5px] font-mono text-[#1a6b2e] leading-normal tracking-wide block truncate">
             {`$ bun add @twoD-verse/client`}
           </code>
-          <code className="text-[7.5px] font-mono text-white/60 leading-normal tracking-wide block truncate mt-1 flex items-center gap-0.5">
+          <code className="text-[7.5px] font-mono text-black/50 leading-normal tracking-wide block truncate mt-1 flex items-center gap-0.5">
             {`> Initializing Spatial Engine...`}
-            <span className="w-1 h-3 bg-[#28a745] animate-pulse" />
+            <span className="w-1 h-3 bg-[#22c55e] animate-pulse" />
           </code>
         </div>
       )
@@ -1362,7 +1363,7 @@ export function StrategySection() {
           We bring together spatial technology, low-latency audio, and real-time multiplayer systems to build environments that scale as your team grows.
         </h2>
         <div className="flex justify-center w-full">
-          <SlideToExploreButton />
+          <SlideToExploreButton onOpenAuth={onOpenAuth} />
         </div>
       </div>
 

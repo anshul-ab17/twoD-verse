@@ -37,7 +37,7 @@ export default function Page() {
         <ClientLogoReel />
         <Features />
         <ThemesShowcase />
-        <StrategySection />
+        <StrategySection onOpenAuth={() => setAuthOpen(true)} />
         <HowItWorks />
         <FAQ />
         <Footer />
