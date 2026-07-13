@@ -1,4 +1,0 @@
--- AlterTable
-ALTER TABLE "User" ADD COLUMN     "focusStreak" INTEGER NOT NULL DEFAULT 0,
-ADD COLUMN     "lastFocusAt" TIMESTAMP(3),
-ADD COLUMN     "questStep" INTEGER NOT NULL DEFAULT 0;
