@@ -3,6 +3,7 @@
 
 export interface Zone {
   id: string
+  label: string
   kind: "voice" | "stage" | "quiet" | "meeting"
   bounds: { x: number; y: number; w: number; h: number }
 }
@@ -31,23 +32,24 @@ export function proximityGain(dist: number): number {
   return dist >= PROXIMITY_RADIUS ? 0 : 1 - dist / PROXIMITY_RADIUS
 }
 
-/** Spike zones inside WORLD (1600x1200): voice lounge + meeting room (voice + AI notes). */
+/** Spike zones inside WORLD (1728x1152), aligned to the Pixi map rooms:
+ * voice-lounge = Lounge room, meeting-room = War Room. */
 export const SPIKE_ZONES: readonly Zone[] = [
-  { id: "voice-lounge", kind: "voice", bounds: { x: 200, y: 200, w: 400, h: 300 } },
-  { id: "meeting-room", kind: "meeting", bounds: { x: 1000, y: 700, w: 400, h: 300 } },
+  { id: "voice-lounge", label: "Lounge", kind: "voice", bounds: { x: 48, y: 624, w: 480, h: 432 } },
+  { id: "meeting-room", label: "War Room", kind: "meeting", bounds: { x: 624, y: 96, w: 480, h: 384 } },
 ]
 
 /** Assert-based self-check: `bun run zones.ts` */
 function demo() {
-  const inside = zoneAt(SPIKE_ZONES, 300, 300)
+  const inside = zoneAt(SPIKE_ZONES, 100, 700)
   console.assert(inside?.id === "voice-lounge", `inside lookup wrong: ${JSON.stringify(inside)}`)
 
-  const outside = zoneAt(SPIKE_ZONES, 1000, 1000)
+  const outside = zoneAt(SPIKE_ZONES, 1500, 1000)
   console.assert(outside === null, `outside lookup wrong: ${JSON.stringify(outside)}`)
 
   // edge: bounds are half-open [x, x+w)
-  console.assert(zoneAt(SPIKE_ZONES, 200, 200)?.id === "voice-lounge", "left edge wrong")
-  console.assert(zoneAt(SPIKE_ZONES, 600, 500) === null, "right edge should be exclusive")
+  console.assert(zoneAt(SPIKE_ZONES, 48, 624)?.id === "voice-lounge", "left edge wrong")
+  console.assert(zoneAt(SPIKE_ZONES, 528, 700) === null, "right edge should be exclusive")
 
   console.log("zones demo ok")
 }

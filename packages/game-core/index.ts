@@ -3,7 +3,8 @@ import { Schema, MapSchema, type } from "@colyseus/schema"
 // --- movement constants ---
 export const TICK_RATE = 20 // server simulation ticks per second
 export const MOVE_SPEED = 200 // px per second
-export const WORLD = { width: 1600, height: 1200 } as const
+// matches the Pixi tilemap: 36 cols × 24 rows × 48px tiles
+export const WORLD = { width: 1728, height: 1152 } as const
 
 // --- message types (client -> server) ---
 export const MSG = {

@@ -7,22 +7,22 @@ import {
   zoneAt,
 } from "./zones.ts"
 
-const WORLD = { w: 1600, h: 1200 }
+const WORLD = { w: 1728, h: 1152 }
 
 describe("zoneAt", () => {
   it("finds a zone for a point inside", () => {
-    expect(zoneAt(SPIKE_ZONES, 300, 300)?.id).toBe("voice-lounge")
+    expect(zoneAt(SPIKE_ZONES, 100, 700)?.id).toBe("voice-lounge")
   })
 
   it("returns null outside every zone", () => {
-    expect(zoneAt(SPIKE_ZONES, 1000, 1000)).toBeNull()
+    expect(zoneAt(SPIKE_ZONES, 1500, 1000)).toBeNull()
   })
 
   it("uses half-open bounds: min edge inside, max edge outside", () => {
-    // voice-lounge: x 200..600, y 200..500
-    expect(zoneAt(SPIKE_ZONES, 200, 200)?.id).toBe("voice-lounge")
-    expect(zoneAt(SPIKE_ZONES, 600, 300)).toBeNull()
-    expect(zoneAt(SPIKE_ZONES, 300, 500)).toBeNull()
+    // voice-lounge: x 48..528, y 624..1056
+    expect(zoneAt(SPIKE_ZONES, 48, 624)?.id).toBe("voice-lounge")
+    expect(zoneAt(SPIKE_ZONES, 528, 700)).toBeNull()
+    expect(zoneAt(SPIKE_ZONES, 100, 1056)).toBeNull()
   })
 })
 
@@ -46,7 +46,7 @@ describe("canPublishIn", () => {
   })
 
   it("blocks publishing in quiet zones", () => {
-    expect(canPublishIn({ id: "library", kind: "quiet", bounds: { x: 0, y: 0, w: 1, h: 1 } })).toBe(false)
+    expect(canPublishIn({ id: "library", label: "Library", kind: "quiet", bounds: { x: 0, y: 0, w: 1, h: 1 } })).toBe(false)
   })
 })
 
